@@ -40,11 +40,12 @@ The panel is styled after classic Roland Jupiter-series synths: a black panel (o
 
 ## Fonts
 
-These fonts are embedded in the file (base64 WOFF2, Latin subset), so it never fetches anything from the network. All three are under the SIL Open Font License 1.1:
+These fonts are embedded in the file (base64 WOFF2), so it never fetches anything from the network. All four are under the SIL Open Font License 1.1:
 
 - [Michroma](https://fonts.google.com/specimen/Michroma) (Vernon Adams)
 - [Barlow Semi Condensed](https://fonts.google.com/specimen/Barlow+Semi+Condensed) (Jeremy Tribby)
 - [Share Tech Mono](https://fonts.google.com/specimen/Share+Tech+Mono) (Carrois Apostrophe)
+- [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) (Florian Karsten), the Timster's Audio Works wordmark, shared with Spool
 
 ## Signal flow
 

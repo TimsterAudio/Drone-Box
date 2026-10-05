@@ -25,6 +25,7 @@ Things that stay the same on both panels, as on real hardware: the black knobs a
 
 | Use | Font | Treatment |
 |---|---|---|
+| Maker wordmark ("Timster's Audio Works - **Drone Box**") | Space Grotesk 500/700 | same badge treatment as Spool: 13px in a thin 3px-radius frame, product name bold |
 | Logo, oscillator numbers | Michroma | wide; the logo is slanted −12° like the Jupiter badge |
 | Panel legends, section titles, key labels | Barlow Semi Condensed 600/700 | uppercase, letter-spaced 0.1–0.2em, 10.5–12px |
 | Displays, tooltips, readouts | Share Tech Mono | uppercase, red with a soft glow |

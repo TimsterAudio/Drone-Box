@@ -6,7 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- Timster's Audio Works maker wordmark ("Timster's Audio Works - **Drone Box**") in the panel header, in the same style and font (Space Grotesk) as Spool's.
+- App icon (an amber sine wave on a dark rounded square, matching Spool's icon style) and the page title "Timster's Audio Works - Drone Box".
 
 ## [0.1.0] — 2026-10-05
 

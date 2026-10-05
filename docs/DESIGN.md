@@ -37,7 +37,7 @@ Things that stay the same on both panels, as on real hardware: the black knobs a
 | Levels, envelope times, filter cutoff and resonance, LFO rate and depth | **Fader**, as on the Jupiter-8 |
 | Continuous settings such as detune, pan, drift, effects and master | **Knob** |
 | A list of more than 5 choices (wave, interval, octave, note) | **Stepped knob**, orange pointer, with a small readout display |
-| Up to about 5 choices (filter type, LFO destination and wave) | **LED button row** |
+| Up to about 5 choices (filter type, LFO destination and wave, noise colour) | **LED button row** |
 | On/off state (mute, solo, play) | **Single LED button**: the LED lit means engaged |
 
 ## Key colours
@@ -53,7 +53,8 @@ Things that stay the same on both panels, as on real hardware: the black knobs a
 ## Layout
 
 - The top strip holds the logo, the LED display, the meters, master volume, the panel switch and Play/Stop.
-- Then rows of outlined sections: Monitor and Memory, then Oscillators, then Root, LFO 1, LFO 2, Filter, Swell, Delay and Reverb.
+- Then rows of outlined sections: Monitor and Memory, then Oscillators, then Root, Noise, LFO 1, LFO 2, Filter, Swell, Delay and Reverb.
+- Each oscillator strip has a 2-column grid of small knobs: Wave and Octave, Interval and Detune, Pan and Drift, Fold and FM. A tall Level fader runs beside them, as tall as the grid.
 - Oscillator strips are a fixed 182 px wide, so all six line up evenly. They sit on one row from about 1,200 px wide and wrap below that.
 - At phone width, sections stack and the page never scrolls sideways.
 

@@ -31,6 +31,16 @@ function check(name, ok, detail = ''){
     let s = 0; for (const v of d) s += v * v;
     return Math.sqrt(s / d.length);
   });
+  // Spectral centroid of the output, in Hz (a rough "brightness" measure).
+  const centroid = () => page.evaluate(() => {
+    const a = engine.analyser, d = new Float32Array(a.frequencyBinCount);
+    a.getFloatFrequencyData(d);
+    const bin = engine.ctx.sampleRate / a.fftSize;
+    let num = 0, den = 0;
+    for (let i = 1; i < d.length; i++){ const p = Math.pow(10, d[i] / 10); num += p * i * bin; den += p; }
+    return den ? num / den : 0;
+  });
+  const settle = (ms = 900) => page.waitForTimeout(ms);
   const gains = () => page.evaluate(() => new Promise(r =>
     setTimeout(() => r(engine.voices.map(v => +v.lvl.gain.value.toFixed(2))), 500)));
 
@@ -71,7 +81,7 @@ function check(name, ok, detail = ''){
   check('fader track click jumps', lvl > 0.7 && lvl < 0.9, lvl.toFixed(2));
 
   // LED buttons
-  await page.click('#ctrlSlot .sec:nth-child(2) .brow button:nth-child(3)');
+  await page.locator('#ctrlSlot .sec', { has: page.locator('h3', { hasText: /^LFO 1$/ }) }).locator('.brow button').nth(2).click();
   check('LFO destination button', await page.evaluate(() => patch.lfos[0].target) === 'pitch');
 
   // Mute / solo (Tanpura Fifths: osc 6 is muted)
@@ -89,6 +99,38 @@ function check(name, ok, detail = ''){
   check('mute is saved in patch', await page.evaluate(() => patch.oscs[0].on === false));
   await page.evaluate(() => loadPatch(FACTORY[2]));
   check('patch load clears solo', await page.evaluate(() => engine.solo.size === 0));
+
+  // Stage 2 DSP: worklets, fold, FM, ladder, noise (all on the single-sine Init patch)
+  check('AudioWorklet DSP active', await page.evaluate(() => engine.dsp && engine.voices[0].src instanceof AudioWorkletNode));
+  const loadInit = async (tweak = '') => {
+    await page.evaluate(t => { const p = clone(FACTORY.find(x => x.name === 'Init')); p.filter.cutoff = 18000; new Function('p', t)(p); loadPatch(p); }, tweak);
+    await settle(1200);
+  };
+  await loadInit();
+  const cSine = await centroid();
+  await loadInit('p.oscs[0].fold = 0.8;');
+  const cFold = await centroid();
+  check('fold brightens the sound', cFold > cSine * 2, `${cSine.toFixed(0)} -> ${cFold.toFixed(0)} Hz`);
+  await loadInit('p.oscs[0].fm = 1; p.oscs[5].ratio = "3/2";');   // index ≈ 2.7: centroid ≈ 160 Hz in theory
+  const cFm = await centroid();
+  check('FM (from muted osc 6) brightens osc 1', cFm > cSine * 1.5, `${cSine.toFixed(0)} -> ${cFm.toFixed(0)} Hz`);
+  await loadInit('p.oscs[0].wave = "sawtooth"; p.filter.cutoff = 18000;');
+  const cSaw = await centroid();
+  await loadInit('p.oscs[0].wave = "sawtooth"; p.filter.type = "ladder"; p.filter.cutoff = 150; p.filter.q = 0.7;');
+  const cLad = await centroid();
+  check('ladder filter darkens a saw', cLad < cSaw * 0.6 && await rms() > 0.0005, `${cSaw.toFixed(0)} -> ${cLad.toFixed(0)} Hz`);
+  await loadInit('p.oscs[0].on = false; p.noise.level = 0.8; p.noise.color = "white";');
+  const cNoise = await centroid();
+  check('noise source sounds', await rms() > 0.002 && cNoise > 2000, `centroid ${cNoise.toFixed(0)} Hz`);
+  await page.click('.ostrip:nth-child(1) .obtns button:nth-child(2)');
+  await settle(500);
+  check('solo silences noise', await page.evaluate(() => engine.noiseLvl.gain.value < 0.01));
+  const old = await page.evaluate(() => {
+    const p = normalize({name: 'v0.1 patch', oscs: [{on: true, wave: 'warm', ratio: '3/2', oct: 0, detune: 1, level: 0.5, pan: 0, drift: 2}],
+                         filter: {type: 'lowpass', cutoff: 900, q: 2}});
+    return p.oscs[0].fold === 0 && p.oscs[0].fm === 0 && p.filter.drive === 0 && p.noise.level === 0 && p.oscs[0].ratio === '3/2';
+  });
+  check('v0.1 patches load with new settings off', old);
 
   // Theme switch
   await page.click('#themeSlot .brow button:nth-child(2)');

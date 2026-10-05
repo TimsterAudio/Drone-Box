@@ -10,17 +10,19 @@ Open `drone-box.html` in a Chromium-based browser (Chrome, Edge or Brave). Firef
 
 Press **Play** or hit **Space**. Browsers only allow audio to start after a click or key press, so that's always the first step.
 
-## What's in v0.1
+## Features
 
-- **6 oscillators.** Each one has:
+- **6 oscillators**, running as band-limited wavetable AudioWorklets (alias-free even at high notes). Each one has:
   - waveform: Sine, Triangle, Warm, Saw, Hollow, Square or Organ
   - a just-intonation interval (1/1, 3/2, 5/4, 7/4…) plus an octave shift
   - fine detune (±25 cents) for slow beating between oscillators
   - level and pan
   - Mute and Solo
   - Drift: a slow random pitch wander, like an analog oscillator
+  - Fold (wavefolder) and FM (modulated by the previous oscillator)
 - **Root:** note, octave, the A4 reference pitch (e.g. 432 Hz) and glide time for pitch changes.
-- **Filter:** low-pass, band-pass, high-pass or notch, with cutoff and resonance.
+- **Noise:** white, pink or brown, with level and pan.
+- **Filter:** low-pass, band-pass, high-pass, notch or a saturating **ladder** low-pass (with Drive), plus cutoff and resonance.
 - **2 LFOs.** Each can control filter cutoff, pitch, volume or pan. On pan, odd and even oscillators move in opposite directions.
 - **Swell:** fade-in and fade-out times of up to 60 s each.
 - **Delay:** repeats get darker each time.

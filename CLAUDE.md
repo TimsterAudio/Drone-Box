@@ -8,7 +8,8 @@ Drone Box is a browser drone synthesizer by Timster's Audio Works. The whole ins
 - **No network requests at runtime.** No CDNs, remote fonts, analytics or fetches. Embed assets (base64) if they're truly needed.
 - **Never break saved patches.** Add new patch fields to `defaultPatch()`. Never rename or repurpose existing ones (see "Patch format" in ARCHITECTURE).
 - **Keep the engine free of DOM code.** The UI changes `patch`, then calls `engine.apply…()`.
-- **Route every audio parameter change through `Engine.T()`** (smoothed), so nothing clicks.
+- **Route every continuous audio parameter change through `Engine.T()`** (smoothed), so nothing clicks. Discrete selectors (wave index, noise colour) use `Engine.set()`.
+- **DSP lives in the `dsp-worklet` script block.** Keep `WAVE_IDS` there in step with `WAVES` in the main script, and keep the basic (non-worklet) fallback working.
 
 ## Workflow
 

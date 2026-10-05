@@ -9,6 +9,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Added
 - Timster's Audio Works maker wordmark ("Timster's Audio Works - **Drone Box**") in the panel header, in the same style and font (Space Grotesk) as Spool's.
 - App icon (an amber sine wave on a dark rounded square, matching Spool's icon style) and the page title "Timster's Audio Works - Drone Box".
+- **New oscillator engine (Stage 2).** The oscillators now run as AudioWorklets, playing band-limited wavetables, so high notes and pitch sweeps stay free of aliasing.
+- **Fold** knob on each oscillator: a sine wavefolder that adds bright, metallic overtones.
+- **FM** knob on each oscillator. Each one is frequency-modulated by the previous one (OSC 6 modulates OSC 1). A muted oscillator still works as a modulator.
+- **Ladder** filter type: a four-pole ladder low-pass with saturation, plus a **Drive** knob for it.
+- **Noise** section: white, pink or brown noise with level and pan, running through the filter. It's silent while any oscillator is soloed.
+- Factory presets showing off the new features: **Folded Fifths**, **Metallic FM** and **Ladder Wind**.
+- If the browser can't run AudioWorklets, the synth falls back to the v0.1 sound and the display says "Basic audio mode".
+
+### Changed
+- The oscillator Level faders are taller, to match the extra row of knobs.
+- Patches gain new fields (`oscs[].fold`, `oscs[].fm`, `filter.drive`, `noise`). Older patches load with all of them off and sound as they did.
 
 ## [0.1.0] — 2026-10-05
 

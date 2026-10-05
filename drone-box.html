@@ -126,7 +126,7 @@ body{
 
 /* Fader */
 .fader{--fh:124px;position:relative;width:36px;height:var(--fh);touch-action:none;cursor:ns-resize;outline:none;margin-top:4px}
-.fader.tall{--fh:176px}
+.fader.tall{--fh:262px}
 .fader .slot{position:absolute;left:50%;top:10px;bottom:10px;width:6px;margin-left:-3px;background:#000;border-radius:3px;box-shadow:inset 0 1px 2px #000,0 1px 0 rgba(255,255,255,.1)}
 .fader .ft{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--tick) 0 7px,transparent 7px calc(100% - 7px),var(--tick) calc(100% - 7px))}
 .fader .ft.major{height:2px}
@@ -264,6 +264,193 @@ kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:
   <span>Everything runs locally in your browser. Nothing is sent anywhere.</span>
 </footer>
 
+<script type="text/plain" id="dsp-worklet">
+// Drone Box DSP: AudioWorklet processors. This block is never run on the page itself;
+// the engine loads its text as a module into the AudioContext's worklet scope.
+
+/* ---- Band-limited wavetables, built once per AudioContext and shared by every oscillator ---- */
+const TABLE = 2048, BANDS = 11, BASE = 20;      // band b holds fundamentals up to BASE * 2^(b+1) Hz
+const WAVE_IDS = ['sine', 'triangle', 'warm', 'sawtooth', 'hollow', 'square', 'organ'];
+const ORGAN = {1: 1, 2: 0.75, 3: 0.5, 4: 0.45, 6: 0.3, 8: 0.25, 10: 0.1, 12: 0.08, 16: 0.05};
+const HALF_PI = Math.PI / 2;
+let TABLES = null;
+
+function harmonic(wave, n){
+  switch (wave){
+    case 'sine':     return n === 1 ? 1 : 0;
+    case 'triangle': return n % 2 ? (((n - 1) / 2) % 2 ? -1 : 1) / (n * n) : 0;
+    case 'sawtooth': return (n % 2 ? 1 : -1) / n;
+    case 'square':   return n % 2 ? 1 / n : 0;
+    case 'warm':     return n <= 48 ? 1 / Math.pow(n, 1.7) : 0;
+    case 'hollow':   return n <= 48 && n % 2 ? 1 / Math.pow(n, 1.4) : 0;
+    case 'organ':    return ORGAN[n] || 0;
+  }
+  return 0;
+}
+
+// For each wave, one table per octave band, each containing only harmonics that stay below
+// Nyquist for the highest fundamental in that band. Tables are peak-normalised per wave.
+function buildTables(){
+  if (TABLES) return;
+  const sin = new Float32Array(TABLE);
+  for (let i = 0; i < TABLE; i++) sin[i] = Math.sin(2 * Math.PI * i / TABLE);
+  TABLES = {};
+  for (const wave of WAVE_IDS){
+    const bands = [];
+    let prev = null, prevH = -1, peak = 0;
+    for (let b = 0; b < BANDS; b++){
+      const top = BASE * Math.pow(2, b + 1);
+      let H = Math.max(1, Math.min(1000, Math.floor(sampleRate / 2 / top)));
+      let last = 0;                                   // highest non-zero harmonic actually used
+      for (let n = 1; n <= H; n++) if (harmonic(wave, n)) last = n;
+      if (last === prevH){ bands.push(prev); continue; }
+      const t = new Float32Array(TABLE + 1);
+      for (let n = 1; n <= last; n++){
+        const a = harmonic(wave, n);
+        if (!a) continue;
+        for (let i = 0; i < TABLE; i++) t[i] += a * sin[(n * i) & (TABLE - 1)];
+      }
+      if (b === 0) for (let i = 0; i < TABLE; i++) peak = Math.max(peak, Math.abs(t[i]));
+      bands.push(t); prev = t; prevH = last;
+    }
+    const k = 1 / (peak || 1);
+    for (const t of new Set(bands)){ for (let i = 0; i < TABLE; i++) t[i] *= k; t[TABLE] = t[0]; }
+    TABLES[wave] = bands;
+  }
+}
+
+function readTable(t, ph){
+  const x = ph * TABLE, i = x | 0, f = x - i;
+  return t[i] + (t[i + 1] - t[i]) * f;
+}
+
+const fastTanh = x => x < -3 ? -1 : x > 3 ? 1 : x * (27 + x * x) / (27 + 9 * x * x);
+
+/* ---- Oscillator: wavetable + FM input + wavefolder ---- */
+class DbOsc extends AudioWorkletProcessor {
+  static get parameterDescriptors(){
+    return [
+      {name: 'frequency', defaultValue: 110, minValue: 0, maxValue: 20000, automationRate: 'a-rate'},
+      {name: 'detune',    defaultValue: 0, automationRate: 'a-rate'},
+      {name: 'wave',      defaultValue: 0, minValue: 0, maxValue: WAVE_IDS.length - 1, automationRate: 'k-rate'},
+      {name: 'fold',      defaultValue: 0, minValue: 0, maxValue: 1, automationRate: 'k-rate'},
+      {name: 'fm',        defaultValue: 0, minValue: 0, maxValue: 8, automationRate: 'k-rate'}   // peak deviation, in multiples of the frequency
+    ];
+  }
+  constructor(){
+    super();
+    buildTables();
+    this.phase = Math.random();
+  }
+  process(inputs, outputs, p){
+    const out = outputs[0][0];
+    if (!out) return true;
+    const mod = inputs[0] && inputs[0][0];
+    const fq = p.frequency, dt = p.detune;
+    const bands = TABLES[WAVE_IDS[Math.round(p.wave[0])]] || TABLES.sine;
+    const fm = mod ? p.fm[0] : 0;
+    const fold = p.fold[0], foldMix = Math.min(1, fold * 4), foldGain = 1 + fold * 7;
+    const fixed = fq.length === 1 && dt.length === 1;
+    let base = fq[0] * Math.pow(2, dt[0] / 1200);
+    let ph = this.phase;
+    for (let i = 0; i < out.length; i++){
+      if (!fixed) base = fq[fq.length > 1 ? i : 0] * Math.pow(2, dt[dt.length > 1 ? i : 0] / 1200);
+      const inst = fm ? base * (1 + fm * mod[i]) : base;
+      ph += inst / sampleRate;
+      ph -= Math.floor(ph);
+      // Pick (and crossfade between) the two octave bands around the instantaneous frequency.
+      const bf = Math.log2(Math.max(Math.abs(inst), BASE) / BASE);
+      const b0 = Math.min(BANDS - 1, bf | 0), b1 = Math.min(BANDS - 1, b0 + 1), bt = Math.min(1, bf - b0);
+      const a = readTable(bands[b0], ph);
+      let x = b1 === b0 ? a : a + (readTable(bands[b1], ph) - a) * bt;
+      if (foldMix > 0) x += foldMix * (Math.sin(HALF_PI * foldGain * x) - x);
+      out[i] = x;
+    }
+    this.phase = ph;
+    return true;
+  }
+}
+
+/* ---- Four-pole ladder low-pass with tanh saturation (simplified Huovilainen model) ---- */
+class DbLadder extends AudioWorkletProcessor {
+  static get parameterDescriptors(){
+    return [
+      {name: 'frequency', defaultValue: 1000, minValue: 20, maxValue: 20000, automationRate: 'a-rate'},
+      {name: 'detune',    defaultValue: 0, automationRate: 'a-rate'},
+      {name: 'resonance', defaultValue: 0, minValue: 0, maxValue: 1.1, automationRate: 'k-rate'},
+      {name: 'drive',     defaultValue: 0, minValue: 0, maxValue: 1, automationRate: 'k-rate'}
+    ];
+  }
+  constructor(){
+    super();
+    this.s = [new Float64Array(4), new Float64Array(4)];
+  }
+  process(inputs, outputs, p){
+    const inp = inputs[0], out = outputs[0];
+    if (!inp || !inp.length){ for (const ch of out) ch.fill(0); return true; }
+    const k = 4 * p.resonance[0];
+    const drive = 1 + p.drive[0] * 9, makeup = 1 / Math.sqrt(drive);
+    const fq = p.frequency, dt = p.detune, nyq = sampleRate * 0.45;
+    const n = out[0].length;
+    const g = new Float64Array(n);
+    for (let i = 0; i < n; i++){
+      const fc = Math.min(nyq, Math.max(10, fq[fq.length > 1 ? i : 0] * Math.pow(2, dt[dt.length > 1 ? i : 0] / 1200)));
+      g[i] = 1 - Math.exp(-2 * Math.PI * fc / sampleRate);
+    }
+    for (let c = 0; c < out.length; c++){
+      const src = inp[c] || inp[0], dst = out[c], s = this.s[c];
+      for (let i = 0; i < n; i++){
+        const x = src[i] * drive;
+        const u = fastTanh(x - k * (s[3] - 0.5 * x));     // feedback with passband gain compensation
+        const gi = g[i];
+        s[0] += gi * (u - fastTanh(s[0]));
+        s[1] += gi * (fastTanh(s[0]) - fastTanh(s[1]));
+        s[2] += gi * (fastTanh(s[1]) - fastTanh(s[2]));
+        s[3] += gi * (fastTanh(s[2]) - fastTanh(s[3]));
+        dst[i] = s[3] * makeup;
+      }
+    }
+    return true;
+  }
+}
+
+/* ---- Noise: white, pink (Paul Kellet's filter) or brown (leaky integrator) ---- */
+class DbNoise extends AudioWorkletProcessor {
+  static get parameterDescriptors(){
+    return [{name: 'color', defaultValue: 1, minValue: 0, maxValue: 2, automationRate: 'k-rate'}];
+  }
+  constructor(){
+    super();
+    this.b = new Float64Array(7);
+    this.brown = 0;
+  }
+  process(_, outputs, p){
+    const out = outputs[0][0];
+    if (!out) return true;
+    const color = Math.round(p.color[0]), b = this.b;
+    for (let i = 0; i < out.length; i++){
+      const w = Math.random() * 2 - 1;
+      if (color === 0) out[i] = w * 0.5;
+      else if (color === 1){
+        b[0] = 0.99886 * b[0] + w * 0.0555179; b[1] = 0.99332 * b[1] + w * 0.0750759;
+        b[2] = 0.96900 * b[2] + w * 0.1538520; b[3] = 0.86650 * b[3] + w * 0.3104856;
+        b[4] = 0.55000 * b[4] + w * 0.5329522; b[5] = -0.7616 * b[5] - w * 0.0168980;
+        out[i] = (b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6] + w * 0.5362) * 0.11;
+        b[6] = w * 0.115926;
+      } else {
+        this.brown = (this.brown + 0.02 * w) / 1.02;
+        out[i] = this.brown * 3.5;
+      }
+    }
+    return true;
+  }
+}
+
+registerProcessor('db-osc', DbOsc);
+registerProcessor('db-ladder', DbLadder);
+registerProcessor('db-noise', DbNoise);
+</script>
+
 <script>
 'use strict';
 
@@ -284,8 +471,8 @@ const STORE_PATCHES = 'dronebox.patches';
 const STORE_LAST = 'dronebox.last';
 
 /* ---------- Patch model ---------- */
-function osc(wave, ratio, oct, detune, level, pan, drift, on = true){
-  return {on, wave, ratio, oct, detune, level, pan, drift};
+function osc(wave, ratio, oct, detune, level, pan, drift, on = true, fold = 0, fm = 0){
+  return {on, wave, ratio, oct, detune, level, pan, drift, fold, fm};
 }
 function defaultPatch(){
   return {
@@ -293,7 +480,8 @@ function defaultPatch(){
     root: {note: 0, octave: 2, a4: 440, glide: 0.5},
     oscs: [osc('sine','1/1',0,0,0.7,0,2)].concat(
       Array.from({length: NUM_OSC - 1}, () => osc('sine','1/1',0,0,0.5,0,2,false))),
-    filter: {type: 'lowpass', cutoff: 4000, q: 0.7},
+    noise: {color: 'pink', level: 0, pan: 0},
+    filter: {type: 'lowpass', cutoff: 4000, q: 0.7, drive: 0},
     lfos: [
       {target: 'filter', shape: 'sine', rate: 0.08, depth: 0.25},
       {target: 'pan',    shape: 'sine', rate: 0.05, depth: 0.4}
@@ -360,6 +548,33 @@ const FACTORY = [
     lfos: [{target:'filter',shape:'triangle',rate:0.05,depth:0.6},{target:'pan',shape:'sine',rate:0.09,depth:0.5}],
     env: {attack: 5, release: 7}, delay: {time: 0.375, feedback: 0.55, tone: 1800, mix: 0.22}, reverb: {decay: 7, mix: 0.45}
   }),
+  preset('Folded Fifths', {
+    root: {note: 7, octave: 1, a4: 440, glide: 0.5},
+    oscs: [osc('triangle','1/1',0,0,0.55,-0.2,2,true,0.35), osc('triangle','3/2',0,2,0.4,0.3,3,true,0.3),
+           osc('sine','1/1',1,-1,0.3,-0.5,3,true,0.5), osc('warm','1/1',-1,0,0.45,0,1),
+           osc('sine','3/2',1,1,0.15,0.6,4,true,0.6), osc('sine','1/1',0,0,0.5,0,2,false)],
+    filter: {type: 'ladder', cutoff: 2200, q: 2, drive: 0.2},
+    lfos: [{target:'filter',shape:'sine',rate:0.04,depth:0.35},{target:'pan',shape:'sine',rate:0.05,depth:0.5}],
+    env: {attack: 5, release: 7}, delay: {time: 0.6, feedback: 0.35, tone: 2200, mix: 0.15}, reverb: {decay: 7, mix: 0.45}
+  }),
+  preset('Metallic FM', {
+    root: {note: 2, octave: 2, a4: 440, glide: 0.5},
+    oscs: [osc('sine','1/1',0,0,0.5,0,1), osc('sine','7/4',0,0,0.35,-0.4,1,true,0,0.45),
+           osc('sine','1/1',1,1,0.25,0.4,2,true,0,0.3), osc('sine','3/2',-1,0,0.4,0,1),
+           osc('sine','5/4',1,-1,0.15,-0.6,2,true,0,0.5), osc('sine','1/1',2,0,0.3,0.6,2,false)],
+    filter: {type: 'lowpass', cutoff: 6000, q: 0.7},
+    lfos: [{target:'pitch',shape:'sine',rate:0.03,depth:0.1},{target:'pan',shape:'sine',rate:0.04,depth:0.5}],
+    env: {attack: 6, release: 9}, delay: {time: 0.75, feedback: 0.45, tone: 3500, mix: 0.18}, reverb: {decay: 9, mix: 0.55}
+  }),
+  preset('Ladder Wind', {
+    root: {note: 9, octave: 1, a4: 440, glide: 1},
+    oscs: [osc('warm','1/1',0,0,0.35,-0.2,2), osc('sine','1/1',-1,0,0.45,0,1), osc('warm','3/2',0,1.5,0.2,0.3,3),
+           osc('sine','1/1',0,0,0.5,0,2,false), osc('sine','1/1',0,0,0.5,0,2,false), osc('sine','1/1',0,0,0.5,0,2,false)],
+    noise: {color: 'pink', level: 0.55, pan: 0},
+    filter: {type: 'ladder', cutoff: 500, q: 9, drive: 0.35},
+    lfos: [{target:'filter',shape:'sine',rate:0.03,depth:0.55},{target:'pan',shape:'triangle',rate:0.07,depth:0.6}],
+    env: {attack: 8, release: 10}, delay: {time: 0.9, feedback: 0.35, tone: 1500, mix: 0.12}, reverb: {decay: 8, mix: 0.5}
+  }),
   preset('Init', {})
 ];
 
@@ -394,10 +609,17 @@ const fmtPan = v => Math.abs(v) < 0.02 ? 'C' : (v < 0 ? 'L' : 'R') + Math.round(
 const fmtCents = v => (v > 0 ? '+' : '') + v.toFixed(1) + '¢';
 
 /* ---------- Audio engine ---------- */
+const WAVE_INDEX = Object.fromEntries(WAVES.map(([id], i) => [id, i]));   // must match WAVE_IDS in the worklet
+const qToRes = q => Math.min(1.05, Math.max(0, Math.log(q / 0.1) / Math.log(200)) * 1.05);   // filter Q -> ladder resonance
+
 class Engine {
-  constructor(patch){
+  // dspSource: text of the AudioWorklet module (oscillator, ladder, noise processors).
+  constructor(patch, dspSource){
     this.p = patch;
+    this.dspSource = dspSource;
     this.ctx = null;
+    this.ready = false;      // graph fully built
+    this.dsp = false;        // true when the AudioWorklet processors loaded; false = basic fallback
     this.running = false;
     this.stopTimer = null;
     this.driftTimer = null;
@@ -408,31 +630,79 @@ class Engine {
   audible(i){ return this.solo.size ? this.solo.has(i) : this.p.oscs[i].on; }
 
   init(){
+    if (!this.initPromise) this.initPromise = this.build();
+    return this.initPromise;
+  }
+
+  async build(){
     const ctx = this.ctx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: 'playback'});
     const g = v => { const n = ctx.createGain(); n.gain.value = v; return n; };
 
-    this.waves = {
-      warm:   this.makeWave(48, n => 1 / Math.pow(n, 1.7)),
-      hollow: this.makeWave(48, n => n % 2 ? 1 / Math.pow(n, 1.4) : 0),
-      organ:  this.makeWave(16, n => ({1:1, 2:0.75, 3:0.5, 4:0.45, 6:0.3, 8:0.25, 10:0.1, 12:0.08, 16:0.05})[n] || 0)
-    };
+    // Load the worklet module from memory. Chrome refuses blob: URLs for worklets on pages opened
+    // from file://, but accepts data: URLs; some browsers prefer blob:, so try both.
+    if (this.dspSource && ctx.audioWorklet){
+      const loaders = [
+        () => 'data:text/javascript;charset=utf-8,' + encodeURIComponent(this.dspSource),
+        () => URL.createObjectURL(new Blob([this.dspSource], {type: 'text/javascript'}))
+      ];
+      for (const make of loaders){
+        const url = make();
+        try { await ctx.audioWorklet.addModule(url); this.dsp = true; }
+        catch (e){ console.warn('Drone Box: worklet load failed via ' + url.slice(0, 5), e); }
+        if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+        if (this.dsp) break;
+      }
+      if (!this.dsp) console.warn('Drone Box: AudioWorklet unavailable, using basic oscillators.');
+    }
+    if (!this.dsp){
+      this.waves = {
+        warm:   this.makeWave(48, n => 1 / Math.pow(n, 1.7)),
+        hollow: this.makeWave(48, n => n % 2 ? 1 / Math.pow(n, 1.4) : 0),
+        organ:  this.makeWave(16, n => ({1:1, 2:0.75, 3:0.5, 4:0.45, 6:0.3, 8:0.25, 10:0.1, 12:0.08, 16:0.05})[n] || 0)
+      };
+    }
 
     // Voices: osc -> level -> panner -> bus
     this.bus = g(0.22);   // headroom for 6 summed oscillators
     this.voices = [];
     for (let i = 0; i < NUM_OSC; i++){
-      const o = ctx.createOscillator();
-      const lvl = g(0);
-      const pan = ctx.createStereoPanner();
-      o.connect(lvl).connect(pan).connect(this.bus);
-      o.start();
-      this.voices.push({osc: o, lvl, pan, drift: 0, wave: null});
+      const v = this.makeVoice();
+      v.lvl = g(0);
+      v.pan = ctx.createStereoPanner();
+      v.drift = 0;
+      v.wave = null;
+      v.src.connect(v.lvl).connect(v.pan).connect(this.bus);
+      this.voices.push(v);
+    }
+    // FM ring: each oscillator's raw output (pre-level, so muted ones still modulate) feeds the
+    // next one's FM input. The 6 -> 1 link closes a loop, which Web Audio requires to pass through a delay.
+    if (this.dsp){
+      this.voices.forEach((v, i) => {
+        const from = this.voices[(i + NUM_OSC - 1) % NUM_OSC].src;
+        if (i === 0){ const d = ctx.createDelay(0.01); d.delayTime.value = 0; from.connect(d).connect(v.src); }
+        else from.connect(v.src);
+      });
     }
 
-    // Filter -> amp (tremolo point)
-    this.filter = ctx.createBiquadFilter();
+    // Noise source -> level -> panner -> bus (so the filter shapes it too)
+    if (this.dsp){
+      this.noise = new AudioWorkletNode(ctx, 'db-noise', {numberOfInputs: 0, outputChannelCount: [1]});
+      this.noiseLvl = g(0);
+      this.noisePan = ctx.createStereoPanner();
+      this.noise.connect(this.noiseLvl).connect(this.noisePan).connect(this.bus);
+    }
+
+    // Filters: biquad and ladder run in parallel; applyFilter() crossfades to the selected one.
     this.amp = g(1);
-    this.bus.connect(this.filter).connect(this.amp);
+    this.filter = ctx.createBiquadFilter();
+    this.bqOut = g(1);
+    this.bus.connect(this.filter).connect(this.bqOut).connect(this.amp);
+    if (this.dsp){
+      this.ladder = new AudioWorkletNode(ctx, 'db-ladder',
+        {numberOfInputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: 'explicit'});
+      this.ldOut = g(0);
+      this.bus.connect(this.ladder).connect(this.ldOut).connect(this.amp);
+    }
 
     // Mix bus
     this.sum = g(1);
@@ -483,7 +753,21 @@ class Engine {
       return {osc: o, depth, inv};
     });
 
+    this.ready = true;
     this.applyAll();
+  }
+
+  // One oscillator: the band-limited worklet when available, otherwise a native OscillatorNode.
+  makeVoice(){
+    const ctx = this.ctx;
+    if (this.dsp){
+      const n = new AudioWorkletNode(ctx, 'db-osc', {numberOfInputs: 1, outputChannelCount: [1]});
+      const P = name => n.parameters.get(name);
+      return {src: n, freq: P('frequency'), detune: P('detune'), waveP: P('wave'), fold: P('fold'), fm: P('fm')};
+    }
+    const o = ctx.createOscillator();
+    o.start();
+    return {src: o, freq: o.frequency, detune: o.detune};
   }
 
   makeWave(n, amp){
@@ -492,11 +776,14 @@ class Engine {
     return this.ctx.createPeriodicWave(real, imag);
   }
 
-  T(param, v, tc = 0.03){ if (this.ctx) param.setTargetAtTime(v, this.ctx.currentTime, tc); }
+  T(param, v, tc = 0.03){ if (this.ready) param.setTargetAtTime(v, this.ctx.currentTime, tc); }
+  // Discrete selectors (wave index, noise colour) jump rather than glide through in-between values.
+  set(param, v){ if (this.ready) param.setValueAtTime(v, this.ctx.currentTime); }
 
   applyAll(){
-    if (!this.ctx) return;
+    if (!this.ready) return;
     for (let i = 0; i < NUM_OSC; i++) this.applyOsc(i, true);
+    this.applyNoise();
     this.applyFilter();
     this.applyLfo(0); this.applyLfo(1);
     this.applyDelay();
@@ -505,38 +792,65 @@ class Engine {
   }
 
   applyOsc(i, instant = false){
-    if (!this.ctx) return;
+    if (!this.ready) return;
     const o = this.p.oscs[i], v = this.voices[i];
     if (v.wave !== o.wave){
-      if (this.waves[o.wave]) v.osc.setPeriodicWave(this.waves[o.wave]);
-      else v.osc.type = o.wave;
+      if (this.dsp) this.set(v.waveP, WAVE_INDEX[o.wave] ?? 0);
+      else if (this.waves[o.wave]) v.src.setPeriodicWave(this.waves[o.wave]);
+      else v.src.type = o.wave;
       v.wave = o.wave;
     }
     const glide = instant && !this.running ? 0.001 : Math.max(0.005, this.p.root.glide / 3);
-    this.T(v.osc.frequency, oscHz(this.p, i), glide);
-    this.T(v.osc.detune, o.detune + v.drift, 0.05);
+    this.T(v.freq, oscHz(this.p, i), glide);
+    this.T(v.detune, o.detune + v.drift, 0.05);
     this.T(v.lvl.gain, this.audible(i) ? o.level : 0, 0.06);
     this.T(v.pan.pan, o.pan, 0.06);
+    if (this.dsp){
+      this.T(v.fold, o.fold, 0.05);
+      this.T(v.fm, o.fm * o.fm * 4, 0.05);   // squared so the low end of the knob is gentle
+    }
+  }
+
+  // Noise is silenced while any oscillator is soloed.
+  applyNoise(){
+    if (!this.ready || !this.dsp) return;
+    const n = this.p.noise;
+    this.set(this.noise.parameters.get('color'), {white: 0, pink: 1, brown: 2}[n.color] ?? 1);
+    this.T(this.noiseLvl.gain, this.solo.size ? 0 : n.level, 0.06);
+    this.T(this.noisePan.pan, n.pan, 0.06);
   }
 
   applyFilter(){
-    if (!this.ctx) return;
+    if (!this.ready) return;
     const f = this.p.filter;
-    this.filter.type = f.type;
+    const ladder = f.type === 'ladder' && this.dsp;
+    this.filter.type = f.type === 'ladder' ? 'lowpass' : f.type;   // basic mode: ladder falls back to low-pass
     this.T(this.filter.frequency, f.cutoff, 0.04);
     this.T(this.filter.Q, f.q, 0.04);
+    if (this.dsp){
+      const P = name => this.ladder.parameters.get(name);
+      this.T(P('frequency'), f.cutoff, 0.04);
+      this.T(P('resonance'), qToRes(f.q), 0.04);
+      this.T(P('drive'), f.drive, 0.04);
+      this.T(this.bqOut.gain, ladder ? 0 : 1, 0.03);
+      this.T(this.ldOut.gain, ladder ? 1 : 0, 0.03);
+    }
   }
 
   applyLfo(i){
-    if (!this.ctx) return;
+    if (!this.ready) return;
     const L = this.p.lfos[i], n = this.lfos[i];
     n.osc.type = L.shape;
     this.T(n.osc.frequency, L.rate, 0.1);
     n.depth.disconnect(); n.inv.disconnect();
     let amount = 0;
     switch (L.target){
-      case 'filter': amount = L.depth * 4800; n.depth.connect(this.filter.detune); break;       // up to ±4 octaves
-      case 'pitch':  amount = L.depth * 30;   this.voices.forEach(v => n.depth.connect(v.osc.detune)); break; // ±30 cents
+      case 'filter':                                                                            // up to ±4 octaves
+        amount = L.depth * 4800;
+        n.depth.connect(this.filter.detune);
+        if (this.dsp) n.depth.connect(this.ladder.parameters.get('detune'));
+        break;
+      case 'pitch':  amount = L.depth * 30;   this.voices.forEach(v => n.depth.connect(v.detune)); break; // ±30 cents
       case 'volume': amount = L.depth * 0.5;  n.depth.connect(this.amp.gain); break;
       case 'pan':
         amount = L.depth;
@@ -555,7 +869,7 @@ class Engine {
   }
 
   applyDelay(){
-    if (!this.ctx) return;
+    if (!this.ready) return;
     const d = this.p.delay;
     this.T(this.delay.delayTime, d.time, 0.15);
     this.T(this.fb.gain, d.feedback, 0.05);
@@ -564,7 +878,7 @@ class Engine {
   }
 
   applyReverb(){
-    if (!this.ctx) return;
+    if (!this.ready) return;
     const r = this.p.reverb;
     this.T(this.revSend.gain, r.mix, 0.05);
     if (this.revDecay !== r.decay){
@@ -589,7 +903,7 @@ class Engine {
     return buf;
   }
 
-  applyMaster(){ if (this.ctx) this.T(this.master.gain, this.p.master.volume, 0.03); }
+  applyMaster(){ if (this.ready) this.T(this.master.gain, this.p.master.volume, 0.03); }
 
   driftTick(){
     for (let i = 0; i < NUM_OSC; i++){
@@ -597,12 +911,12 @@ class Engine {
       v.drift += (Math.random() - 0.5) * amt * 0.15;
       v.drift *= 0.985;
       v.drift = Math.max(-amt, Math.min(amt, v.drift));
-      this.T(v.osc.detune, o.detune + v.drift, 0.4);
+      this.T(v.detune, o.detune + v.drift, 0.4);
     }
   }
 
   async play(){
-    if (!this.ctx) this.init();
+    await this.init();
     clearTimeout(this.stopTimer);
     await this.ctx.resume();
     this.running = true;
@@ -614,7 +928,7 @@ class Engine {
   }
 
   stop(){
-    if (!this.ctx || !this.running) return;
+    if (!this.ready || !this.running) return;
     this.running = false;
     const now = this.ctx.currentTime, gain = this.env.gain, rel = this.p.env.release;
     if (gain.cancelAndHoldAtTime) gain.cancelAndHoldAtTime(now);
@@ -846,7 +1160,7 @@ const fmtOct = n => (n > 0 ? '+' : '') + n;
 
 /* ---------- App ---------- */
 let patch = normalize(store(STORE_LAST) || clone(FACTORY[0]));
-const engine = new Engine(patch);
+const engine = new Engine(patch, $('#dsp-worklet').textContent);
 
 const ui = {
   setStatus(){
@@ -912,6 +1226,7 @@ function render(){
       if (engine.solo.has(i)) engine.solo.delete(i); else engine.solo.add(i);
       lcd.show(nm('solo'), engine.solo.has(i) ? 'ON' : 'OFF');
       for (let k = 0; k < NUM_OSC; k++) engine.applyOsc(k);
+      engine.applyNoise();
       syncStrips(); solo.blur();
     });
     strips.push({strip, mute, solo});
@@ -932,7 +1247,11 @@ function render(){
       knob({label: 'Pan', name: nm('pan'), size: 'sm', min: -1, max: 1, fmt: fmtPan,
         get: () => o.pan, set: v => { o.pan = v; upd(); }}),
       knob({label: 'Drift', name: nm('drift'), size: 'sm', min: 0, max: 20, step: 0.1, fmt: v => v.toFixed(1) + '¢',
-        get: () => o.drift, set: v => { o.drift = v; changed(); }}));
+        get: () => o.drift, set: v => { o.drift = v; changed(); }}),
+      knob({label: 'Fold', name: nm('fold'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
+        get: () => o.fold, set: v => { o.fold = v; upd(); }}),
+      knob({label: 'FM', name: `Osc ${n} FM from ${(i + NUM_OSC - 1) % NUM_OSC + 1}`, size: 'sm', min: 0, max: 1, fmt: fmtPct,
+        get: () => o.fm, set: v => { o.fm = v; upd(); }}));
     const body = el('div', 'obody');
     body.append(kg, fader({label: 'Level', name: nm('level'), tall: true, min: 0, max: 1, fmt: fmtPct,
       get: () => o.level, set: v => { o.level = v; upd(); }}));
@@ -973,17 +1292,26 @@ function render(){
   const F = P.filter, E = P.env, D = P.delay, R = P.reverb;
   const upF = () => { engine.applyFilter(); changed(); };
   const upD = () => { engine.applyDelay(); changed(); };
+  const N = P.noise, upN = () => { engine.applyNoise(); changed(); };
   const upR = () => { engine.applyReverb(); changed(); };
   $('#ctrlSlot').replaceChildren(
     rootSec,
+    section('Noise',
+      buttons({label: 'Colour', name: 'Noise colour', color: 'k-cream',
+        options: [['white','White'],['pink','Pink'],['brown','Brown']], get: () => N.color, set: v => { N.color = v; upN(); }}),
+      pair(
+        fader({label: 'Level', name: 'Noise level', min: 0, max: 1, fmt: fmtPct, get: () => N.level, set: v => { N.level = v; upN(); }}),
+        knob({label: 'Pan', name: 'Noise pan', min: -1, max: 1, fmt: fmtPan, get: () => N.pan, set: v => { N.pan = v; upN(); }}))),
     lfoSec(0),
     lfoSec(1),
     section('Filter',
       buttons({label: 'Type', name: 'Filter type', color: 'k-orange',
-        options: [['lowpass','LPF'],['bandpass','BPF'],['highpass','HPF'],['notch','Notch']], get: () => F.type, set: v => { F.type = v; upF(); }}),
+        options: [['lowpass','LPF'],['bandpass','BPF'],['highpass','HPF'],['notch','Notch'],['ladder','Ladder']],
+        get: () => F.type, set: v => { F.type = v; upF(); }}),
       pair(
         fader({label: 'Cutoff', name: 'Filter cutoff', min: 40, max: 18000, scale: 'log', fmt: fmtHz, get: () => F.cutoff, set: v => { F.cutoff = v; upF(); }}),
-        fader({label: 'Reso', name: 'Filter resonance', min: 0.1, max: 20, scale: 'log', fmt: v => v.toFixed(1), get: () => F.q, set: v => { F.q = v; upF(); }}))),
+        fader({label: 'Reso', name: 'Filter resonance', min: 0.1, max: 20, scale: 'log', fmt: v => v.toFixed(1), get: () => F.q, set: v => { F.q = v; upF(); }}),
+        knob({label: 'Drive', name: 'Filter drive (ladder)', min: 0, max: 1, fmt: fmtPct, get: () => F.drive, set: v => { F.drive = v; upF(); }}))),
     section('Swell',
       pair(
         fader({label: 'Fade In', name: 'Swell fade in', min: 0.05, max: 60, scale: 'log', fmt: fmtSec, get: () => E.attack, set: v => { E.attack = v; changed(); }}),
@@ -1099,6 +1427,7 @@ $('#randBtn').addEventListener('click', () => {
 async function toggle(){
   if (engine.running) engine.stop(); else await engine.play();
   ui.setStatus();
+  if (engine.ready && !engine.dsp) lcd.show('Basic audio mode', 'No worklets');
 }
 $('#play').addEventListener('click', e => { toggle(); e.currentTarget.blur(); });
 document.addEventListener('keydown', e => {
@@ -1132,7 +1461,7 @@ function trace(g, dpr){
 function draw(){
   requestAnimationFrame(draw);
   const now = performance.now(), dt = Math.min(0.1, (now - lastFrame) / 1000); lastFrame = now;
-  const live = engine.ctx && engine.ctx.state === 'running';
+  const live = engine.ready && engine.ctx.state === 'running';
   const dpr = window.devicePixelRatio || 1;
 
   // Scope

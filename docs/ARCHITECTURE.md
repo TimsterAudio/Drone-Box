@@ -17,7 +17,8 @@ The `<script>` block is split into sections with `/* ---------- Name ---------- 
 | Constants | `VERSION`, note names, interval ratios, wave list, LFO targets and shapes, storage keys |
 | Patch model | `defaultPatch()`, `normalize()`, `preset()`, the `FACTORY` presets |
 | Helpers | `$`, `el`, `store` (safe localStorage), pitch maths (`rootHz`, `oscHz`), formatters |
-| Audio engine | `class Engine`: builds the Web Audio graph and applies patch values |
+| (DSP worklet) | separate `<script type="text/plain" id="dsp-worklet">`: the `db-osc`, `db-ladder` and `db-noise` processors |
+| Audio engine | `class Engine`: loads the worklets, builds the Web Audio graph, applies patch values |
 | Panel display | `lcd`: the two-line LED display |
 | UI controls | `mapper`, `bindControl`, `knob`, `fader`, `hwButton`, `buttons`, `section` |
 | App | the `patch` and `engine` instances, `ui.setStatus`, theme, `render()` |
@@ -29,28 +30,55 @@ The `<script>` block is split into sections with `/* ---------- Name ---------- 
 ## Audio graph
 
 ```
+          ┌──── FM ring: each osc's raw output → next osc's FM input (6 → 1 via a delay) ────┐
 osc ─► level ─► pan ─┐   (× 6, always running; muting sets level to 0)
-                     ▼
-                    bus (0.22 headroom) ─► filter ─► amp ─┬─► dry ─────────────────────────┐
-                                                          ├─► delaySend ─► delay ─► fbTone ─┼─► delayOut ─┐
-                                                          │                  ▲         │    │             │
-                                                          │                  └── fb ◄──┘    │             │
-                                                          └─► revSend ◄───────────────────────────────────┘
-                                                                 └─► convolver ────────────►┤
-                                                                                           sum ─► env (swell) ─► master ─► limiter ─► out
-                                                                                                                              └─► analysers
+noise ─► level ─► pan ┤
+                      ▼
+                     bus (0.22 headroom) ─┬─► biquad filter ─► bqOut ─┐
+                                          └─► ladder filter ─► ldOut ─┴─► amp ─┬─► dry ─────────────────────────┐
+                                                           ├─► delaySend ─► delay ─► fbTone ─┼─► delayOut ─┐
+                                                           │                  ▲         │    │             │
+                                                           │                  └── fb ◄──┘    │             │
+                                                           └─► revSend ◄───────────────────────────────────┘
+                                                                  └─► convolver ────────────►┤
+                                                                                            sum ─► env (swell) ─► master ─► limiter ─► out
+                                                                                                                               └─► analysers
 ```
 
 - The **oscillators run continuously** once the context exists. Play and Stop only move the `env` gain, so there are no clicks from starting or stopping oscillators. After a stop, the context is suspended once the fade-out plus effect tails are done.
-- **Every parameter change goes through `Engine.T()`** (`setTargetAtTime`), so knob moves never click. Pitch changes use the patch's glide time.
+- **Every continuous parameter change goes through `Engine.T()`** (`setTargetAtTime`), so knob moves never click. Pitch changes use the patch's glide time.
+  - **Discrete selectors** use `Engine.set()` (`setValueAtTime`) instead, so they jump rather than gliding through in-between values. These are the wavetable index and the noise colour.
 - **LFOs** are oscillators feeding a depth gain, which is connected to the target AudioParam:
-  - filter cutoff goes through `filter.detune` (in cents, so the sweep is exponential)
+  - filter cutoff goes to the `detune` param of both filters (in cents, so the sweep is exponential)
   - pitch goes to each oscillator's `detune`
   - volume goes to `amp.gain`, and `applyAmpBase()` lowers the base gain so tremolo never boosts the level
   - pan goes through an inverting gain, so odd and even oscillators move in opposite directions
 - **Drift** is a JavaScript random walk every 150 ms, written to each oscillator's `detune` on top of the patch detune.
-- **Mute and solo** both go through `Engine.audible(i)`. If any oscillator is soloed, only soloed ones play; otherwise `osc.on` (mute) decides. `engine.solo` is a `Set` and isn't part of the patch.
+- **Mute and solo** both go through `Engine.audible(i)`. If any oscillator is soloed, only soloed ones play; otherwise `osc.on` (mute) decides. `engine.solo` is a `Set` and isn't part of the patch. The noise source is silent while any solo is active.
+- **Both filters always run.** `applyFilter()` crossfades `bqOut` and `ldOut`, so switching to or from Ladder never clicks. Filter Q maps to ladder resonance through `qToRes()`, so one Reso fader drives both filters.
 - The **reverb impulse** is generated: decaying stereo noise that darkens over time. It's rebuilt, with a debounce, when the decay changes.
+
+## DSP worklets
+
+The custom DSP lives in `<script type="text/plain" id="dsp-worklet">`, so the page itself never runs it. `Engine.build()` loads its text into the AudioContext as an AudioWorklet module.
+- **Loading:** it tries a `data:` URL first, because Chrome rejects `blob:` worklet modules on pages opened from `file://`, then a `blob:` URL.
+- **Fallback:** if neither loads, `engine.dsp` stays `false` and the engine uses native OscillatorNodes and the biquad filter only (the v0.1 sound). Fold, FM, Ladder and Noise then do nothing, and the LED display says "Basic audio mode".
+- The engine gets the module text through its constructor, so it still doesn't touch the DOM.
+
+| Processor | What it does | Params |
+|---|---|---|
+| `db-osc` | Wavetable oscillator. FM comes from audio input 0, and an optional sine wavefolder follows the table read. | `frequency`, `detune` (a-rate); `wave` (index into `WAVE_IDS`), `fold` 0–1, `fm` 0–8 (k-rate) |
+| `db-ladder` | Four-pole ladder low-pass with tanh saturation (simplified Huovilainen model), in stereo | `frequency`, `detune` (a-rate); `resonance` 0–1.1, `drive` 0–1 (k-rate) |
+| `db-noise` | White, pink (Paul Kellet's filter) or brown (leaky integrator) noise | `color` 0/1/2 (k-rate) |
+
+- **Wavetables** are built once per AudioContext, in the worklet's global scope, and shared by all six oscillators.
+  - Each wave gets 11 octave bands (fundamentals from 20 Hz up). Each band holds only the harmonics that stay below Nyquist for the band's highest note.
+  - The oscillator crossfades between the two bands around its *instantaneous* frequency (including FM), so it stays alias-free while sweeping.
+  - Measured on a sawtooth at 3.5 kHz: aliases are about 107 dB down, against about 21 dB for a naive sawtooth.
+- **Wave order** in `WAVE_IDS` (worklet) must match `WAVES` (main script). `WAVE_INDEX` maps from one to the other.
+- **FM** is linear and through-zero: `freq × (1 + fm × modulator)`. The UI knob is squared and scaled by 4, so 100% gives a peak deviation of 4× the carrier frequency. The FM ring takes each oscillator's **pre-level** output, so a muted oscillator can act as a pure modulator.
+- **Wavefolder:** `x + mix × (sin(π/2 · gain · x) − x)`, with gain from 1 to 8. High fold settings can alias, since there's no oversampling yet.
+- **Cost:** six oscillators with FM and fold, plus the ladder and noise, render about 10× faster than real time offline (roughly 10% of one core).
 
 ## Patch format
 
@@ -62,9 +90,12 @@ A patch is plain JSON. This is what Export writes and what's stored in localStor
   "root":   { "note": 0, "octave": 2, "a4": 440, "glide": 0.5 },      // note: 0 = C … 11 = B
   "oscs": [                                                            // always 6
     { "on": true, "wave": "warm", "ratio": "3/2", "oct": 0,           // on = NOT muted
-      "detune": 1.5, "level": 0.5, "pan": 0.25, "drift": 3 }
+      "detune": 1.5, "level": 0.5, "pan": 0.25, "drift": 3,
+      "fold": 0, "fm": 0 }                                             // 0–1 each (added in 0.2)
   ],
-  "filter": { "type": "lowpass", "cutoff": 1800, "q": 1.2 },
+  "noise":  { "color": "pink", "level": 0, "pan": 0 },                // white | pink | brown (added in 0.2)
+  "filter": { "type": "lowpass", "cutoff": 1800, "q": 1.2,            // type: lowpass | bandpass | highpass | notch | ladder
+              "drive": 0 },                                            // drive: ladder only (added in 0.2)
   "lfos":   [ { "target": "filter", "shape": "sine", "rate": 0.07, "depth": 0.3 } ],  // always 2
   "env":    { "attack": 6, "release": 8 },
   "delay":  { "time": 0.45, "feedback": 0.4, "tone": 2500, "mix": 0.2 },

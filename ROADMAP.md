@@ -11,16 +11,16 @@ This is where Drone Box is heading. It's a plan, not a promise: items move, merg
 - [x] Patches: presets, save, randomize, export/import
 - [x] Jupiter-style hardware panel (Black / Silver)
 
-## Stage 2: Movement and texture
+## Stage 2: Movement and texture (in progress)
 
-- [ ] Oscillators written as AudioWorklets (the browser's custom audio-processing code), with band-limited waveforms
-- [ ] A ladder filter as an AudioWorklet, with drive
-- [ ] Cross-modulation and FM between oscillators
-- [ ] A wavefolder
-- [ ] A noise source (white, pink, brown)
+- [x] Oscillators written as AudioWorklets (the browser's custom audio-processing code), with band-limited waveforms
+- [x] A ladder filter as an AudioWorklet, with drive
+- [x] FM between oscillators (each one modulated by its neighbour)
+- [x] A wavefolder
+- [x] A noise source (white, pink, brown)
 - [ ] Sample-and-hold and random-walk modulators
 - [ ] Very long envelopes (minutes)
-- [ ] A modulation matrix (any source to any destination)
+- [ ] A modulation matrix (any source to any destination), including free FM routing between any oscillators
 - [ ] A better reverb (feedback delay network, or convolution with your own impulse responses)
 - [ ] A tape delay with wow and flutter
 
@@ -48,3 +48,4 @@ This is where Drone Box is heading. It's a plan, not a promise: items move, merg
 - [ ] An option for exclusive solo (one oscillator at a time)
 - [ ] Mouse-wheel control on knobs (needs a way to avoid hijacking page scroll)
 - [ ] A patch format version field, for future migrations
+- [ ] 2× oversampling for the wavefolder and ladder, to remove aliasing at extreme settings

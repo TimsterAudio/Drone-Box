@@ -167,6 +167,8 @@ body{
 .ostrip:first-child{border-left:0}
 .ostrip.off .knob,.ostrip.off .fader{opacity:.45}
 .ohead{display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:6px}
+.obtns{display:flex;gap:8px}
+.obtns .key{width:30px}
 .onum{font-family:'Michroma',sans-serif;font-size:15px;letter-spacing:.06em}
 .obody{display:flex;gap:4px;align-items:flex-start}
 .kgrid{display:grid;grid-template-columns:62px 62px;gap:2px 0;justify-items:center}
@@ -390,7 +392,11 @@ class Engine {
     this.running = false;
     this.stopTimer = null;
     this.driftTimer = null;
+    this.solo = new Set();   // soloed oscillator indexes; not saved with the patch
   }
+
+  // Any solo wins (and overrides mute); with no solos, mute decides.
+  audible(i){ return this.solo.size ? this.solo.has(i) : this.p.oscs[i].on; }
 
   init(){
     const ctx = this.ctx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: 'playback'});
@@ -500,7 +506,7 @@ class Engine {
     const glide = instant && !this.running ? 0.001 : Math.max(0.005, this.p.root.glide / 3);
     this.T(v.osc.frequency, oscHz(this.p, i), glide);
     this.T(v.osc.detune, o.detune + v.drift, 0.05);
-    this.T(v.lvl.gain, o.on ? o.level : 0, 0.06);
+    this.T(v.lvl.gain, this.audible(i) ? o.level : 0, 0.06);
     this.T(v.pan.pan, o.pan, 0.06);
   }
 
@@ -874,19 +880,36 @@ function render(){
     hzEls.forEach((e, i) => e.textContent = fmtHz(oscHz(P, i) * Math.pow(2, P.oscs[i].detune / 1200)));
   };
   const slot = $('#oscSlot'); slot.replaceChildren();
+  const strips = [];
+  const syncStrips = () => strips.forEach(({strip, mute, solo}, i) => {
+    mute.setAttribute('aria-pressed', !P.oscs[i].on);
+    solo.setAttribute('aria-pressed', engine.solo.has(i));
+    strip.classList.toggle('off', !engine.audible(i));
+  });
   P.oscs.forEach((o, i) => {
     const n = i + 1, nm = s => `Osc ${n} ${s}`;
-    const strip = el('div', 'ostrip' + (o.on ? '' : ' off'));
+    const strip = el('div', 'ostrip');
     const upd = () => { engine.applyOsc(i); refreshHz(); changed(); };
-    const on = hwButton('On', 'k-orange');
-    on.setAttribute('aria-pressed', o.on);
-    on.setAttribute('aria-label', `Oscillator ${n} on`);
-    on.addEventListener('click', () => {
-      o.on = !o.on; on.setAttribute('aria-pressed', o.on); strip.classList.toggle('off', !o.on);
-      lcd.show(nm('on'), o.on ? 'ON' : 'OFF'); upd(); on.blur();
+    const mute = hwButton('Mute', 'k-orange');
+    mute.setAttribute('aria-label', `Mute oscillator ${n}`);
+    mute.addEventListener('click', () => {
+      o.on = !o.on;
+      lcd.show(nm('mute'), o.on ? 'OFF' : 'ON');
+      upd(); syncStrips(); mute.blur();
     });
+    const solo = hwButton('Solo', 'k-yellow');
+    solo.setAttribute('aria-label', `Solo oscillator ${n}`);
+    solo.addEventListener('click', () => {
+      if (engine.solo.has(i)) engine.solo.delete(i); else engine.solo.add(i);
+      lcd.show(nm('solo'), engine.solo.has(i) ? 'ON' : 'OFF');
+      for (let k = 0; k < NUM_OSC; k++) engine.applyOsc(k);
+      syncStrips(); solo.blur();
+    });
+    strips.push({strip, mute, solo});
+    const btns = el('div', 'obtns');
+    btns.append(mute, solo);
     const head = el('div', 'ohead');
-    head.append(el('span', 'onum', `OSC ${n}`), on);
+    head.append(el('span', 'onum', `OSC ${n}`), btns);
     const kg = el('div', 'kgrid');
     kg.append(
       knob({label: 'Wave', name: nm('wave'), size: 'sm', options: WAVES, fmt: v => WAVES.find(w => w[0] === v)[1],
@@ -971,6 +994,7 @@ function render(){
   );
 
   refreshHz();
+  syncStrips();
   lcd.show(`Root ${NOTE_NAMES[P.root.note]}${P.root.octave}`, fmtHz(rootHz(P)));
   ui.setStatus();
 }
@@ -992,6 +1016,7 @@ function fillPresets(selected){
   sel.value = selected || '';
 }
 function loadPatch(p){
+  engine.solo.clear();
   patch = normalize(clone(p));
   render();
   engine.applyAll();

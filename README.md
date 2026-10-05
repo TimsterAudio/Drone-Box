@@ -17,6 +17,7 @@ Press **Play** or hit **Space**. Browsers only allow audio to start after a clic
   - a just-intonation interval (1/1, 3/2, 5/4, 7/4…) plus an octave shift
   - fine detune (±25 cents) for slow beating between oscillators
   - level and pan
+  - Mute and Solo
   - Drift: a slow random pitch wander, like an analog oscillator
 - **Root:** note, octave, the A4 reference pitch (e.g. 432 Hz) and glide time for pitch changes.
 - **Filter:** low-pass, band-pass, high-pass or notch, with cutoff and resonance.
@@ -34,6 +35,7 @@ The panel is styled after classic Roland Jupiter-series synths: a black panel (o
 - **Knobs and faders:** drag up or down. Hold **Shift** while dragging for fine control. Click anywhere on a fader's track to jump there.
 - **Keyboard:** click a control to focus it, then use the arrow keys (Shift for finer steps), Page Up/Down, or Home/End.
 - **Reset:** double-click any knob or fader to return it to its value when the patch loaded.
+- **Mute / Solo:** each oscillator has a Mute button (saved with the patch) and a Solo button. When any oscillator is soloed, only the soloed ones play, even if they're muted. Solo isn't saved and clears when you load a patch.
 - **Displays:** the red LED display at the top shows the patch name, play state, and the last control you touched.
 
 ## Fonts

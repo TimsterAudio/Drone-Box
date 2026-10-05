@@ -27,7 +27,22 @@ Press **Play** or hit **Space**. Browsers only allow audio to start after a clic
 - **Output:** master volume, a safety limiter, L/R meters, a scope and a log-frequency spectrum.
 - **Patches:** factory presets, Randomize, saving your own patches in browser storage, and Export/Import as JSON.
 
-Double-click any slider to reset it.
+## Playing the panel
+
+The panel is styled after classic Roland Jupiter-series synths: a black panel (or Silver, switchable on the panel), knurled knobs, slider caps with a white line, and LED buttons.
+
+- **Knobs and faders:** drag up or down. Hold **Shift** while dragging for fine control. Click anywhere on a fader's track to jump there.
+- **Keyboard:** click a control to focus it, then use the arrow keys (Shift for finer steps), Page Up/Down, or Home/End.
+- **Reset:** double-click any knob or fader to return it to its value when the patch loaded.
+- **Displays:** the red LED display at the top shows the patch name, play state, and the last control you touched.
+
+## Fonts
+
+These fonts are embedded in the file (base64 WOFF2, Latin subset), so it never fetches anything from the network. All three are under the SIL Open Font License 1.1:
+
+- [Michroma](https://fonts.google.com/specimen/Michroma) (Vernon Adams)
+- [Barlow Semi Condensed](https://fonts.google.com/specimen/Barlow+Semi+Condensed) (Jeremy Tribby)
+- [Share Tech Mono](https://fonts.google.com/specimen/Share+Tech+Mono) (Carrois Apostrophe)
 
 ## Signal flow
 

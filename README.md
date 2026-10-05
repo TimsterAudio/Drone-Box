@@ -1,16 +1,16 @@
 # Drone Box
 
-Timster's Audio Works
+Timster's Audio Works · **v0.1.0**
 
 A drone synthesizer that runs entirely in one browser tab. It has no install, server or account, and nothing is sent anywhere.
 
 ## Running it
 
-Open `drone-box.html` in a Chromium-based browser (Chrome, Edge or Brave). Firefox works too. Safari should work but hasn't been tested yet.
+Open `drone-box.html` in a Chromium-based browser (Chrome, Edge or Brave). Firefox and Safari should work but haven't been tested yet.
 
 Press **Play** or hit **Space**. Browsers only allow audio to start after a click or key press, so that's always the first step.
 
-## What's in stage 1
+## What's in v0.1
 
 - **6 oscillators.** Each one has:
   - waveform: Sine, Triangle, Warm, Saw, Hollow, Square or Organ
@@ -56,27 +56,21 @@ These fonts are embedded in the file (base64 WOFF2, Latin subset), so it never f
                                                                          sum → swell → master → limiter → out
 ```
 
-## Roadmap
+## Project docs
 
-**Stage 2: movement and texture**
-- Oscillators and a ladder filter written as AudioWorklets (the browser's custom audio-processing code), for analog-style character.
-- Cross-modulation, FM and a wavefolder.
-- A noise source and sample-and-hold or random-walk modulators.
-- Very long envelopes.
-- A modulation matrix so any source can control any destination.
-- A better reverb (feedback delay network or convolution with your own impulse responses).
-- A tape delay with wow and flutter.
+| File | What it's for |
+|---|---|
+| [CHANGELOG.md](CHANGELOG.md) | What changed in each version |
+| [ROADMAP.md](ROADMAP.md) | Where it's heading, stage by stage, plus a backlog of small items |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the code is laid out: audio graph, patch format, UI control system, how to add a parameter |
+| [docs/DESIGN.md](docs/DESIGN.md) | Panel design rules: colours, fonts, which control to use for what |
+| [CLAUDE.md](CLAUDE.md) | Working conventions for Claude Code sessions on this repo |
 
-**Stage 3: the looper**
-- 4–8 tracks with record, overdub, undo, half-speed and reverse.
-- Per-track decay, so overdubs slowly fade away.
-- Loops locked to a master length, or each with its own length so they drift out of phase.
-- Recording from the synth and from mic or line input, with latency compensation.
-- WAV export.
+## Testing
 
-**Stage 4: more ambitious**
-- Granular processing.
-- A generative "evolve" mode.
-- A patch-cable modular interface.
-- MIDI learn.
-- Scenes with morphing between them.
+`tests/smoke.js` drives the page in headless Chromium and checks playback, presets, controls, mute/solo and layout:
+
+```sh
+npm i -g playwright && npx playwright install chromium   # once
+NODE_PATH="$(npm root -g)" node tests/smoke.js
+```

@@ -6,7 +6,24 @@ A drone synthesizer that runs entirely in one browser tab. It has no install, se
 
 ## Running it
 
-Open `drone-box.html` in a Chromium-based browser (Chrome, Edge or Brave). Firefox and Safari should work but haven't been tested yet.
+Keep the files together in one folder and double-click the launcher for your system:
+
+| System | Launcher |
+|---|---|
+| macOS | `Launch on Mac.command` |
+| Windows | `Launch on Windows.bat` |
+| Linux | `Launch on Linux.sh` |
+
+The launcher opens Drone Box in a **clean, stand-alone window**, with no address bar, tabs, bookmarks or toolbars. It uses the "app mode" built into Chromium-based browsers, so it needs Chrome, Edge or Brave installed (Linux also accepts Chromium and Vivaldi, including Flatpak and Snap installs). The window opens at 1920 × 930, which leaves about 1920 × 900 for the panel. If no suitable browser is found, it opens in your default browser as a normal tab.
+
+**First run:** the scripts aren't signed, so your system may ask once:
+- **macOS:** right-click (or Control-click) the `.command` file and choose **Open**.
+- **Windows:** if SmartScreen says "Windows protected your PC", click **More info**, then **Run anyway**.
+- **Linux:** you may need to make the script executable first: `chmod +x "Launch on Linux.sh"`.
+
+You can also open `drone-box.html` directly in any browser tab. Chrome, Edge and Brave are tested; Firefox and Safari should work but haven't been tested yet.
+
+**Window size:** the panel scales to fit whatever window it's in, so it never needs scrolling. Resize or maximise the window and the whole instrument grows or shrinks with it. Windows narrower than 1000 px (phones) use a stacked layout instead.
 
 Press **Play** or hit **Space**. Browsers only allow audio to start after a click or key press, so that's always the first step.
 
@@ -40,7 +57,7 @@ The panel is styled after classic Roland Jupiter-series synths: a black panel (o
 - **Mute / Solo:** each oscillator has a Mute button (saved with the patch) and a Solo button. When any oscillator is soloed, only the soloed ones play, even if they're muted. Solo isn't saved and clears when you load a patch.
 - **Displays:** the red LED display at the top shows the patch name, play state, and the last control you touched. Every knob and fader also has its own small value readout.
 - **Knob colours:** blue for pitch, green for tone, red for modulation. The **Knobs** switch picks tinted knob tops (Colour) or coloured pointers (Pointer).
-- **Screen size:** the panel is designed for a 1920 × 900 window, and fits it without scrolling. Smaller windows wrap the sections onto more rows.
+- **Screen size:** the panel is designed at 1920 × 900 and scales as a whole to fit any desktop window, from a 1366 × 768 laptop to a 2560 px monitor. Phone-width windows stack the sections instead.
 
 ## Fonts
 

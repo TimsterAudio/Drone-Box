@@ -19,6 +19,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - **Knob colours by function:** blue for pitch, green for tone, red for modulation, and black for level and space. A new **Knobs** switch picks **Colour** (tinted knob tops, the default) or **Pointer** (black knobs with coloured pointers and scales). The choice is remembered.
 
+- **Stand-alone window launchers:** `Launch on Mac.command`, `Launch on Windows.bat` and `Launch on Linux.sh` open Drone Box in a clean app window, with no address bar, tabs or toolbars, at 1920 × 930. They use Chrome, Edge or Brave (plus Chromium and Vivaldi on Linux) and fall back to a normal browser tab if none is found.
+- **Fit to window:** on desktop-sized windows, the whole panel scales to fit the window, so it never scrolls or wraps, whether in the app window, on a 1366 × 768 laptop or on a large monitor. Phone-width windows keep the stacked layout.
+
 ### Changed
 - **The panel is laid out for a 1920 × 900 window** and fits it without scrolling:
   - Memory moves into the top strip.

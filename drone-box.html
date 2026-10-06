@@ -83,21 +83,21 @@ body{
 .meter-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
 
 /* Rows & sections */
-.row{display:flex;flex-wrap:wrap;gap:22px 12px;padding:22px 22px 0;align-items:stretch}
+.row{display:flex;flex-wrap:wrap;gap:22px 10px;padding:22px 22px 0;align-items:stretch}
 .side{display:flex;flex-direction:column;gap:22px;flex:1 1 560px;min-width:0}
 .side-row{display:flex;flex-wrap:wrap;gap:22px 12px;flex:1}
 .osc-sec{flex:0 1 auto}
 .monitor{flex:1 1 auto;align-items:stretch}
 .sec{
   position:relative; flex:1 1 auto; border:1px solid var(--frame); border-radius:4px;
-  padding:20px 12px 12px; display:flex; flex-wrap:wrap; gap:12px 8px; justify-content:center; align-items:flex-start;
+  padding:20px 10px 12px; display:flex; flex-wrap:wrap; gap:12px 8px; justify-content:center; align-items:flex-start;
 }
 .sec > h3{
   position:absolute; top:-9px; left:12px; margin:0; padding:0 7px; background:var(--panel);
   font-size:12px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; line-height:16px;
 }
 .col{display:flex;flex-direction:column;gap:12px;align-items:center}
-.pair{display:flex;gap:6px;align-items:flex-start}
+.pair{display:flex;gap:4px;align-items:flex-start}
 
 /* Control wrapper: control, label, then a permanent value readout (every knob and fader has one) */
 .cw{display:flex;flex-direction:column;align-items:center;position:relative;min-width:54px}
@@ -212,6 +212,10 @@ body{
 footer{max-width:1888px;margin:8px auto 0;color:#8e8a81;font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;letter-spacing:.04em}
 :root[data-theme="silver"] footer{color:#2a2926}
 kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:0 5px;font-size:11px;opacity:.85}
+
+/* Fitted mode (see fitToWindow): fixed design width, scaled as a whole, never scrolls */
+:root.fitted{overflow:hidden}
+:root.fitted body{width:1920px;box-sizing:border-box;margin:0 auto}
 
 @media (max-width:760px){
   body{padding:8px}
@@ -1048,9 +1052,10 @@ function bindControl(node, wrap, o, kind, visual){
     node.setPointerCapture(e.pointerId);
     wrap.classList.add('active');
     const rect = node.getBoundingClientRect();
-    const travel = kind === 'fader' ? rect.height - 24 : Math.max(140, steps * 16);
+    const cap = kind === 'fader' ? 24 * rect.height / node.offsetHeight : 0;   // cap height in screen px (page may be zoomed)
+    const travel = kind === 'fader' ? rect.height - cap : Math.max(140, steps * 16);
     if (kind === 'fader' && !e.target.classList.contains('cap')) {
-      commit(1 - (e.clientY - rect.top - 12) / travel);     // click on the track jumps there
+      commit(1 - (e.clientY - rect.top - cap / 2) / travel);     // click on the track jumps there
     } else {
       lcd.show(name, fmt(m.fromPos(pos)));
     }
@@ -1492,8 +1497,8 @@ document.addEventListener('keydown', e => {
 
 /* ---------- Visualisers ---------- */
 function fit(c){
-  const dpr = window.devicePixelRatio || 1;
-  const w = Math.round(c.clientWidth * dpr), h = Math.round(c.clientHeight * dpr);
+  const dpr = window.devicePixelRatio || 1, r = c.getBoundingClientRect();   // on-screen size, including page zoom
+  const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
   if (c.width !== w || c.height !== h){ c.width = w; c.height = h; }
   return c.getContext('2d');
 }
@@ -1589,10 +1594,34 @@ function draw(){
   });
 }
 
+/* ---------- Fit to window ---------- */
+// On desktop-sized windows the panel is laid out at its 1920px design width and the whole page is
+// scaled (CSS zoom) to fit the window, so the stand-alone app window never scrolls, whatever its frame
+// or screen size. Narrow windows (phones, small tablets) keep the normal wrapping layout instead.
+const DESIGN_W = 1920, FIT_MIN_W = 1000;
+function fitToWindow(){
+  const root = document.documentElement, body = document.body;
+  body.style.zoom = '';
+  const fitted = innerWidth >= FIT_MIN_W;
+  root.classList.toggle('fitted', fitted);
+  if (!fitted) return;
+  const naturalH = body.scrollHeight;                       // height at zoom 1, laid out at the design width
+  const z = Math.min(innerWidth / DESIGN_W, innerHeight / naturalH);
+  body.style.zoom = z.toFixed(4);
+}
+let fitQueued = false;
+addEventListener('resize', () => {
+  if (fitQueued) return;
+  fitQueued = true;
+  requestAnimationFrame(() => { fitQueued = false; fitToWindow(); });
+});
+
 /* ---------- Boot ---------- */
 $('#ver').textContent = 'v' + VERSION;
 fillPresets(store(STORE_LAST) ? '' : 'f:0');
 render();
+fitToWindow();
+if (document.fonts) document.fonts.ready.then(fitToWindow);
 requestAnimationFrame(draw);
 </script>
 </body>

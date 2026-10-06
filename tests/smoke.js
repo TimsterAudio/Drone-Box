@@ -206,6 +206,18 @@ function check(name, ok, detail = ''){
     strips: new Set([...document.querySelectorAll('.ostrip')].map(e => Math.round(e.getBoundingClientRect().top))).size,
     ctrl: new Set([...document.querySelectorAll('#ctrlSlot > .sec')].map(e => Math.round(e.getBoundingClientRect().top))).size }));
   check('whole panel fits 1920x900', hd.h <= 900 && hd.w <= 1920 && hd.strips === 1 && hd.ctrl === 1, JSON.stringify(hd));
+  // Fit to window: laptop and app-window sizes scale the whole panel, never scroll, never wrap
+  for (const [w, h] of [[1366, 768], [1920, 825], [2560, 1400]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(150);
+    const f = await page.evaluate(() => ({
+      fitted: document.documentElement.classList.contains('fitted'),
+      scroll: document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth,
+      strips: new Set([...document.querySelectorAll('.ostrip')].map(e => Math.round(e.getBoundingClientRect().top))).size,
+      ctrl: new Set([...document.querySelectorAll('#ctrlSlot > .sec')].map(e => Math.round(e.getBoundingClientRect().top))).size,
+      zoom: document.body.style.zoom }));
+    check(`panel scales to fit ${w}x${h}`, f.fitted && f.scroll && f.strips === 1 && f.ctrl === 1, `zoom ${f.zoom}`);
+  }
   await page.setViewportSize({ width: 1280, height: 900 });
   const tops = await page.$$eval('.ostrip', a => new Set(a.map(e => Math.round(e.getBoundingClientRect().top))).size);
   check('six strips on one row at 1280px', tops === 1);

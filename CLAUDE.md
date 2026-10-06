@@ -4,7 +4,7 @@ Drone Box is a browser drone synthesizer by Timster's Audio Works. The whole ins
 
 ## Hard rules
 
-- **Keep it one self-contained file.** No build step, no bundler, no npm dependencies for the app itself.
+- **Keep it one self-contained file.** No build step, no bundler, no npm dependencies for the app itself. The three `Launch on …` scripts are optional wrappers that open it in a clean app-mode window; keep their window size in step with the design size.
 - **No network requests at runtime.** No CDNs, remote fonts, analytics or fetches. Embed assets (base64) if they're truly needed.
 - **Never break saved patches.** Add new patch fields to `defaultPatch()`. Never rename or repurpose existing ones (see "Patch format" in ARCHITECTURE).
 - **Keep the engine free of DOM code.** The UI changes `patch`, then calls `engine.apply…()`.

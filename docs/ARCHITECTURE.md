@@ -5,6 +5,7 @@ How Drone Box is put together, for whoever works on it next.
 ## Ground rules
 
 - **One file.** The whole instrument is `drone-box.html`: markup, CSS, embedded fonts and script. There's no build step, package manager or server. You open the file and it runs.
+- **Optional launchers.** `Launch on Mac.command`, `Launch on Windows.bat` and `Launch on Linux.sh` open the page in a Chromium browser's app mode (`--app=… --window-size=1920,930`), giving a clean, stand-alone window. They're conveniences around the one file, adapted from Spool's launchers; the page doesn't depend on them. `.gitattributes` keeps the `.bat` file on CRLF line endings and the shell scripts on LF.
 - **Fully offline.** No network requests at runtime: no CDNs, web fonts, analytics or update checks. Fonts are embedded as base64 WOFF2. New assets get embedded the same way.
 - **The engine and the UI are separate.** The `Engine` class knows nothing about the DOM. The UI reads and writes the `patch` object, then calls the matching `engine.apply…()` method.
 
@@ -25,6 +26,7 @@ The `<script>` block is split into sections with `/* ---------- Name ---------- 
 | Patches | the preset menu, save, delete, export, import, randomize |
 | Transport | Play/Stop and the Space bar |
 | Visualisers | the scope, spectrum and segmented meters (`draw()` on requestAnimationFrame) |
+| Fit to window | `fitToWindow()`: lays the page out at 1920 px and scales it with CSS `zoom` to fit windows ≥ 1000 px wide |
 | Boot | starts everything |
 
 ## Audio graph

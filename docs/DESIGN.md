@@ -77,7 +77,9 @@ In both styles, a fader's cap line takes the family colour.
 - The top strip holds the logo, the LED display, Memory (patch menu and buttons), the meters, master volume, the Panel and Knobs switches, and Play/Stop.
 - Row 2: the six oscillator strips on the left, and a side column with Monitor (the scope and spectrum, which stretch to fill it) above Root and Noise.
 - Row 3: LFO 1, LFO 2, Filter, Swell, Delay and Reverb.
-- On narrower windows, rows wrap: the side column drops below the oscillators, and the sections flow onto more rows.
+- **Fit to window:** in windows 1000 px wide or more, the page is always laid out at the 1920 px design width, and the whole page is scaled with CSS `zoom` to fit the window (`fitToWindow()`). It never scrolls and never re-wraps, so the panel looks the same on a laptop, in the app window and on a large monitor; only the size changes.
+- **Phones:** below 1000 px wide, the normal wrapping layout applies. The side column drops below the oscillators, and sections flow onto more rows.
+- **Width budget:** the bottom row (LFO 1, LFO 2, Filter, Swell, Delay, Reverb) has only about 40 px to spare at 1920 px. Widen anything there with care; the smoke test checks that it stays on one row at several zoom levels.
 - Each oscillator strip has a 2-column grid of small knobs: Wave and Octave, Interval and Detune, Pan and Drift, Fold and FM. A tall Level fader runs beside them, as tall as the grid.
 - Oscillator strips are a fixed 182 px wide, so all six line up evenly. They sit on one row from about 1,200 px wide and wrap below that.
 - At phone width, sections stack and the page never scrolls sideways.

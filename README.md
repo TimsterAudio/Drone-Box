@@ -14,7 +14,7 @@ Keep the files together in one folder and double-click the launcher for your sys
 | Windows | `Launch on Windows.bat` |
 | Linux | `Launch on Linux.sh` |
 
-The launcher opens Drone Box in a **clean, stand-alone window**, with no address bar, tabs, bookmarks or toolbars. It uses the "app mode" built into Chromium-based browsers, so it needs Chrome, Edge or Brave installed (Linux also accepts Chromium and Vivaldi, including Flatpak and Snap installs). The window opens at 1920 × 930, which leaves about 1920 × 900 for the panel. If no suitable browser is found, it opens in your default browser as a normal tab.
+The launcher opens Drone Box in a **clean, stand-alone window**, with no address bar, tabs, bookmarks or toolbars. It uses the "app mode" built into Chromium-based browsers, so it needs Chrome, Edge, Brave or Vivaldi (Linux also accepts Chromium, including Flatpak and Snap installs). **It uses your default browser if that's one of these**; otherwise it picks the first one installed (Edge, then Chrome, Brave and Vivaldi on Windows; Chrome, then Edge and Brave on macOS). The window opens at 1920 × 930, which leaves about 1920 × 900 for the panel. If no suitable browser is found, it opens in your default browser as a normal tab.
 
 **First run:** the scripts aren't signed, so your system may ask once:
 - **macOS:** right-click (or Control-click) the `.command` file and choose **Open**.

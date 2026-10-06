@@ -10,8 +10,20 @@ rem Brave, Vivaldi); otherwise the first of Edge, Chrome, Brave or Vivaldi that'
 rem installed. Set DRONEBOX_DRYRUN=1 to print the choice instead of launching.
 
 set "DIR=%~dp0"
-set "INDEX=file:///%DIR:\=/%drone-box.html"
-set "ARGS=--app="%INDEX%" --window-size=1920,930 --window-position=0,0 --no-first-run --no-default-browser-check"
+set "DRONEBOX_PAGE=%DIR%drone-box.html"
+if not exist "%DRONEBOX_PAGE%" goto :missing
+
+rem The page's address. PowerShell builds it as a fully encoded file URL (spaces,
+rem quotes, brackets and & all %-encoded), and it's passed to the browser WITHOUT
+rem quotes: a quoted address in a folder with spaces can reach the browser with the
+rem quotes still attached, and the browser then opens its home page instead.
+rem ARGS is only ever read as !ARGS! (delayed expansion), so the % codes in it are
+rem never re-read as batch variables.
+set "FLAGS=--window-size=1920,930 --window-position=0,0 --no-first-run --no-default-browser-check"
+set "ARGS="
+for /f "usebackq delims=" %%U in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$u=([System.Uri]$env:DRONEBOX_PAGE).AbsoluteUri; [regex]::Replace($u, '[&()^!,;=''\s]', [System.Text.RegularExpressions.MatchEvaluator]{ param($m) '%%{0:X2}' -f [int][char]$m.Value })" 2^>nul`) do set "ARGS=--app=%%U %FLAGS%"
+rem No PowerShell (very old Windows): fall back to the quoted address.
+if not defined ARGS set ARGS=--app="file:///%DIR:\=/%drone-box.html" %FLAGS%
 set "LAUNCHED="
 
 rem 1. Your default browser. Windows keeps it in the registry; PowerShell reads it
@@ -36,7 +48,20 @@ if defined LAUNCHED goto :eof
 
 echo No Chrome, Edge, Brave or Vivaldi installation found in the usual locations.
 echo Opening in your default browser instead. It will show normal browser controls.
-if defined DRONEBOX_DRYRUN (echo Fallback: "%INDEX%") else (timeout /t 2 >nul & start "" "%INDEX%")
+if defined DRONEBOX_DRYRUN goto :dryFallback
+timeout /t 2 >nul
+start "" "%DRONEBOX_PAGE%"
+goto :eof
+:dryFallback
+echo Fallback: "%DRONEBOX_PAGE%"
+goto :eof
+
+:missing
+echo Can't find drone-box.html next to this launcher:
+echo   %DIR%
+echo If you opened the zip without extracting it, choose "Extract All" first,
+echo then run the launcher from the extracted folder.
+pause
 goto :eof
 
 rem Launch the default browser only if it's one that supports app mode.
@@ -46,5 +71,7 @@ exit /b
 
 :launch
 set "LAUNCHED=1"
-if defined DRONEBOX_DRYRUN (echo Launch: %1 %ARGS%) else (start "" %1 %ARGS%)
+setlocal EnableDelayedExpansion
+if defined DRONEBOX_DRYRUN (echo Launch: %1 !ARGS!) else (start "" %1 !ARGS!)
+endlocal
 exit /b

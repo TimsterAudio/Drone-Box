@@ -38,7 +38,9 @@ The panel is styled after classic Roland Jupiter-series synths: a black panel (o
 - **Keyboard:** click a control to focus it, then use the arrow keys (Shift for finer steps), Page Up/Down, or Home/End.
 - **Reset:** double-click any knob or fader to return it to its value when the patch loaded.
 - **Mute / Solo:** each oscillator has a Mute button (saved with the patch) and a Solo button. When any oscillator is soloed, only the soloed ones play, even if they're muted. Solo isn't saved and clears when you load a patch.
-- **Displays:** the red LED display at the top shows the patch name, play state, and the last control you touched.
+- **Displays:** the red LED display at the top shows the patch name, play state, and the last control you touched. Every knob and fader also has its own small value readout.
+- **Knob colours:** blue for pitch, green for tone, red for modulation. The **Knobs** switch picks tinted knob tops (Colour) or coloured pointers (Pointer).
+- **Screen size:** the panel is designed for a 1920 × 900 window, and fits it without scrolling. Smaller windows wrap the sections onto more rows.
 
 ## Fonts
 

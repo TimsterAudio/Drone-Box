@@ -132,6 +132,21 @@ function check(name, ok, detail = ''){
   });
   check('v0.1 patches load with new settings off', old);
 
+  // Readouts: every knob and fader has a permanent value display, and there are no hover pop-ups
+  const ro = await page.evaluate(() => ({
+    controls: document.querySelectorAll('.knob, .fader').length,
+    withReadout: [...document.querySelectorAll('.knob, .fader')].filter(n => n.closest('.cw').querySelector(':scope > .mlcd')).length,
+    tips: document.querySelectorAll('.tip').length }));
+  check('every knob and fader has a readout', ro.controls > 0 && ro.withReadout === ro.controls && ro.tips === 0, `${ro.withReadout}/${ro.controls}`);
+
+  // Knob colours: Colour (caps) by default, Pointer as the alternate; families tagged
+  check('knob colour default is Colour', await page.evaluate(() => document.documentElement.dataset.knobs) === 'caps');
+  await page.click('#knobSlot .brow button:nth-child(2)');
+  check('knob style switch to Pointer', await page.evaluate(() => document.documentElement.dataset.knobs === 'pointers' && localStorage.getItem('dronebox.knobs') === '"pointers"'));
+  const fams = await page.evaluate(() => ['pitch', 'tone', 'mod'].map(f => document.querySelectorAll('.fam-' + f).length));
+  check('knob families tagged (pitch, tone, mod)', fams.every(n => n > 0), fams.join('/'));
+  await page.click('#knobSlot .brow button:nth-child(1)');
+
   // Theme switch
   await page.click('#themeSlot .brow button:nth-child(2)');
   check('silver panel switch', await page.evaluate(() => document.documentElement.dataset.theme) === 'silver');
@@ -142,6 +157,13 @@ function check(name, ok, detail = ''){
   check('space stops', (await page.textContent('#lcd1b')) !== 'PLAY');
 
   // Layout
+  await page.setViewportSize({ width: 1920, height: 900 });
+  await page.waitForTimeout(100);
+  const hd = await page.evaluate(() => ({
+    h: document.documentElement.scrollHeight, w: document.documentElement.scrollWidth,
+    strips: new Set([...document.querySelectorAll('.ostrip')].map(e => Math.round(e.getBoundingClientRect().top))).size,
+    ctrl: new Set([...document.querySelectorAll('#ctrlSlot > .sec')].map(e => Math.round(e.getBoundingClientRect().top))).size }));
+  check('whole panel fits 1920x900', hd.h <= 900 && hd.w <= 1920 && hd.strips === 1 && hd.ctrl === 1, JSON.stringify(hd));
   await page.setViewportSize({ width: 1280, height: 900 });
   const tops = await page.$$eval('.ostrip', a => new Set(a.map(e => Math.round(e.getBoundingClientRect().top))).size);
   check('six strips on one row at 1280px', tops === 1);

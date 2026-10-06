@@ -17,7 +17,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Factory presets showing off the new features: **Folded Fifths**, **Metallic FM** and **Ladder Wind**.
 - If the browser can't run AudioWorklets, the synth falls back to the v0.1 sound and the display says "Basic audio mode".
 
+- **Knob colours by function:** blue for pitch, green for tone, red for modulation, and black for level and space. A new **Knobs** switch picks **Colour** (tinted knob tops, the default) or **Pointer** (black knobs with coloured pointers and scales). The choice is remembered.
+
 ### Changed
+- **The panel is laid out for a 1920 × 900 window** and fits it without scrolling:
+  - Memory moves into the top strip.
+  - The oscillators sit beside a column with Monitor, Root and Noise.
+  - The LFOs, Filter, Swell, Delay and Reverb share one row.
+  - The scope and spectrum are taller.
+  - Smaller windows still wrap, down to phone width.
+- **Value readouts are consistent:** every knob and fader now has a permanent red readout, and the hover pop-ups are gone. Before, only some knobs had a permanent readout and all of them showed a pop-up on hover.
+- Delay's four knobs sit in one row, and Reverb's two sit side by side.
 - The oscillator Level faders are taller, to match the extra row of knobs.
 - Patches gain new fields (`oscs[].fold`, `oscs[].fm`, `filter.drive`, `noise`). Older patches load with all of them off and sound as they did.
 

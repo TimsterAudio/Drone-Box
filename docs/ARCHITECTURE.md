@@ -113,20 +113,23 @@ A patch is plain JSON. This is what Export writes and what's stored in localStor
 | `dronebox.last` | the current patch, autosaved 300 ms after any change |
 | `dronebox.patches` | your saved patches, as `{ name: patch }` |
 | `dronebox.theme` | `"dark"` or `"silver"` |
+| `dronebox.knobs` | `"caps"` (Colour) or `"pointers"` (Pointer) |
 
 ## UI control system
 
 Every continuous or stepped control goes through `bindControl()`. That gives every control the same dragging, keyboard support, double-click reset, ARIA slider role, tooltip and LED-display behaviour.
 
 ```js
-knob({ label, name?, min, max, scale?: 'lin'|'log', step?, fmt, short?, get, set, size?: 'sm'|'md'|'lg' })
-knob({ label, options: [[value, text], …], fmt, get, set })   // stepped knob, with a small readout display
-fader({ label, name?, min, max, scale?, step?, fmt, get, set, tall? })
+knob({ label, name?, fam?, min, max, scale?: 'lin'|'log', step?, fmt, short?, get, set, size?: 'sm'|'md'|'lg', readout? })
+knob({ label, fam?, options: [[value, text], …], fmt, get, set })   // stepped knob
+fader({ label, name?, fam?, min, max, scale?, step?, fmt, get, set, tall? })
 buttons({ label, name?, options: [[value, text, iconSvg?], …], color, get, set })   // LED radio row
 hwButton(text, colorClass, iconSvg?)                                           // single LED button
 ```
 
 - `get` and `set` read and write the patch. `set` should also call the right `engine.apply…()` and `changed()` (which autosaves).
+- `fam` is the colour family: `'pitch'`, `'tone'` or `'mod'`, or leave it out for neutral (see DESIGN.md).
+- Every knob and fader gets a permanent readout under its label. `short(value)` can give a shorter text for that readout than `fmt`; the Interval knob uses it to show just the ratio.
 - `name` is what the LED display shows, for example "Osc 3 detune". It defaults to `label`.
 - `render()` rebuilds the whole panel from `patch`. It runs on boot and on every patch load, so controls hold no state of their own.
 

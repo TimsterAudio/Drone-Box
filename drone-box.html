@@ -33,16 +33,16 @@ html,body{margin:0}
 body{
   background:var(--page); color:var(--legend);
   font:500 13px/1.3 'Barlow Semi Condensed',"Arial Narrow",system-ui,sans-serif;
-  padding:16px;
+  padding:10px 16px 2px;
 }
 .mono{font-family:'Share Tech Mono',ui-monospace,monospace}
 
 /* Chassis */
 .synth{
-  max-width:1340px; margin:0 auto; position:relative;
+  max-width:1888px; margin:0 auto; position:relative;
   background:var(--tex),var(--panel);
   border-left:16px solid var(--rail); border-right:16px solid var(--rail);
-  border-radius:6px; padding-bottom:22px;
+  border-radius:6px; padding-bottom:16px;
   box-shadow:0 20px 50px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);
 }
 .synth::before,.synth::after{ /* end-cheek highlight */
@@ -51,13 +51,13 @@ body{
 .synth::before{left:-4px} .synth::after{right:-4px}
 
 /* Top strip */
-.strip{display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px;padding:16px 22px 14px}
+.strip{display:flex;flex-wrap:wrap;align-items:center;gap:12px 26px;padding:12px 22px 10px}
 .logo{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin-right:auto}
 /* Maker wordmark: same treatment as Spool's header badge */
-.maker{font:500 13px/1.3 'Space Grotesk',system-ui,sans-serif;letter-spacing:.01em;color:var(--legend-dim);border:1px solid var(--frame);border-radius:3px;padding:5px 10px;margin:0 0 8px;display:inline-block;white-space:nowrap}
+.maker{font:500 13px/1.3 'Space Grotesk',system-ui,sans-serif;letter-spacing:.01em;color:var(--legend-dim);border:1px solid var(--frame);border-radius:3px;padding:5px 10px;margin:0 0 5px;display:inline-block;white-space:nowrap}
 .maker strong{color:var(--legend);font-weight:700}
 .brand{
-  font-family:'Michroma',sans-serif; font-size:28px; letter-spacing:.06em; line-height:1;
+  font-family:'Michroma',sans-serif; font-size:26px; letter-spacing:.06em; line-height:1;
   transform:skewX(-12deg); transform-origin:left bottom; display:inline-block; white-space:nowrap;
 }
 .model{font-size:11px;letter-spacing:.32em;color:var(--legend-dim);text-transform:uppercase;white-space:nowrap}
@@ -83,10 +83,14 @@ body{
 .meter-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
 
 /* Rows & sections */
-.row{display:flex;flex-wrap:wrap;gap:26px 14px;padding:26px 22px 0}
+.row{display:flex;flex-wrap:wrap;gap:22px 12px;padding:22px 22px 0;align-items:stretch}
+.side{display:flex;flex-direction:column;gap:22px;flex:1 1 560px;min-width:0}
+.side-row{display:flex;flex-wrap:wrap;gap:22px 12px;flex:1}
+.osc-sec{flex:0 1 auto}
+.monitor{flex:1 1 auto;align-items:stretch}
 .sec{
   position:relative; flex:1 1 auto; border:1px solid var(--frame); border-radius:4px;
-  padding:22px 14px 14px; display:flex; flex-wrap:wrap; gap:14px 10px; justify-content:center; align-items:flex-start;
+  padding:20px 12px 12px; display:flex; flex-wrap:wrap; gap:12px 8px; justify-content:center; align-items:flex-start;
 }
 .sec > h3{
   position:absolute; top:-9px; left:12px; margin:0; padding:0 7px; background:var(--panel);
@@ -95,16 +99,22 @@ body{
 .col{display:flex;flex-direction:column;gap:12px;align-items:center}
 .pair{display:flex;gap:6px;align-items:flex-start}
 
-/* Control wrapper, label, tooltip */
+/* Control wrapper: control, label, then a permanent value readout (every knob and fader has one) */
 .cw{display:flex;flex-direction:column;align-items:center;position:relative;min-width:54px}
-.cl{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-top:6px;white-space:nowrap}
-.tip{
-  position:absolute; bottom:calc(100% - 4px); left:50%; transform:translateX(-50%);
-  background:#000; color:var(--lcd-ink); font:11px 'Share Tech Mono',monospace; padding:2px 6px; border-radius:2px;
-  white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s; z-index:5;
-  text-shadow:0 0 5px var(--lcd-glow);
+.cl{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;white-space:nowrap}
+.cw > .mlcd{margin-top:3px}
+
+/* Knob colour families. Colour = what the control does; the same colour wherever a function appears.
+   html[data-knobs="caps"] tints the knob top (default); "pointers" colours only the pointer and scale. */
+.fam-pitch{--fam:#4f8cc9} .fam-tone{--fam:#5aa86f} .fam-mod{--fam:#d24b33}
+:root[data-knobs="caps"] .fam .knob .cap{
+  background:radial-gradient(circle at 38% 28%,color-mix(in srgb,var(--fam) 55%,white) 0,var(--fam) 40%,color-mix(in srgb,var(--fam) 55%,black) 78%);
 }
-.cw:hover > .tip,.cw.active > .tip,.cw:focus-within > .tip{opacity:1}
+:root[data-knobs="caps"] .fam .knob .ptr{background:#fff}
+:root[data-knobs="pointers"] .fam .knob .ptr{background:var(--fam);box-shadow:0 0 4px var(--fam)}
+:root[data-knobs="pointers"] .fam .knob svg{color:var(--fam)}
+:root[data-knobs="pointers"] .fam .fader .ft{background:linear-gradient(90deg,var(--fam) 0 7px,transparent 7px calc(100% - 7px),var(--fam) calc(100% - 7px))}
+.fam .fader .cap::after{background:var(--fam);height:3px}
 
 /* Rotary knob */
 .knob{--k:44px;position:relative;width:var(--k);height:var(--k);margin:9px;touch-action:none;cursor:ns-resize;border-radius:50%;outline:none}
@@ -166,6 +176,10 @@ body{
 .bgroup{display:flex;flex-direction:column;align-items:center;gap:7px}
 .glabel{font-size:10.5px;font-weight:700;letter-spacing:.18em;color:var(--legend-dim);text-transform:uppercase}
 .brow{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+/* Button rows inside sections run tighter so a whole row of sections fits 1920px */
+.sec .brow{gap:6px}
+.sec .brow .hwb{letter-spacing:.05em}
+.sec .brow .hwb .key{width:30px}
 
 /* Oscillator strips */
 .strips{display:flex;flex-wrap:wrap;gap:16px 0;justify-content:center;width:100%}
@@ -179,15 +193,15 @@ body{
 .obody{display:flex;gap:4px;align-items:flex-start}
 .kgrid{display:grid;grid-template-columns:62px 62px;gap:2px 0;justify-items:center}
 .ostrip .cw{min-width:48px}
-.ostrip .knob{margin:8px}
+.ostrip .knob{margin:6px 8px}
 .ostrip .mlcd{font-size:11px;min-width:0;max-width:62px;overflow:hidden;padding:2px 4px}
 .ostrip > .mlcd{max-width:none;min-width:80px}
 .ostrip .cl{font-size:10.5px}
 
 /* Monitor screens */
-.screen{flex:1 1 280px;display:flex;flex-direction:column;gap:5px;min-width:0}
-.screen canvas{width:100%;height:118px;display:block;background:var(--lcd-bg);border-radius:3px;box-shadow:inset 0 0 14px #000,0 0 0 2px #000,0 0 0 3px rgba(255,255,255,.07)}
-.memory{flex:0 1 auto;flex-direction:column;align-items:stretch}
+.screen{flex:1 1 280px;display:flex;flex-direction:column;gap:5px;min-width:0;align-self:stretch}
+.screen canvas{width:100%;height:auto;flex:1 1 auto;min-height:96px;display:block;background:var(--lcd-bg);border-radius:3px;box-shadow:inset 0 0 14px #000,0 0 0 2px #000,0 0 0 3px rgba(255,255,255,.07)}
+.memory{display:flex;flex-direction:column;align-items:stretch;gap:9px}
 .memory select{
   font:15px 'Share Tech Mono',monospace; text-transform:uppercase; letter-spacing:.05em;
   background:var(--lcd-bg); color:var(--lcd-ink); text-shadow:0 0 6px var(--lcd-glow);
@@ -195,7 +209,7 @@ body{
 }
 .memory select option,.memory select optgroup{background:#111;color:#ff8a66;text-shadow:none}
 
-footer{max-width:1340px;margin:18px auto 0;color:#8e8a81;font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;letter-spacing:.04em}
+footer{max-width:1888px;margin:8px auto 0;color:#8e8a81;font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;letter-spacing:.04em}
 :root[data-theme="silver"] footer{color:#2a2926}
 kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:0 5px;font-size:11px;opacity:.85}
 
@@ -223,23 +237,7 @@ kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:
       <div class="ln"><span id="lcd1a">—</span><span id="lcd1b"></span></div>
       <div class="ln"><span id="lcd2a"></span><span id="lcd2b"></span></div>
     </div>
-    <div class="meter-wrap"><canvas id="meters" aria-label="Output level meters"></canvas><span class="cl" style="margin:0">Output L / R</span></div>
-    <div id="masterSlot"></div>
-    <div id="themeSlot"></div>
-    <button class="hwb big k-red" id="play" aria-pressed="false" type="button">
-      <span class="led"></span><span class="key"></span><span class="txt">Play / Stop</span>
-    </button>
-  </header>
-  <div class="stripe"></div>
-
-  <div class="row">
-    <section class="sec">
-      <h3>Monitor</h3>
-      <div class="screen"><span class="glabel">Scope</span><canvas id="scope"></canvas></div>
-      <div class="screen"><span class="glabel">Spectrum</span><canvas id="spectrum"></canvas></div>
-    </section>
-    <section class="sec memory">
-      <h3>Memory</h3>
+    <div class="memory">
       <select id="presetSel" aria-label="Patch"></select>
       <div class="brow">
         <button class="hwb wide k-cream" id="saveBtn" type="button"><span class="key"></span><span class="txt">Save</span></button>
@@ -249,11 +247,27 @@ kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:
         <button class="hwb wide k-cream" id="importBtn" type="button"><span class="key"></span><span class="txt">Import</span></button>
       </div>
       <input type="file" id="importFile" accept="application/json,.json" hidden>
-    </section>
-  </div>
+    </div>
+    <div class="meter-wrap"><canvas id="meters" aria-label="Output level meters"></canvas><span class="cl" style="margin:0">Output L / R</span></div>
+    <div id="masterSlot"></div>
+    <div id="themeSlot"></div>
+    <div id="knobSlot"></div>
+    <button class="hwb big k-red" id="play" aria-pressed="false" type="button">
+      <span class="led"></span><span class="key"></span><span class="txt">Play / Stop</span>
+    </button>
+  </header>
+  <div class="stripe"></div>
 
   <div class="row">
-    <section class="sec"><h3>Oscillators</h3><div class="strips" id="oscSlot"></div></section>
+    <section class="sec osc-sec"><h3>Oscillators</h3><div class="strips" id="oscSlot"></div></section>
+    <div class="side">
+      <section class="sec monitor">
+        <h3>Monitor</h3>
+        <div class="screen"><span class="glabel">Scope</span><canvas id="scope"></canvas></div>
+        <div class="screen"><span class="glabel">Spectrum</span><canvas id="spectrum"></canvas></div>
+      </section>
+      <div class="side-row" id="sideSlot"></div>
+    </div>
   </div>
 
   <div class="row" id="ctrlSlot"></div>
@@ -983,7 +997,6 @@ function mapper({min = 0, max = 1, scale = 'lin', step = 0, options = null}){
 function bindControl(node, wrap, o, kind, visual){
   const m = mapper(o);
   const steps = m.steps;
-  const tip = wrap.querySelector('.tip');
   const fmt = o.fmt || (v => String(v));
   const name = o.name || o.label;
   const initial = o.get();
@@ -1001,7 +1014,6 @@ function bindControl(node, wrap, o, kind, visual){
     visual(snapped(), txt, m.fromPos(pos));
     node.setAttribute('aria-valuenow', Math.round(snapped() * 1000));
     node.setAttribute('aria-valuetext', txt);
-    tip.textContent = txt;
     if (announce) lcd.show(name, txt);
   };
   const commit = p => {
@@ -1088,8 +1100,9 @@ function knob(o){
   const skirt = el('div', 'skirt');
   skirt.append(el('div', 'cap'), el('div', 'ptr'));
   node.append(tickSvg(o.options ? o.options.length : 11, KNOB_PX[size]), skirt);
-  wrap.append(el('div', 'tip'), node, el('div', 'cl', o.label));
-  const readout = o.readout ?? !!o.options;
+  if (o.fam) wrap.classList.add('fam', 'fam-' + o.fam);
+  wrap.append(node, el('div', 'cl', o.label));
+  const readout = o.readout ?? true;
   const mini = readout ? el('div', 'mlcd') : null;
   if (mini) wrap.append(mini);
   bindControl(node, wrap, o, 'knob', (p, txt, v) => {
@@ -1110,8 +1123,13 @@ function fader(o){
   }
   const cap = el('div', 'cap');
   node.append(cap);
-  wrap.append(el('div', 'tip'), node, el('div', 'cl', o.label));
-  bindControl(node, wrap, o, 'fader', p => { cap.style.top = `calc((100% - 24px) * ${(1 - p).toFixed(4)})`; });
+  if (o.fam) wrap.classList.add('fam', 'fam-' + o.fam);
+  const mini = el('div', 'mlcd');
+  wrap.append(node, el('div', 'cl', o.label), mini);
+  bindControl(node, wrap, o, 'fader', (p, txt) => {
+    cap.style.top = `calc((100% - 24px) * ${(1 - p).toFixed(4)})`;
+    mini.textContent = txt;
+  });
   return wrap;
 }
 
@@ -1178,6 +1196,12 @@ function changed(){
   saveTimer = setTimeout(() => store(STORE_LAST, patch), 300);
 }
 
+function setKnobStyle(k){
+  document.documentElement.dataset.knobs = k;
+  store('dronebox.knobs', k);
+}
+setKnobStyle(store('dronebox.knobs') === 'pointers' ? 'pointers' : 'caps');
+
 function setTheme(t){
   document.documentElement.dataset.theme = t;
   store('dronebox.theme', t);
@@ -1194,6 +1218,9 @@ function render(){
   $('#themeSlot').replaceChildren(
     buttons({label: 'Panel', options: [['dark', 'Black'], ['silver', 'Silver']], color: 'k-grey',
       get: () => document.documentElement.dataset.theme, set: setTheme}));
+  $('#knobSlot').replaceChildren(
+    buttons({label: 'Knobs', name: 'Knob colours', options: [['caps', 'Colour'], ['pointers', 'Pointer']], color: 'k-grey',
+      get: () => document.documentElement.dataset.knobs, set: setKnobStyle}));
 
   // Oscillator strips
   const hzEls = [];
@@ -1236,21 +1263,21 @@ function render(){
     head.append(el('span', 'onum', `OSC ${n}`), btns);
     const kg = el('div', 'kgrid');
     kg.append(
-      knob({label: 'Wave', name: nm('wave'), size: 'sm', options: WAVES, fmt: v => WAVES.find(w => w[0] === v)[1],
+      knob({fam: 'tone', label: 'Wave', name: nm('wave'), size: 'sm', options: WAVES, fmt: v => WAVES.find(w => w[0] === v)[1],
         get: () => o.wave, set: v => { o.wave = v; upd(); }}),
-      knob({label: 'Octave', name: nm('octave'), size: 'sm', options: [-2,-1,0,1,2,3].map(x => [x, fmtOct(x)]), fmt: fmtOct,
+      knob({fam: 'pitch', label: 'Octave', name: nm('octave'), size: 'sm', options: [-2,-1,0,1,2,3].map(x => [x, fmtOct(x)]), fmt: fmtOct,
         get: () => o.oct, set: v => { o.oct = v; upd(); }}),
-      knob({label: 'Interval', name: nm('interval'), size: 'sm', options: RATIOS, fmt: shortRatio, short: v => v,
+      knob({fam: 'pitch', label: 'Interval', name: nm('interval'), size: 'sm', options: RATIOS, fmt: shortRatio, short: v => v,
         get: () => o.ratio, set: v => { o.ratio = v; upd(); }}),
-      knob({label: 'Detune', name: nm('detune'), size: 'sm', min: -25, max: 25, step: 0.1, fmt: fmtCents,
+      knob({fam: 'pitch', label: 'Detune', name: nm('detune'), size: 'sm', min: -25, max: 25, step: 0.1, fmt: fmtCents,
         get: () => o.detune, set: v => { o.detune = v; upd(); }}),
       knob({label: 'Pan', name: nm('pan'), size: 'sm', min: -1, max: 1, fmt: fmtPan,
         get: () => o.pan, set: v => { o.pan = v; upd(); }}),
-      knob({label: 'Drift', name: nm('drift'), size: 'sm', min: 0, max: 20, step: 0.1, fmt: v => v.toFixed(1) + '¢',
+      knob({fam: 'pitch', label: 'Drift', name: nm('drift'), size: 'sm', min: 0, max: 20, step: 0.1, fmt: v => v.toFixed(1) + '¢',
         get: () => o.drift, set: v => { o.drift = v; changed(); }}),
-      knob({label: 'Fold', name: nm('fold'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
+      knob({fam: 'tone', label: 'Fold', name: nm('fold'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
         get: () => o.fold, set: v => { o.fold = v; upd(); }}),
-      knob({label: 'FM', name: `Osc ${n} FM from ${(i + NUM_OSC - 1) % NUM_OSC + 1}`, size: 'sm', min: 0, max: 1, fmt: fmtPct,
+      knob({fam: 'tone', label: 'FM', name: `Osc ${n} FM from ${(i + NUM_OSC - 1) % NUM_OSC + 1}`, size: 'sm', min: 0, max: 1, fmt: fmtPct,
         get: () => o.fm, set: v => { o.fm = v; upd(); }}));
     const body = el('div', 'obody');
     body.append(kg, fader({label: 'Level', name: nm('level'), tall: true, min: 0, max: 1, fmt: fmtPct,
@@ -1263,15 +1290,15 @@ function render(){
   // Root
   const retune = () => { for (let i = 0; i < NUM_OSC; i++) engine.applyOsc(i); refreshHz(); changed(); };
   const rootSec = section('Root',
-    knob({label: 'Note', name: 'Root note', options: NOTE_NAMES.map((t, i) => [i, t]), fmt: v => NOTE_NAMES[v],
+    knob({fam: 'pitch', label: 'Note', name: 'Root note', options: NOTE_NAMES.map((t, i) => [i, t]), fmt: v => NOTE_NAMES[v],
       get: () => P.root.note, set: v => { P.root.note = v; retune(); }}),
-    knob({label: 'Octave', name: 'Root octave', options: [0,1,2,3,4].map(x => [x, String(x)]), fmt: String,
+    knob({fam: 'pitch', label: 'Octave', name: 'Root octave', options: [0,1,2,3,4].map(x => [x, String(x)]), fmt: String,
       get: () => P.root.octave, set: v => { P.root.octave = v; retune(); }}),
     col(
-      knob({label: 'A4 Tune', name: 'A4 reference', min: 400, max: 480, step: 0.1, fmt: v => v.toFixed(1) + ' Hz',
+      knob({fam: 'pitch', label: 'A4 Tune', name: 'A4 reference', min: 400, max: 480, step: 0.1, fmt: v => v.toFixed(1) + ' Hz',
         get: () => P.root.a4, set: v => { P.root.a4 = v; retune(); }}),
       (() => { const c = el('div', 'cw'); c.append(rootHzEl, el('div', 'cl', 'Root Hz')); return c; })()),
-    knob({label: 'Glide', name: 'Glide', min: 0.01, max: 10, scale: 'log', fmt: fmtSec,
+    knob({fam: 'pitch', label: 'Glide', name: 'Glide', min: 0.01, max: 10, scale: 'log', fmt: fmtSec,
       get: () => P.root.glide, set: v => { P.root.glide = v; changed(); }}));
 
   // LFOs
@@ -1284,9 +1311,9 @@ function render(){
         buttons({label: 'Wave', name: nm('wave'), color: 'k-cream',
           options: LFO_SHAPES.map(([v, t]) => [v, t, ICON[v]]), get: () => L.shape, set: v => { L.shape = v; up(); }})),
       pair(
-        fader({label: 'Rate', name: nm('rate'), min: 0.005, max: 12, scale: 'log',
+        fader({fam: 'mod', label: 'Rate', name: nm('rate'), min: 0.005, max: 12, scale: 'log',
           fmt: v => v < 1 ? (1 / v).toFixed(1) + ' s' : v.toFixed(2) + ' Hz', get: () => L.rate, set: v => { L.rate = v; up(); }}),
-        fader({label: 'Depth', name: nm('depth'), min: 0, max: 1, fmt: fmtPct, get: () => L.depth, set: v => { L.depth = v; up(); }})));
+        fader({fam: 'mod', label: 'Depth', name: nm('depth'), min: 0, max: 1, fmt: fmtPct, get: () => L.depth, set: v => { L.depth = v; up(); }})));
   };
 
   const F = P.filter, E = P.env, D = P.delay, R = P.reverb;
@@ -1294,14 +1321,15 @@ function render(){
   const upD = () => { engine.applyDelay(); changed(); };
   const N = P.noise, upN = () => { engine.applyNoise(); changed(); };
   const upR = () => { engine.applyReverb(); changed(); };
-  $('#ctrlSlot').replaceChildren(
+  $('#sideSlot').replaceChildren(
     rootSec,
     section('Noise',
       buttons({label: 'Colour', name: 'Noise colour', color: 'k-cream',
         options: [['white','White'],['pink','Pink'],['brown','Brown']], get: () => N.color, set: v => { N.color = v; upN(); }}),
       pair(
         fader({label: 'Level', name: 'Noise level', min: 0, max: 1, fmt: fmtPct, get: () => N.level, set: v => { N.level = v; upN(); }}),
-        knob({label: 'Pan', name: 'Noise pan', min: -1, max: 1, fmt: fmtPan, get: () => N.pan, set: v => { N.pan = v; upN(); }}))),
+        knob({label: 'Pan', name: 'Noise pan', min: -1, max: 1, fmt: fmtPan, get: () => N.pan, set: v => { N.pan = v; upN(); }}))));
+  $('#ctrlSlot').replaceChildren(
     lfoSec(0),
     lfoSec(1),
     section('Filter',
@@ -1309,23 +1337,21 @@ function render(){
         options: [['lowpass','LPF'],['bandpass','BPF'],['highpass','HPF'],['notch','Notch'],['ladder','Ladder']],
         get: () => F.type, set: v => { F.type = v; upF(); }}),
       pair(
-        fader({label: 'Cutoff', name: 'Filter cutoff', min: 40, max: 18000, scale: 'log', fmt: fmtHz, get: () => F.cutoff, set: v => { F.cutoff = v; upF(); }}),
-        fader({label: 'Reso', name: 'Filter resonance', min: 0.1, max: 20, scale: 'log', fmt: v => v.toFixed(1), get: () => F.q, set: v => { F.q = v; upF(); }}),
-        knob({label: 'Drive', name: 'Filter drive (ladder)', min: 0, max: 1, fmt: fmtPct, get: () => F.drive, set: v => { F.drive = v; upF(); }}))),
+        fader({fam: 'tone', label: 'Cutoff', name: 'Filter cutoff', min: 40, max: 18000, scale: 'log', fmt: fmtHz, get: () => F.cutoff, set: v => { F.cutoff = v; upF(); }}),
+        fader({fam: 'tone', label: 'Reso', name: 'Filter resonance', min: 0.1, max: 20, scale: 'log', fmt: v => v.toFixed(1), get: () => F.q, set: v => { F.q = v; upF(); }}),
+        knob({fam: 'tone', label: 'Drive', name: 'Filter drive (ladder)', min: 0, max: 1, fmt: fmtPct, get: () => F.drive, set: v => { F.drive = v; upF(); }}))),
     section('Swell',
       pair(
         fader({label: 'Fade In', name: 'Swell fade in', min: 0.05, max: 60, scale: 'log', fmt: fmtSec, get: () => E.attack, set: v => { E.attack = v; changed(); }}),
         fader({label: 'Fade Out', name: 'Swell fade out', min: 0.05, max: 60, scale: 'log', fmt: fmtSec, get: () => E.release, set: v => { E.release = v; changed(); }}))),
     section('Delay',
-      col(
-        pair(
-          knob({label: 'Time', name: 'Delay time', min: 0.02, max: 4, scale: 'log', fmt: fmtSec, get: () => D.time, set: v => { D.time = v; upD(); }}),
-          knob({label: 'Feedback', name: 'Delay feedback', min: 0, max: 0.92, fmt: fmtPct, get: () => D.feedback, set: v => { D.feedback = v; upD(); }})),
-        pair(
-          knob({label: 'Tone', name: 'Delay tone', min: 200, max: 12000, scale: 'log', fmt: fmtHz, get: () => D.tone, set: v => { D.tone = v; upD(); }}),
-          knob({label: 'Amount', name: 'Delay amount', min: 0, max: 1, fmt: fmtPct, get: () => D.mix, set: v => { D.mix = v; upD(); }})))),
+      pair(
+        knob({label: 'Time', name: 'Delay time', min: 0.02, max: 4, scale: 'log', fmt: fmtSec, get: () => D.time, set: v => { D.time = v; upD(); }}),
+        knob({label: 'Feedback', name: 'Delay feedback', min: 0, max: 0.92, fmt: fmtPct, get: () => D.feedback, set: v => { D.feedback = v; upD(); }}),
+        knob({label: 'Tone', name: 'Delay tone', min: 200, max: 12000, scale: 'log', fmt: fmtHz, get: () => D.tone, set: v => { D.tone = v; upD(); }}),
+        knob({label: 'Amount', name: 'Delay amount', min: 0, max: 1, fmt: fmtPct, get: () => D.mix, set: v => { D.mix = v; upD(); }}))),
     section('Reverb',
-      col(
+      pair(
         knob({label: 'Decay', name: 'Reverb decay', min: 0.5, max: 15, scale: 'log', fmt: fmtSec, get: () => R.decay, set: v => { R.decay = v; upR(); }}),
         knob({label: 'Amount', name: 'Reverb amount', min: 0, max: 1, fmt: fmtPct, get: () => R.mix, set: v => { R.mix = v; upR(); }})))
   );

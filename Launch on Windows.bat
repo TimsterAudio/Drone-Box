@@ -15,8 +15,9 @@ if not exist "%DRONEBOX_PAGE%" goto :missing
 
 rem The page's address. PowerShell builds it as a fully encoded file URL (spaces,
 rem quotes, brackets and & all %-encoded), and it's passed to the browser WITHOUT
-rem quotes: a quoted address in a folder with spaces can reach the browser with the
-rem quotes still attached, and the browser then opens its home page instead.
+rem quotes. An earlier version stored a quoted address in a variable; on a real
+rem Windows machine the quotes reached the browser, which opened its home page
+rem instead of the app. The encoded, unquoted address avoids quoting altogether.
 rem ARGS is only ever read as !ARGS! (delayed expansion), so the % codes in it are
 rem never re-read as batch variables.
 set "FLAGS=--window-size=1920,930 --window-position=0,0 --no-first-run --no-default-browser-check"

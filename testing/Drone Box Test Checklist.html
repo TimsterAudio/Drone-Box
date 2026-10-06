@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Drone Box Test Checklist</title>
+<style>
+:root{
+  --bg:#f3f1ec; --panel:#fffdf9; --ink:#1d1c1a; --muted:#6a665e; --line:#dcd6cb;
+  --pass:#2f7d4f; --fail:#b8402b; --skip:#8a7f6a; --accent:#c4651a; --chip:#efeae1;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141312; --panel:#1d1c1a; --ink:#ece8dd; --muted:#9a958b; --line:#34312c;
+    --pass:#4fb878; --fail:#e5604a; --skip:#a89d86; --accent:#f0a040; --chip:#26241f;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141312; --panel:#1d1c1a; --ink:#ece8dd; --muted:#9a958b; --line:#34312c;
+  --pass:#4fb878; --fail:#e5604a; --skip:#a89d86; --accent:#f0a040; --chip:#26241f;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 80px}
+h1{font-size:24px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.card h2{font-size:17px;margin:0 0 10px}
+.intro p{margin:6px 0}
+.env{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+input[type=text],textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%}
+textarea{min-height:56px;resize:vertical}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line);margin-bottom:16px}
+.progress{flex:1;min-width:200px}
+.meter{height:8px;border-radius:4px;background:var(--chip);overflow:hidden;display:flex}
+.meter span{display:block;height:100%}
+.counts{font-size:13px;color:var(--muted);margin-top:4px}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.item{border-top:1px solid var(--line);padding:12px 0;display:grid;grid-template-columns:52px 1fr auto;gap:4px 12px;align-items:start}
+.item:first-of-type{border-top:0}
+.id{font:600 12px ui-monospace,monospace;color:var(--muted);padding-top:3px}
+.step{font-weight:600}
+.expect{color:var(--muted);font-size:14px}
+.expect::before{content:"Expect: ";font-weight:600}
+.choices{display:flex;gap:6px}
+.choices button{padding:4px 10px;font-size:13px;min-width:52px}
+.choices button[aria-pressed="true"][data-v="pass"]{background:var(--pass);border-color:var(--pass);color:#fff}
+.choices button[aria-pressed="true"][data-v="fail"]{background:var(--fail);border-color:var(--fail);color:#fff}
+.choices button[aria-pressed="true"][data-v="skip"]{background:var(--skip);border-color:var(--skip);color:#fff}
+.note{grid-column:2 / 4}
+.note textarea{min-height:40px}
+.note.hide{display:none}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (max-width:640px){
+  .item{grid-template-columns:1fr}
+  .note{grid-column:1}
+  .choices{order:3}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Drone Box Test Checklist</h1>
+  <p class="sub">Timster's Audio Works · for Drone Box <b id="verLabel">v0.2.0</b></p>
+
+  <div class="card intro">
+    <h2>How this works</h2>
+    <p>Thanks for testing! Work through the checks below with Drone Box open. Mark each one <b>Pass</b>, <b>Fail</b> or <b>Skip</b> (skip anything you can't try). When something fails, a box opens: say what happened instead.</p>
+    <p>Your answers are saved in this browser as you go, so you can stop and come back. When you're done, click <b>Copy report</b> or <b>Download report</b> and send the result back.</p>
+    <p>Use headphones or speakers at a <b>low volume</b> to start with. Drones can build up, and some settings get loud.</p>
+  </div>
+
+  <div class="card">
+    <h2>Your setup</h2>
+    <div class="env">
+      <label class="f">Your name<input type="text" data-env="name" placeholder="So we know who to ask"></label>
+      <label class="f">Operating system<input type="text" data-env="os"></label>
+      <label class="f">Browser and version<input type="text" data-env="browser"></label>
+      <label class="f">Screen size and scaling<input type="text" data-env="screen"></label>
+      <label class="f">How you opened it<input type="text" data-env="launch" placeholder="Launcher, or the file in a tab"></label>
+      <label class="f">Audio output<input type="text" data-env="audio" placeholder="Speakers, headphones, interface…"></label>
+    </div>
+  </div>
+
+  <div class="bar">
+    <div class="progress">
+      <div class="meter" aria-hidden="true"><span id="mPass" style="background:var(--pass)"></span><span id="mFail" style="background:var(--fail)"></span><span id="mSkip" style="background:var(--skip)"></span></div>
+      <div class="counts" id="counts"></div>
+    </div>
+    <button class="primary" id="copyBtn">Copy report</button>
+    <button id="dlBtn">Download report</button>
+    <button id="resetBtn">Start over</button>
+  </div>
+
+  <div id="sections"></div>
+
+  <div class="card">
+    <h2>Overall impressions</h2>
+    <label class="f">What did you like? What felt awkward or confusing? What would you want next?<textarea data-env="overall" rows="5"></textarea></label>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const VERSION = '0.2.0';
+const STORE = 'dronebox.testrun.' + VERSION;
+
+// Each check: [id, what to do, what should happen]
+const SECTIONS = [
+  ['Setup and launch', [
+    ['L1', 'Extract the zip (right-click > Extract All on Windows), then double-click the launcher for your system.', 'Drone Box opens in its own window with no address bar, tabs or toolbars.'],
+    ['L2', 'Check which browser opened it.', 'Your default browser, if it is Chrome, Edge, Brave or Vivaldi; otherwise one of those that is installed.'],
+    ['L3', 'Run the launcher again with Drone Box already open.', 'A second Drone Box window opens; nothing breaks.'],
+    ['L4', 'Open drone-box.html directly in a normal browser tab (double-click or drag it in).', 'It works in a tab too.'],
+  ]],
+  ['Panel and display', [
+    ['P1', 'Look at the whole panel at your normal window size.', 'Everything fits with no scrolling: header, six oscillators, Monitor/Root/Noise, and the bottom row (LFOs, Filter, Swell, Delay, Reverb).'],
+    ['P2', 'Resize the window smaller and larger, and maximise it.', 'The whole panel shrinks or grows as one piece and never needs scrolling.'],
+    ['P3', 'Click Panel: Silver, then back to Black.', 'The panel switches between a brushed silver and a black look; everything stays readable.'],
+    ['P4', 'Click Knobs: Pointer, then back to Colour.', 'Colour: blue, green and red knob tops. Pointer: black knobs with coloured pointers.'],
+    ['P5', 'Close and reopen Drone Box.', 'Your Panel and Knobs choices are remembered, and so is the last patch.'],
+    ['P6', 'Look under every knob and fader.', 'Each one has a small red value readout. Nothing pops up on hover.'],
+  ]],
+  ['Controls', [
+    ['C1', 'Drag a knob up and down (for example OSC 1 Detune).', 'It turns smoothly, the readout changes, and the top LED display shows the control name and value.'],
+    ['C2', 'Hold Shift while dragging a knob.', 'It moves much more slowly, for fine adjustment.'],
+    ['C3', 'Click a knob, then press the Up and Down arrow keys.', 'It moves in small steps.'],
+    ['C4', 'Click Root A4 Tune, then press Shift+Up five times and Shift+Down five times.', 'It goes 440.1, 440.2 … 440.5 and back to exactly 440.0.'],
+    ['C5', 'Double-click a knob after moving it.', 'It jumps back to the value it had when the patch loaded.'],
+    ['C6', 'Drag a fader cap; then click somewhere else on its track.', 'Dragging moves it smoothly; clicking the track jumps the cap there.'],
+    ['C7', 'Turn a stepped knob (Wave, Interval, Octave or Note).', 'It clicks from one setting to the next, and the readout shows the setting name.'],
+  ]],
+  ['Sound basics', [
+    ['S1', 'Click Play / Stop (or press Space).', 'The sound swells in slowly; the Play LED lights; the meters, scope and spectrum move.'],
+    ['S2', 'Press Space again.', 'The sound fades out slowly and the display shows FADE, then STOP.'],
+    ['S3', 'While playing, move several knobs quickly.', 'No clicks, pops or crackles.'],
+    ['S4', 'Change Volume (top strip).', 'The overall level follows the knob.'],
+    ['S5', 'Leave it playing for 10 minutes or more.', 'No dropouts, glitches or growing distortion; your computer stays responsive.'],
+    ['S6', 'Switch to another app or minimise the window for a minute, then come back.', 'The sound keeps playing without glitches.'],
+  ]],
+  ['Oscillators', [
+    ['O1', 'On one oscillator, try every Wave.', 'Each sounds different: Sine is pure, Saw is bright, Organ is rich, and so on.'],
+    ['O2', 'Change Interval and Octave on OSC 2.', 'Its pitch changes and its Hz readout updates. 3/2 sounds like a pure fifth over OSC 1.'],
+    ['O3', 'Set two oscillators to the same pitch and move Detune on one slightly.', 'You hear slow beating that speeds up as you detune further.'],
+    ['O4', 'Turn Drift up on an oscillator.', 'Its pitch wanders slowly and slightly.'],
+    ['O5', 'Move Pan and Level on an oscillator.', 'It moves left and right, and gets louder and quieter.'],
+    ['O6', 'Click Mute on an oscillator, then click it again.', 'It goes silent and its strip dims; it comes back when unmuted.'],
+    ['O7', 'Click Solo on OSC 2, then also on OSC 5.', 'Only the soloed oscillators play; the others dim. Turning both solos off restores everything.'],
+    ['O8', 'Solo a muted oscillator.', 'You hear it (solo overrides mute).'],
+  ]],
+  ['Stage 2 sound', [
+    ['T1', 'Turn up Fold on an oscillator (try a Sine or Triangle).', 'The tone gets brighter and more metallic as Fold increases.'],
+    ['T2', 'Turn up FM on OSC 2 (it is modulated by OSC 1).', 'The tone becomes bell-like or clangorous; more FM, more complex.'],
+    ['T3', 'Mute OSC 6, then turn up FM on OSC 1.', 'OSC 1 still changes tone: a muted oscillator still works as a modulator.'],
+    ['T4', 'Set Filter type to Ladder, then sweep Cutoff and raise Reso.', 'A smooth, warm sweep; at high Reso it rings or whistles.'],
+    ['T5', 'With Ladder selected, turn up Drive.', 'The sound thickens and saturates.'],
+    ['T6', 'In Noise, raise Level and try White, Pink and Brown.', 'Hiss that gets darker from White to Brown; the filter shapes it.'],
+    ['T7', 'With noise up, solo any oscillator.', 'The noise goes silent while a solo is on.'],
+  ]],
+  ['Modulation and effects', [
+    ['M1', 'Set LFO 1 Destination to Filter and raise Depth.', 'The tone opens and closes slowly in a cycle.'],
+    ['M2', 'Try LFO destinations Pitch, Volume and Pan, and each Wave shape.', 'Pitch wobbles, volume pulses, and the sound moves across the stereo field.'],
+    ['M3', 'Change Rate on an LFO.', 'The movement speeds up or slows down; the readout shows seconds per cycle or Hz.'],
+    ['M4', 'Try the Filter types LPF, BPF, HPF and Notch.', 'Each changes the character: muffled, nasal, thin, hollow.'],
+    ['M5', 'Change Swell Fade In and Fade Out, then play and stop.', 'The sound swells and fades over the times shown.'],
+    ['M6', 'Raise Delay Amount and Feedback; change Time and Tone.', 'Echoes that repeat and get darker; Time changes their spacing.'],
+    ['M7', 'Raise Reverb Amount and Decay.', 'A larger, longer space around the sound.'],
+  ]],
+  ['Patches', [
+    ['R1', 'Load every factory patch from the menu in the top strip.', 'Each loads and sounds different, with no errors.'],
+    ['R2', 'Click Random a few times.', 'A new, usually consonant patch each time.'],
+    ['R3', 'Click Save and give the patch a name; load another patch; then load yours again.', 'Your patch comes back exactly as you saved it.'],
+    ['R4', 'Click Export, then Import the file you just saved.', 'A .dronebox.json file downloads, and importing it restores the patch.'],
+    ['R5', 'Delete your saved patch.', 'It disappears from the menu.'],
+  ]],
+  ['Other browsers and devices (optional)', [
+    ['B1', 'Open drone-box.html in Firefox.', 'It works (note anything that looks or sounds different).'],
+    ['B2', 'Open drone-box.html in Safari (Mac).', 'It works (note anything that looks or sounds different).'],
+    ['B3', 'Open it on a phone or tablet.', 'Sections stack vertically and the controls can be used by touch.'],
+  ]],
+];
+
+/* ---------- State ---------- */
+let state = { env: {}, results: {} };
+try { const s = JSON.parse(localStorage.getItem(STORE)); if (s && s.results) state = s; } catch (_) {}
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (_) {} };
+const $ = s => document.querySelector(s);
+const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
+
+/* ---------- Environment (pre-filled where the browser can tell) ---------- */
+function guessBrowser(){
+  const ua = navigator.userAgent;
+  const brands = (navigator.userAgentData && navigator.userAgentData.brands || []).map(b => b.brand + ' ' + b.version);
+  if (navigator.brave) return 'Brave ' + ((ua.match(/Chrome\/(\d+)/) || [])[1] || '');
+  if (/Edg\//.test(ua)) return 'Edge ' + ua.match(/Edg\/(\d+)/)[1];
+  if (/Firefox\//.test(ua)) return 'Firefox ' + ua.match(/Firefox\/(\d+)/)[1];
+  if (/Chrome\//.test(ua)) return 'Chrome ' + ua.match(/Chrome\/(\d+)/)[1];
+  if (/Safari\//.test(ua)) return 'Safari ' + ((ua.match(/Version\/(\d+)/) || [])[1] || '');
+  return brands.join(', ') || ua;
+}
+function guessOS(){
+  const ua = navigator.userAgent;
+  if (/Windows/.test(ua)) return 'Windows';
+  if (/Mac OS X/.test(ua)) return /iPhone|iPad/.test(ua) ? 'iOS' : 'macOS';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Linux/.test(ua)) return 'Linux';
+  return '';
+}
+const guesses = {
+  os: guessOS(), browser: guessBrowser(),
+  screen: `${screen.width}×${screen.height} at ${Math.round((window.devicePixelRatio || 1) * 100)}%`
+};
+document.querySelectorAll('[data-env]').forEach(inp => {
+  const k = inp.dataset.env;
+  if (state.env[k] == null && guesses[k]) state.env[k] = guesses[k];   // pre-filled guesses count as answers
+  inp.value = state.env[k] ?? '';
+  inp.addEventListener('input', () => { state.env[k] = inp.value; save(); });
+});
+save();
+
+/* ---------- Checklist ---------- */
+const ALL = SECTIONS.flatMap(([, items]) => items);
+function render(){
+  const root = $('#sections'); root.replaceChildren();
+  for (const [title, items] of SECTIONS){
+    const card = el('div', 'card'); card.append(el('h2', null, title));
+    for (const [id, step, expect] of items){
+      const row = el('div', 'item');
+      const r = state.results[id] || {};
+      const choices = el('div', 'choices');
+      const note = el('label', 'f note' + (r.v === 'fail' || r.note ? '' : ' hide'));
+      const ta = el('textarea'); ta.placeholder = 'What happened instead? Any detail helps.'; ta.value = r.note || '';
+      ta.addEventListener('input', () => { (state.results[id] ||= {}).note = ta.value; save(); });
+      note.append(ta);
+      for (const [v, label] of [['pass', 'Pass'], ['fail', 'Fail'], ['skip', 'Skip']]){
+        const b = el('button', null, label); b.type = 'button'; b.dataset.v = v;
+        b.setAttribute('aria-pressed', r.v === v);
+        b.setAttribute('aria-label', `${id} ${label}`);
+        b.addEventListener('click', () => {
+          const cur = state.results[id] || {};
+          cur.v = cur.v === v ? undefined : v;
+          state.results[id] = cur; save();
+          choices.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x.dataset.v === cur.v));
+          note.classList.toggle('hide', !(cur.v === 'fail' || cur.note));
+          if (cur.v === 'fail') ta.focus();
+          tally();
+        });
+        choices.append(b);
+      }
+      const text = el('div'); text.append(el('div', 'step', step), el('div', 'expect', expect));
+      row.append(el('div', 'id', id), text, choices, note);
+      card.append(row);
+    }
+    root.append(card);
+  }
+  tally();
+}
+function tally(){
+  const c = { pass: 0, fail: 0, skip: 0 };
+  for (const [id] of ALL){ const v = (state.results[id] || {}).v; if (v) c[v]++; }
+  const n = ALL.length, done = c.pass + c.fail + c.skip;
+  $('#counts').textContent = `${done} of ${n} checked · ${c.pass} pass · ${c.fail} fail · ${c.skip} skipped`;
+  $('#mPass').style.width = (c.pass / n * 100) + '%';
+  $('#mFail').style.width = (c.fail / n * 100) + '%';
+  $('#mSkip').style.width = (c.skip / n * 100) + '%';
+  return c;
+}
+
+/* ---------- Report ---------- */
+function report(){
+  const c = tally(), e = state.env;
+  const lines = [`# Drone Box v${VERSION} test report`, '',
+    `- **Tester:** ${e.name || '—'}`, `- **OS:** ${e.os || '—'}`, `- **Browser:** ${e.browser || '—'}`,
+    `- **Screen:** ${e.screen || '—'}`, `- **Opened with:** ${e.launch || '—'}`, `- **Audio:** ${e.audio || '—'}`,
+    `- **Result:** ${c.pass} pass, ${c.fail} fail, ${c.skip} skipped, ${ALL.length - c.pass - c.fail - c.skip} not checked`, ''];
+  const failed = ALL.filter(([id]) => (state.results[id] || {}).v === 'fail');
+  lines.push('## Failures', '');
+  if (!failed.length) lines.push('None.', '');
+  for (const [id, step, expect] of failed){
+    lines.push(`### ${id}: ${step}`, `- Expected: ${expect}`, `- What happened: ${(state.results[id].note || '(no note)').trim()}`, '');
+  }
+  const notes = ALL.filter(([id]) => { const r = state.results[id] || {}; return r.v !== 'fail' && r.note && r.note.trim(); });
+  if (notes.length){
+    lines.push('## Other notes', '');
+    for (const [id] of notes) lines.push(`- **${id}:** ${state.results[id].note.trim()}`);
+    lines.push('');
+  }
+  if ((e.overall || '').trim()) lines.push('## Overall impressions', '', e.overall.trim(), '');
+  lines.push('## All checks', '', '| Check | Result |', '|---|---|');
+  for (const [title, items] of SECTIONS) for (const [id, step] of items){
+    const v = (state.results[id] || {}).v;
+    lines.push(`| ${id} ${step.replace(/\|/g, '/')} | ${v ? v[0].toUpperCase() + v.slice(1) : '—'} |`);
+  }
+  return lines.join('\n');
+}
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1800); }
+$('#copyBtn').addEventListener('click', async () => {
+  const text = report();
+  try { await navigator.clipboard.writeText(text); toast('Report copied. Paste it into an email or message.'); }
+  catch (_) {
+    const ta = el('textarea'); ta.value = text; document.body.append(ta); ta.select();
+    try { document.execCommand('copy'); toast('Report copied.'); } catch (__) { toast('Copy failed: use Download report.'); }
+    ta.remove();
+  }
+});
+$('#dlBtn').addEventListener('click', () => {
+  const blob = new Blob([report()], { type: 'text/markdown' });
+  const a = el('a'); a.href = URL.createObjectURL(blob);
+  const who = (state.env.name || 'tester').replace(/[^\w-]+/g, '-');
+  a.download = `drone-box-${VERSION}-test-report-${who}.md`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+$('#resetBtn').addEventListener('click', () => {
+  if (!confirm('Clear all your answers and start over?')) return;
+  state = { env: {}, results: {} }; save(); location.reload();
+});
+$('#verLabel').textContent = 'v' + VERSION;
+render();
+</script>
+</body>
+</html>

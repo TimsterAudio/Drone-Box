@@ -225,6 +225,13 @@ function check(name, ok, detail = ''){
   await page.waitForTimeout(100);
   check('no sideways scroll at phone width', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)));
 
+  // Release hygiene: the panel shows VERSION, and the tester checklist is for the same version
+  const fs = require('fs');
+  const ver = f => (fs.readFileSync(path.resolve(__dirname, '..', f), 'utf8').match(/const VERSION = '([\d.]+)'/) || [])[1];
+  const appVer = ver('drone-box.html'), listVer = ver('testing/Drone Box Test Checklist.html');
+  check('tester checklist version matches the app', appVer && appVer === listVer, `app ${appVer}, checklist ${listVer}`);
+  check('panel shows the version', (await page.textContent('#ver')) === 'v' + appVer);
+
   check('no page errors', errors.length === 0, errors.join(' | '));
   await browser.close();
   console.log(failures ? `\n${failures} check(s) failed` : '\nAll checks passed');

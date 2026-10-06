@@ -1,6 +1,6 @@
 # Drone Box
 
-Timster's Audio Works · **v0.1.0**
+Timster's Audio Works · **v0.2.0**
 
 A drone synthesizer that runs entirely in one browser tab. It has no install, server or account, and nothing is sent anywhere.
 
@@ -83,7 +83,9 @@ These fonts are embedded in the file (base64 WOFF2), so it never fetches anythin
 | File | What it's for |
 |---|---|
 | [CHANGELOG.md](CHANGELOG.md) | What changed in each version |
-| [ROADMAP.md](ROADMAP.md) | Where it's heading, stage by stage, plus a backlog of small items |
+| [ROADMAP.md](ROADMAP.md) | The full plan and to-do list: stages, backlogs, known issues and ideas |
+| [TESTING.md](TESTING.md) | How to test: the tester checklist for people, and the automated smoke test |
+| `testing/Drone Box Test Checklist.html` | The offline checklist testers work through. It produces a report to send back. |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the code is laid out: audio graph, patch format, UI control system, how to add a parameter |
 | [docs/DESIGN.md](docs/DESIGN.md) | Panel design rules: colours, fonts, which control to use for what |
 | [CLAUDE.md](CLAUDE.md) | Working conventions for Claude Code sessions on this repo |

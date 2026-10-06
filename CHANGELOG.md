@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.2.0] — 2026-10-06
+
+The first part of Stage 2 plus a big panel update. Drone Box gets a new alias-free oscillator engine with Fold, FM, a ladder filter and noise; a 1920 × 900 panel that scales to any window; colour-coded knobs; and stand-alone app-window launchers. This is the release for the first round of outside testing.
+
 ### Added
 - Timster's Audio Works maker wordmark ("Timster's Audio Works - **Drone Box**") in the panel header, in the same style and font (Space Grotesk) as Spool's.
 - App icon (an amber sine wave on a dark rounded square, matching Spool's icon style) and the page title "Timster's Audio Works - Drone Box".
@@ -16,10 +22,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - **Noise** section: white, pink or brown noise with level and pan, running through the filter. It's silent while any oscillator is soloed.
 - Factory presets showing off the new features: **Folded Fifths**, **Metallic FM** and **Ladder Wind**.
 - If the browser can't run AudioWorklets, the synth falls back to the v0.1 sound and the display says "Basic audio mode".
-
 - **Knob colours by function:** blue for pitch, green for tone, red for modulation, and black for level and space. A new **Knobs** switch picks **Colour** (tinted knob tops, the default) or **Pointer** (black knobs with coloured pointers and scales). The choice is remembered.
-
 - **Stand-alone window launchers:** `Launch on Mac.command`, `Launch on Windows.bat` and `Launch on Linux.sh` open Drone Box in a clean app window, with no address bar, tabs or toolbars, at 1920 × 930. They use your default browser when it's Chromium-based (Chrome, Edge, Brave, Vivaldi, or Chromium on Linux), otherwise the first one installed, and they skip the browser's first-run and default-browser prompts. If none is found, they fall back to a normal browser tab. On Windows the page address is passed fully encoded and unquoted, so folders with spaces, apostrophes, `&` or brackets work.
+- **Testing kit:** `TESTING.md`, an offline tester checklist (`testing/Drone Box Test Checklist.html`) that produces a report to send back, and GitHub issue templates for bugs and ideas.
+- **Full roadmap:** `ROADMAP.md` now lists every planned stage (Keys and performance next, then Modulation, Effects, the Looper and more), plus backlogs, known issues and an ideas parking lot.
 - **Fit to window:** on desktop-sized windows, the whole panel scales to fit the window, so it never scrolls or wraps, whether in the app window, on a 1366 × 768 laptop or on a large monitor. Phone-width windows keep the stacked layout.
 
 ### Changed
@@ -80,5 +86,6 @@ The foundation release: a complete six-oscillator drone synth with a Jupiter-sty
 - Save and delete your own patches in browser storage. The current patch is autosaved and restored on reload.
 - Export and import patches as `.dronebox.json` files. Imports are merged onto defaults, so partial or older files still load.
 
-[Unreleased]: https://github.com/TimsterAudio/Drone-Box/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/TimsterAudio/Drone-Box/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/TimsterAudio/Drone-Box/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/TimsterAudio/Drone-Box/releases/tag/v0.1.0

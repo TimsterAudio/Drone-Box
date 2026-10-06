@@ -155,12 +155,4 @@ Colours are CSS custom properties on `:root`. `[data-theme="silver"]` overrides 
 
 ## Testing
 
-`tests/smoke.js` loads the page in headless Chromium (Playwright). It checks:
-- audio plays
-- every factory preset loads
-- the knobs, faders and buttons change the patch
-- mute and solo silence the right oscillators
-- the layout doesn't overflow at phone width
-- there are no page errors
-
-Run it before every merge (see the README).
+See [TESTING.md](../TESTING.md). `tests/smoke.js` is the automated check run before every merge. `testing/Drone Box Test Checklist.html` is the manual checklist for human testers. It's a separate offline page, not part of the instrument.

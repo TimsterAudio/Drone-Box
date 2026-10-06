@@ -25,9 +25,10 @@ Things that stay the same on both panels, as on real hardware: the black knobs a
 
 | Use | Font | Treatment |
 |---|---|---|
+| Maker wordmark ("Timster's Audio Works - **Drone Box**") | Space Grotesk 500/700 | same badge treatment as Spool: 13px in a thin 3px-radius frame, product name bold |
 | Logo, oscillator numbers | Michroma | wide; the logo is slanted −12° like the Jupiter badge |
 | Panel legends, section titles, key labels | Barlow Semi Condensed 600/700 | uppercase, letter-spaced 0.1–0.2em, 10.5–12px |
-| Displays, tooltips, readouts | Share Tech Mono | uppercase, red with a soft glow |
+| Displays and value readouts | Share Tech Mono | uppercase, red with a soft glow |
 
 ## Which control to use
 
@@ -35,9 +36,30 @@ Things that stay the same on both panels, as on real hardware: the black knobs a
 |---|---|
 | Levels, envelope times, filter cutoff and resonance, LFO rate and depth | **Fader**, as on the Jupiter-8 |
 | Continuous settings such as detune, pan, drift, effects and master | **Knob** |
-| A list of more than 5 choices (wave, interval, octave, note) | **Stepped knob**, orange pointer, with a small readout display |
-| Up to about 5 choices (filter type, LFO destination and wave) | **LED button row** |
+| A list of more than 5 choices (wave, interval, octave, note) | **Stepped knob**: it clicks between settings |
+| Up to about 5 choices (filter type, LFO destination and wave, noise colour) | **LED button row** |
 | On/off state (mute, solo, play) | **Single LED button**: the LED lit means engaged |
+
+## Value readouts
+
+**Every knob and fader has a permanent small red readout under its label.** There are no hover pop-ups. The main LED display also shows the name and value of the last control touched. LED buttons don't need a readout, because their lit LED shows the state.
+
+## Knob colours
+
+Knob colour shows **what a control does**, and each colour means the same thing everywhere on the panel. Colours are muted so they read on both panels.
+
+| Family | Colour | Controls |
+|---|---|---|
+| Pitch (`fam: 'pitch'`) | blue `#4f8cc9` | Interval, Octave, Detune, Drift; Root Note, Octave, A4, Glide |
+| Tone (`fam: 'tone'`) | green `#5aa86f` | Wave, Fold, FM; Filter Cutoff, Reso, Drive |
+| Modulation (`fam: 'mod'`) | red `#d24b33` | LFO Rate and Depth |
+| Level and space (no family) | black | Level, Pan, Noise, Swell, Delay, Reverb, Volume |
+
+The **Knobs** switch in the top strip picks between two styles, and the choice is remembered:
+- **Colour** (default): the knob top is tinted with the family colour, and the pointer is white.
+- **Pointer:** the knob stays black, and only the pointer and its tick scale take the family colour.
+
+In both styles, a fader's cap line takes the family colour.
 
 ## Key colours
 
@@ -51,8 +73,14 @@ Things that stay the same on both panels, as on real hardware: the black knobs a
 
 ## Layout
 
-- The top strip holds the logo, the LED display, the meters, master volume, the panel switch and Play/Stop.
-- Then rows of outlined sections: Monitor and Memory, then Oscillators, then Root, LFO 1, LFO 2, Filter, Swell, Delay and Reverb.
+- **Design target: a 1920 × 900 window.** At that size the whole instrument fits without scrolling (the smoke test checks this).
+- The top strip holds the logo, the LED display, Memory (patch menu and buttons), the meters, master volume, the Panel and Knobs switches, and Play/Stop.
+- Row 2: the six oscillator strips on the left, and a side column with Monitor (the scope and spectrum, which stretch to fill it) above Root and Noise.
+- Row 3: LFO 1, LFO 2, Filter, Swell, Delay and Reverb.
+- **Fit to window:** in windows 1000 px wide or more, the page is always laid out at the 1920 px design width, and the whole page is scaled with CSS `zoom` to fit the window (`fitToWindow()`). It never scrolls and never re-wraps, so the panel looks the same on a laptop, in the app window and on a large monitor; only the size changes.
+- **Phones:** below 1000 px wide, the normal wrapping layout applies. The side column drops below the oscillators, and sections flow onto more rows.
+- **Width budget:** the bottom row (LFO 1, LFO 2, Filter, Swell, Delay, Reverb) has only about 40 px to spare at 1920 px. Widen anything there with care; the smoke test checks that it stays on one row at several zoom levels.
+- Each oscillator strip has a 2-column grid of small knobs: Wave and Octave, Interval and Detune, Pan and Drift, Fold and FM. A tall Level fader runs beside them, as tall as the grid.
 - Oscillator strips are a fixed 182 px wide, so all six line up evenly. They sit on one row from about 1,200 px wide and wrap below that.
 - At phone width, sections stack and the page never scrolls sideways.
 
@@ -60,5 +88,11 @@ Things that stay the same on both panels, as on real hardware: the black knobs a
 
 - **Knobs** turn through 270° (−135° to +135°). Drag up or right to increase, and use Shift for fine control.
 - **Faders:** dragging the cap moves it relative to where you grabbed it. Clicking the track jumps to that point.
-- **Feedback:** while a control is hovered, dragged or focused, a tooltip shows its value. Every change also shows on the main LED display.
-- **Keyboard:** controls can be focused. Arrow keys, Page Up/Down and Home/End adjust them, and there's an orange focus ring.
+- **Feedback:** each control's own readout always shows its value, and every change also shows on the main LED display.
+- **Keyboard:** controls can be focused, with an orange focus ring.
+  - Arrow keys move 1% of the travel. **Shift + arrow** moves exactly one step of the control's value grid.
+  - Page Up/Down move 10%, and Home/End jump to the ends.
+- **Value grid:** every continuous control snaps to exact values, so whatever the readout shows is exactly what's stored:
+  - an explicit step where one is set, such as 0.1 Hz (A4) or 0.1¢ (Detune, Drift)
+  - otherwise 1% for linear controls (levels, amounts, pan)
+  - otherwise 3 significant figures for log controls (Cutoff, Reso, Glide, Rate, times)

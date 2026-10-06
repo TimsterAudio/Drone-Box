@@ -8,6 +8,42 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 _Nothing yet._
 
+## [0.2.0] — 2026-10-06
+
+The first part of Stage 2 plus a big panel update. Drone Box gets a new alias-free oscillator engine with Fold, FM, a ladder filter and noise; a 1920 × 900 panel that scales to any window; colour-coded knobs; and stand-alone app-window launchers. This is the release for the first round of outside testing.
+
+### Added
+- Timster's Audio Works maker wordmark ("Timster's Audio Works - **Drone Box**") in the panel header, in the same style and font (Space Grotesk) as Spool's.
+- App icon (an amber sine wave on a dark rounded square, matching Spool's icon style) and the page title "Timster's Audio Works - Drone Box".
+- **New oscillator engine (Stage 2).** The oscillators now run as AudioWorklets, playing band-limited wavetables, so high notes and pitch sweeps stay free of aliasing.
+- **Fold** knob on each oscillator: a sine wavefolder that adds bright, metallic overtones.
+- **FM** knob on each oscillator. Each one is frequency-modulated by the previous one (OSC 6 modulates OSC 1). A muted oscillator still works as a modulator.
+- **Ladder** filter type: a four-pole ladder low-pass with saturation, plus a **Drive** knob for it.
+- **Noise** section: white, pink or brown noise with level and pan, running through the filter. It's silent while any oscillator is soloed.
+- Factory presets showing off the new features: **Folded Fifths**, **Metallic FM** and **Ladder Wind**.
+- If the browser can't run AudioWorklets, the synth falls back to the v0.1 sound and the display says "Basic audio mode".
+- **Knob colours by function:** blue for pitch, green for tone, red for modulation, and black for level and space. A new **Knobs** switch picks **Colour** (tinted knob tops, the default) or **Pointer** (black knobs with coloured pointers and scales). The choice is remembered.
+- **Stand-alone window launchers:** `Launch on Mac.command`, `Launch on Windows.bat` and `Launch on Linux.sh` open Drone Box in a clean app window, with no address bar, tabs or toolbars, at 1920 × 930. They use your default browser when it's Chromium-based (Chrome, Edge, Brave, Vivaldi, or Chromium on Linux), otherwise the first one installed, and they skip the browser's first-run and default-browser prompts. If none is found, they fall back to a normal browser tab. On Windows the page address is passed fully encoded and unquoted, so folders with spaces, apostrophes, `&` or brackets work.
+- **Testing kit:** `TESTING.md`, an offline tester checklist (`testing/Drone Box Test Checklist.html`) that produces a report to send back, and GitHub issue templates for bugs and ideas.
+- **Full roadmap:** `ROADMAP.md` now lists every planned stage (Keys and performance next, then Modulation, Effects, the Looper and more), plus backlogs, known issues and an ideas parking lot.
+- **Fit to window:** on desktop-sized windows, the whole panel scales to fit the window, so it never scrolls or wraps, whether in the app window, on a 1366 × 768 laptop or on a large monitor. Phone-width windows keep the stacked layout.
+
+### Changed
+- **The panel is laid out for a 1920 × 900 window** and fits it without scrolling:
+  - Memory moves into the top strip.
+  - The oscillators sit beside a column with Monitor, Root and Noise.
+  - The LFOs, Filter, Swell, Delay and Reverb share one row.
+  - The scope and spectrum are taller.
+  - Smaller windows still wrap, down to phone width.
+- **Value readouts are consistent:** every knob and fader now has a permanent red readout, and the hover pop-ups are gone. Before, only some knobs had a permanent readout and all of them showed a pop-up on hover.
+- Delay's four knobs sit in one row, and Reverb's two sit side by side.
+- The oscillator Level faders are taller, to match the extra row of knobs.
+- Patches gain new fields (`oscs[].fold`, `oscs[].fm`, `filter.drive`, `noise`). Older patches load with all of them off and sound as they did.
+
+### Fixed
+- **Fine control lands on exact values.** Shift + arrow now moves exactly one step: 0.1 Hz on A4 Tune, 0.1¢ on Detune, 1% on levels and amounts, 1 unit on Pan, and 3 significant figures on log controls such as Cutoff, Glide and Rate. Before, it moved by a fraction of the travel, which rounded to uneven 0.1 and 0.2 jumps and could skip values such as 440.0 Hz.
+- Dragging and plain arrow keys also land on that same grid, so stored values are exact (50%, not 49.73%). Arrow steps are measured from the current value, so they no longer drift.
+
 ## [0.1.0] — 2026-10-05
 
 The foundation release: a complete six-oscillator drone synth with a Jupiter-style hardware panel, in a single offline HTML file.
@@ -50,5 +86,6 @@ The foundation release: a complete six-oscillator drone synth with a Jupiter-sty
 - Save and delete your own patches in browser storage. The current patch is autosaved and restored on reload.
 - Export and import patches as `.dronebox.json` files. Imports are merged onto defaults, so partial or older files still load.
 
-[Unreleased]: https://github.com/TimsterAudio/Drone-Box/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/TimsterAudio/Drone-Box/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/TimsterAudio/Drone-Box/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/TimsterAudio/Drone-Box/releases/tag/v0.1.0

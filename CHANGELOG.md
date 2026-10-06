@@ -31,6 +31,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - The oscillator Level faders are taller, to match the extra row of knobs.
 - Patches gain new fields (`oscs[].fold`, `oscs[].fm`, `filter.drive`, `noise`). Older patches load with all of them off and sound as they did.
 
+### Fixed
+- **Fine control lands on exact values.** Shift + arrow now moves exactly one step: 0.1 Hz on A4 Tune, 0.1¢ on Detune, 1% on levels and amounts, 1 unit on Pan, and 3 significant figures on log controls such as Cutoff, Glide and Rate. Before, it moved by a fraction of the travel, which rounded to uneven 0.1 and 0.2 jumps and could skip values such as 440.0 Hz.
+- Dragging and plain arrow keys also land on that same grid, so stored values are exact (50%, not 49.73%). Arrow steps are measured from the current value, so they no longer drift.
+
 ## [0.1.0] — 2026-10-05
 
 The foundation release: a complete six-oscillator drone synth with a Jupiter-style hardware panel, in a single offline HTML file.

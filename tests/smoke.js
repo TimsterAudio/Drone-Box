@@ -132,6 +132,48 @@ function check(name, ok, detail = ''){
   });
   check('v0.1 patches load with new settings off', old);
 
+  // Fine control: Shift+arrow moves exactly one grid step, and every control lands on exact values
+  await page.evaluate(() => { loadPatch(FACTORY.find(x => x.name === 'Init')); });
+  const ctl = (sec, label) => page.locator('.sec', { has: page.locator('h3', { hasText: new RegExp('^' + sec + '$') }) })
+    .locator('.cw', { has: page.locator('.cl', { hasText: new RegExp('^' + label + '$') }) }).locator('.knob, .fader').first();
+  await ctl('Root', 'A4 Tune').focus();
+  const a4 = [];
+  for (let i = 0; i < 5; i++){ await page.keyboard.press('Shift+ArrowUp'); a4.push(await page.evaluate(() => patch.root.a4)); }
+  for (let i = 0; i < 5; i++){ await page.keyboard.press('Shift+ArrowDown'); a4.push(await page.evaluate(() => patch.root.a4)); }
+  check('A4 fine steps are exactly 0.1 Hz', a4.join(' ') === '440.1 440.2 440.3 440.4 440.5 440.4 440.3 440.2 440.1 440', a4.join(' '));
+  await ctl('Filter', 'Cutoff').focus();
+  await page.keyboard.press('Shift+ArrowUp');
+  check('log control fine step is 3 significant figures', await page.evaluate(() => patch.filter.cutoff) === 4010);
+  // Every continuous knob and fader: Shift+Up then Shift+Down returns exactly to where it was.
+  const roundTrip = await page.evaluate(async () => {
+    const bad = [];
+    const nodes = [...document.querySelectorAll('.knob:not(.step), .fader')];
+    for (const n of nodes){
+      const label = n.closest('.cw').querySelector(':scope > .cl').textContent;
+      const read = () => n.getAttribute('aria-valuetext');
+      const key = (k) => n.dispatchEvent(new KeyboardEvent('keydown', {key: k, shiftKey: true, bubbles: true}));
+      const before = read();
+      key('ArrowDown'); key('ArrowUp');    // move off and back (handles controls sitting at their maximum)
+      const mid = read();
+      key('ArrowUp'); key('ArrowDown');
+      if (read() !== mid) bad.push(label + ': ' + mid + ' -> ' + read());
+    }
+    return {count: nodes.length, bad};
+  });
+  check('every control returns exactly after fine up/down', roundTrip.bad.length === 0, `${roundTrip.count} controls ${roundTrip.bad.slice(0, 4).join('; ')}`);
+  const onGrid = await page.evaluate(() => {
+    const vals = [...patch.oscs.flatMap(o => [o.level, o.pan, o.fold, o.fm]), patch.master.volume, patch.delay.mix, patch.reverb.mix, patch.lfos[0].depth];
+    return vals.every(v => Math.abs(v * 100 - Math.round(v * 100)) < 1e-9);
+  });
+  check('percent and pan values sit on the 1% grid', onGrid);
+  const fold0 = page.locator('.ostrip').first().locator('.cw', { has: page.locator('.cl', { hasText: /^Fold$/ }) }).locator('.knob');
+  await fold0.scrollIntoViewIfNeeded();
+  const fb0 = await fold0.boundingBox();
+  await page.mouse.move(fb0.x + fb0.width / 2, fb0.y + fb0.height / 2); await page.mouse.down();
+  await page.mouse.move(fb0.x + fb0.width / 2, fb0.y - 37, { steps: 7 }); await page.mouse.up();
+  const foldV = await page.evaluate(() => patch.oscs[0].fold);
+  check('dragged values land on the grid', foldV > 0.2 && Math.abs(foldV * 100 - Math.round(foldV * 100)) < 1e-9, String(foldV));
+
   // Readouts: every knob and fader has a permanent value display, and there are no hover pop-ups
   const ro = await page.evaluate(() => ({
     controls: document.querySelectorAll('.knob, .fader').length,

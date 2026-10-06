@@ -87,4 +87,10 @@ In both styles, a fader's cap line takes the family colour.
 - **Knobs** turn through 270° (−135° to +135°). Drag up or right to increase, and use Shift for fine control.
 - **Faders:** dragging the cap moves it relative to where you grabbed it. Clicking the track jumps to that point.
 - **Feedback:** each control's own readout always shows its value, and every change also shows on the main LED display.
-- **Keyboard:** controls can be focused. Arrow keys, Page Up/Down and Home/End adjust them, and there's an orange focus ring.
+- **Keyboard:** controls can be focused, with an orange focus ring.
+  - Arrow keys move 1% of the travel. **Shift + arrow** moves exactly one step of the control's value grid.
+  - Page Up/Down move 10%, and Home/End jump to the ends.
+- **Value grid:** every continuous control snaps to exact values, so whatever the readout shows is exactly what's stored:
+  - an explicit step where one is set, such as 0.1 Hz (A4) or 0.1¢ (Detune, Drift)
+  - otherwise 1% for linear controls (levels, amounts, pan)
+  - otherwise 3 significant figures for log controls (Cutoff, Reso, Glide, Rate, times)

@@ -130,6 +130,7 @@ hwButton(text, colorClass, iconSvg?)                                           /
 - `get` and `set` read and write the patch. `set` should also call the right `engine.apply…()` and `changed()` (which autosaves).
 - `fam` is the colour family: `'pitch'`, `'tone'` or `'mod'`, or leave it out for neutral (see DESIGN.md).
 - Every knob and fader gets a permanent readout under its label. `short(value)` can give a shorter text for that readout than `fmt`; the Interval knob uses it to show just the ratio.
+- `step` sets a control's value grid. Without one, linear controls snap to 0.01 and log controls to 3 significant figures (`mapper().quant`). Shift + arrow calls `mapper().nudge`, which moves exactly one grid step from the current value.
 - `name` is what the LED display shows, for example "Osc 3 detune". It defaults to `label`.
 - `render()` rebuilds the whole panel from `patch`. It runs on boot and on every patch load, so controls hold no state of their own.
 

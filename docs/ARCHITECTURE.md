@@ -34,7 +34,7 @@ The `<script>` block is split into sections with `/* ---------- Name ---------- 
 | Patches | the preset menu, save, delete, export, import, randomize |
 | Transport | Play/Stop, and `onKeyDown`/`onKeyUp` (Space, plus the Keys), attached to every window |
 | Visualisers | the scope, spectrum and segmented meters; `drawLoop(win)` runs one loop per window and draws the canvases that live in it |
-| Fit to window | `fitToWindow()`: lays the page out at 1920 px and scales it with CSS `zoom` to fit windows ≥ 1000 px wide |
+| Fit to window | `fitToWindow()`: lays the page out at 1920 px and scales it with CSS `zoom` to fit any window (there is no phone layout) |
 | Boot | starts everything |
 
 ## Audio graph

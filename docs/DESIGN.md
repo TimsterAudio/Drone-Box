@@ -78,12 +78,11 @@ In both styles, a fader's cap line takes the family colour.
 - Row 2: the six oscillator strips on the left, and a side column with Monitor (the scope and spectrum, which stretch to fill it) above Root and Noise.
 - Row 3: LFO 1, LFO 2, Filter, Swell, Delay and Reverb.
 - **View › Play** swaps row 3 for the **Keys** (layout B from the mock-ups): its controls on the left, then the 12 strips across the rest of the width. **View › Keys** floats the Keys in their own window from either view.
-- **Fit to window:** in windows 1000 px wide or more, the page is always laid out at the 1920 px design width, and the whole page is scaled with CSS `zoom` to fit the window (`fitToWindow()`). It never scrolls and never re-wraps, so the panel looks the same on a laptop, in the app window and on a large monitor; only the size changes.
-- **Phones:** below 1000 px wide, the normal wrapping layout applies. The side column drops below the oscillators, and sections flow onto more rows.
+- **Fit to window:** the page is always laid out at the 1920 px design width, and the whole page is scaled with CSS `zoom` to fit the window (`fitToWindow()`). It never scrolls and never re-wraps, so the panel looks the same on a laptop, in the app window and on a large monitor; only the size changes.
+- **Devices:** desktops, laptops and tablets. A tablet in landscape gets the same panel at about 60% scale; portrait works, but leaves the lower part of the screen empty. **Phones aren't supported**, so there's no stacked or wrapping layout to maintain.
 - **Width budget:** the bottom row (LFO 1, LFO 2, Filter, Swell, Delay, Reverb) has only about 40 px to spare at 1920 px. Widen anything there with care; the smoke test checks that it stays on one row at several zoom levels.
 - Each oscillator strip has a 2-column grid of small knobs: Wave and Octave, Interval and Detune, Pan and Drift, Fold and FM. A tall Level fader runs beside them, as tall as the grid.
 - Oscillator strips are a fixed 182 px wide, so all six line up evenly. They sit on one row from about 1,200 px wide and wrap below that.
-- At phone width, sections stack and the page never scrolls sideways.
 
 ## Interaction
 
@@ -105,7 +104,6 @@ In both styles, a fader's cap line takes the family colour.
 - Strips outside the current Scale dim to 30% and don't play. In Tune mode every strip gets an orange outline, and its readout shows its tuning in cents instead of Hz.
 - Controls, left to right: Latch and Tune (single LED buttons), Voices and Pressure (LED rows), then three groups divided by a thin rule, each with a small title: **Voice** (two rows of four knobs), **Filter** (type buttons over Cutoff, Reso, Drive) and **LFO** (wave buttons over Rate, Pitch, Filter, Level).
 - **Playing:** press to play; the height in the strip is pressure (top is full), or a pen's real pressure. Drag sideways to glide between strips in the scale; Shift + drag slides freely. Computer keys A S D F G H J K L ; ' \ walk up the scale, Z and X change octave.
-- At phone width the controls wrap above the strips, and the strips drop their name and frequency.
 
 ## Pop-out windows
 

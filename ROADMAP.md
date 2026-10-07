@@ -149,6 +149,7 @@ Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone 
 - High Fold settings can add some harshness (aliasing), because the wavefolder isn't oversampled yet.
 - FM always goes from the previous oscillator to the next (OSC 6 modulates OSC 1). Free routing comes with the matrix.
 - Firefox and Safari haven't been tested yet.
+- Phones aren't supported (desktop, laptop and tablet only). On a tablet in portrait, the panel fits the width and leaves the lower part of the screen empty.
 - The macOS and Linux launchers have only been tested by simulation, not on real machines.
 - Version tags can't be pushed from the Claude Code session, so releases are tagged on GitHub by hand.
 

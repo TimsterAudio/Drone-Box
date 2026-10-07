@@ -276,23 +276,6 @@ kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:
 :root.fitted{overflow:hidden}
 :root.fitted body{width:1920px;box-sizing:border-box;margin:0 auto}
 
-@media (max-width:760px){
-  .keys-sec{flex-wrap:wrap}
-  .kbed{flex-basis:100%;min-height:180px}
-  .kbed{gap:3px}
-  .kctl{flex-wrap:wrap;justify-content:center;min-width:0;max-width:100%}
-  .kgrp{border-left:0;padding-left:0}
-  .krow{flex-wrap:wrap}
-  .kstrip .nm,.kstrip .hz{display:none}
-  .kstrip .lab{font-size:11px;letter-spacing:0}
-  body{padding:8px}
-  .synth{border-left-width:6px;border-right-width:6px}
-  .strip,.row{padding-left:12px;padding-right:12px}
-  .brand{font-size:22px}
-  .model{white-space:normal;letter-spacing:.2em}
-  .lcd{width:100%}
-  .ostrip{border-left:0}
-}
 </style>
 </head>
 <body>
@@ -2326,16 +2309,14 @@ function drawLoop(win){
 }
 
 /* ---------- Fit to window ---------- */
-// On desktop-sized windows the panel is laid out at its 1920px design width and the whole page is
-// scaled (CSS zoom) to fit the window, so the stand-alone app window never scrolls, whatever its frame
-// or screen size. Narrow windows (phones, small tablets) keep the normal wrapping layout instead.
-const DESIGN_W = 1920, FIT_MIN_W = 1000;
+// The panel is always laid out at its 1920px design width and the whole page is scaled (CSS zoom) to
+// fit the window, so it never scrolls or re-wraps, whatever the frame or screen: desktop, laptop or
+// tablet in either orientation. (Phones aren't supported; the panel is too dense for them.)
+const DESIGN_W = 1920;
 function fitToWindow(){
   const root = document.documentElement, body = document.body;
   body.style.zoom = '';
-  const fitted = innerWidth >= FIT_MIN_W;
-  root.classList.toggle('fitted', fitted);
-  if (!fitted) return;
+  root.classList.add('fitted');
   const naturalH = body.scrollHeight;                       // height at zoom 1, laid out at the design width
   const z = Math.min(innerWidth / DESIGN_W, innerHeight / naturalH);
   body.style.zoom = z.toFixed(4);

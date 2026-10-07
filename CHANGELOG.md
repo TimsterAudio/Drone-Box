@@ -27,6 +27,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - The swell fade now applies to the drone only, so delay and reverb tails ring out naturally after Stop.
 - The top strip is slightly tighter to make room for the View switch.
 
+### Removed
+- **Phone layout.** Drone Box now targets desktops, laptops and tablets. Every window, tablets included, gets the same scaled panel, and the stacked phone layout is gone.
+
 ## [0.2.0] — 2026-10-06
 
 The first part of Stage 2 plus a big panel update. Drone Box gets a new alias-free oscillator engine with Fold, FM, a ladder filter and noise; a 1920 × 900 panel that scales to any window; colour-coded knobs; and stand-alone app-window launchers. This is the release for the first round of outside testing.

@@ -221,11 +221,20 @@ function check(name, ok, detail = ''){
   await page.setViewportSize({ width: 1280, height: 900 });
   const tops = await page.$$eval('.ostrip', a => new Set(a.map(e => Math.round(e.getBoundingClientRect().top))).size);
   check('six strips on one row at 1280px', tops === 1);
-  await page.setViewportSize({ width: 390, height: 900 });
-  await page.waitForTimeout(100);
-  check('no sideways scroll at phone width', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)));
-  await page.evaluate(() => setView('play'));
-  check('no sideways scroll at phone width in the Play view', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth || $('.keys-sec').getBoundingClientRect().right > innerWidth)));
+  // Tablets (and small laptop windows) scale the whole panel too, in both views and orientations
+  for (const [w, h, name] of [[820, 1180, 'tablet portrait'], [1180, 820, 'tablet landscape'], [1024, 768, '1024x768']]) {
+    await page.setViewportSize({ width: w, height: h });
+    for (const v of ['panel', 'play']) {
+      await page.evaluate(v => setView(v), v);
+      await page.waitForTimeout(100);
+      const f = await page.evaluate(() => ({
+        fitted: document.documentElement.classList.contains('fitted'),
+        scroll: document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth,
+        strips: new Set([...document.querySelectorAll('.ostrip')].map(e => Math.round(e.getBoundingClientRect().top))).size,
+        zoom: document.body.style.zoom }));
+      check(`${name}: ${v} view scales to fit`, f.fitted && f.scroll && f.strips === 1, `zoom ${f.zoom}`);
+    }
+  }
   await page.evaluate(() => setView('panel'));
 
   // Header: everything on one row, including the View switch
@@ -435,7 +444,7 @@ function check(name, ok, detail = ''){
   await page.reload(); await page.waitForTimeout(300);
   check('last session\'s windows light their tab', await page.evaluate(() => $('.monitor .popbtn').classList.contains('pending')));
   await page.evaluate(() => localStorage.removeItem('dronebox.pops'));
-  await page.setViewportSize({ width: 390, height: 900 });
+  await page.setViewportSize({ width: 1400, height: 900 });
 
   // Release hygiene: the panel shows VERSION, and the tester checklist is for the same version
   const fs = require('fs');

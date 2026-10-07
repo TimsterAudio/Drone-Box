@@ -7,11 +7,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ## [Unreleased]
 
 ### Added
-- **Keys (Stage 3).** Twelve touch strips, one per just-intonation interval above the root, play a new two-voice Keys section over the drone.
+- **Keys (Stage 3).** Thirteen touch strips play a new Keys section over the drone: one strip per just-intonation interval above the root, plus the octave (2/1), so a slide can cross a whole octave.
   - Press a strip to play it. The height you press at is pressure: it sets the level, the tone or both (**Pressure** switch). A pen's real pressure is used.
   - Drag sideways to glide to the next strip; Shift + drag slides freely between them.
   - **Latch** holds notes until you press them again. **Tune** mode lets you drag a strip up or down to retune it by up to ±50 cents (double-click resets it).
-  - Knobs: Wave, Octave, Scale (all 12, pentatonic, major, minor, Bhairav, harmonic), Glide, Vibrato, Tone, Attack, Release, Level and Pan. Strips outside the scale go dark.
+  - **Voices:** Mono, 2, 3 or 4. When a held note loses its voice to a newer one, it comes back when you let go of the newer one. In Mono that gives legato playing: hold one strip, tap another, and it glides back.
+  - **Voice** knobs: Wave, Octave, Scale (all 12, pentatonic, major, minor, Bhairav, harmonic), Glide, Attack, Release, Level and Pan. Strips outside the scale go dark.
+  - **Filter** on each voice: LPF, BPF, HPF or Ladder, with Cutoff, Reso and Drive (a soft-clipping drive before the filter, or the ladder's own drive).
+  - **LFO** for the Keys: four wave shapes, Rate (0.05–12 Hz), and depths for Pitch (vibrato), Filter (up to ±2 octaves) and Level (tremolo).
   - Computer keys A S D F G H J K L ; ' \ play up the scale, and Z / X change the octave.
   - Each strip glows up to the pressure while it plays.
   - The Keys go through the delay and reverb, not the drone's filter, and play even while the drone is stopped (the display shows KEYS).

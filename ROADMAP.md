@@ -39,8 +39,8 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone buttons, designed for a mouse first.
 
 **Touch-strip keyboard**
-- [x] 12 tall strips, one per just-intonation interval above the root
-- [x] A new two-voice **Keys** section to play them: wavetable oscillator, attack/release envelope, filter amount, level and pan, sitting over the drone
+- [x] 12 tall strips, one per just-intonation interval above the root, plus a 13th for the octave
+- [x] A new **Keys** section (1–4 voices, mono legato) to play them: wavetable oscillator, attack/release envelope, filter amount, level and pan, sitting over the drone
 - [x] Press a strip to start a note, and release it to stop. A **Latch** button holds notes instead.
 - [x] Vertical position inside a strip stands in for **pressure**: it controls level and brightness, and changes continuously while held
 - [x] Drag sideways across strips to **glide**, with a Portamento knob for the speed. Shift + drag gives a free pitch slide with no scale.
@@ -48,8 +48,10 @@ Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone 
 - [x] A **Scale** stepped knob (all 12, pentatonic, raga-like sets and so on). Strips outside the scale go dark.
 - [x] Computer-keyboard playing: A S D F G H J K L ; ' play the 12 strips, and Z / X shift the octave
 - [ ] On touchscreens, two fingers play two notes, and real pressure is used where the device reports it (built, and pen pressure works; needs testing on a real touchscreen)
-- [x] Vibrato depth (rate fixed at 5.5 Hz for now)
-- [ ] Vibrato rate, and a simple arpeggiator (up, down, random; rate synced to an LFO)
+- [x] A Keys LFO: wave, rate, and depth to pitch (vibrato), filter and level (tremolo)
+- [x] A Keys filter: LPF, BPF, HPF or Ladder, with cutoff, resonance and drive
+- [ ] A simple arpeggiator (up, down, random; rate synced to an LFO)
+- [ ] Let the drone's LFO 1 / 2 drive the Keys too (a Keys destination, or through the Stage 4 matrix)
 - [x] LED glow on each strip that follows the note's pressure
 
 **Pop-out windows**

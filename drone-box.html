@@ -220,8 +220,11 @@ kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:
 .kctl{display:flex;gap:12px;align-items:center}
 .kleft{display:flex;flex-direction:column;gap:12px;align-items:center;min-width:150px}
 .kbtns{display:flex;gap:10px}
-.kgrid2{display:grid;grid-template-columns:repeat(5,auto);gap:0 2px;justify-items:center}
-.kgrid2 .knob{margin:6px 8px}
+.kgrp{display:flex;flex-direction:column;align-items:center;gap:4px;padding-left:12px;border-left:1px solid var(--frame)}
+.kgt{font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--legend-dim);align-self:flex-start}
+.krow{display:flex;gap:2px;justify-content:center}
+.krow .knob{margin:4px 5px}
+.kgrp .bgroup{margin:2px 0 4px}
 .khint{font-size:10.5px;font-weight:600;letter-spacing:.12em;color:var(--legend-dim);text-transform:uppercase;text-align:center;line-height:1.5}
 .kbed{display:flex;gap:6px;flex:1;min-width:0;align-items:stretch;touch-action:none;user-select:none;-webkit-user-select:none;min-height:150px}
 .kstrip{flex:1;min-width:0;position:relative;border-radius:4px;overflow:hidden;cursor:pointer;
@@ -263,8 +266,10 @@ kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:
 .popbody > .monitor{flex-wrap:nowrap}
 .popbody .screen canvas{min-height:0}
 .popbody .kbed{min-height:0}
-/* A narrow Keys window keeps the strips playable: the knobs go first (they're still on the panel), then the side buttons */
-@media (max-width:1150px){ .popbody .kgrid2{display:none} }
+/* A narrow Keys window keeps the strips playable: the knob groups drop out (LFO, then Voice, then Filter), then the side buttons */
+@media (max-width:1500px){ .popbody .kg-lfo{display:none} }
+@media (max-width:1250px){ .popbody .kg-voice{display:none} }
+@media (max-width:1000px){ .popbody .kg-filter{display:none} }
 @media (max-width:640px){ .popbody .kctl{display:none} }
 
 /* Fitted mode (see fitToWindow): fixed design width, scaled as a whole, never scrolls */
@@ -276,8 +281,8 @@ kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:
   .kbed{flex-basis:100%;min-height:180px}
   .kbed{gap:3px}
   .kctl{flex-wrap:wrap;justify-content:center;min-width:0;max-width:100%}
-  .kgrid2{grid-template-columns:repeat(4,auto)}
-  .kgrid2 .knob{margin:6px 4px}
+  .kgrp{border-left:0;padding-left:0}
+  .krow{flex-wrap:wrap}
   .kstrip .nm,.kstrip .hz{display:none}
   .kstrip .lab{font-size:11px;letter-spacing:0}
   body{padding:8px}
@@ -547,12 +552,17 @@ const WAVES = [['sine','Sine'],['triangle','Triangle'],['warm','Warm'],['sawtoot
 const LFO_TARGETS = [['off','Off'],['filter','Filter'],['pitch','Pitch'],['volume','Volume'],['pan','Pan']];
 const LFO_SHAPES = [['sine','Sine'],['triangle','Triangle'],['square','Square'],['sawtooth','Saw']];
 const NUM_OSC = 6;
-// Keys scales: indexes into RATIOS that are playable (the other strips go dark).
+// Keys strips: the 12 intervals plus the octave above, so a slide can cross a whole octave.
+const KEY_RATIOS = [...RATIOS, ['2/1', '2/1 · octave']];
+const NUM_KEYS = KEY_RATIOS.length;
+const KEYS_FILTERS = [['lowpass','LPF'],['bandpass','BPF'],['highpass','HPF'],['ladder','Ladder']];
+// Keys scales: indexes into KEY_RATIOS that are playable (the other strips go dark). The octave strip (12)
+// is in every scale.
 const SCALES = [
   ['all', 'All 12', [0,1,2,3,4,5,6,7,8,9,10,11]], ['penta', 'Penta', [0,2,4,7,9]],
   ['major', 'Major', [0,2,4,5,7,9,11]], ['minor', 'Minor', [0,2,3,5,7,8,10]],
   ['bhairav', 'Bhairav', [0,1,4,5,7,8,11]], ['harm', 'Harmonic', [0,4,7,10]]
-];
+].map(([id, name, deg]) => [id, name, [...deg, 12]]);
 // Computer keys that play the Keys, in order (they walk up the current scale).
 const KEY_CODES = ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon','Quote','Backslash'];
 const KEY_LABELS = ['A','S','D','F','G','H','J','K','L',';',"'",'\\'];
@@ -581,7 +591,10 @@ function defaultPatch(){
     master: {volume: 0.7},
     keys: {wave: 'triangle', octave: 2, scale: 'all', glide: 0.15, vibrato: 0.1, tone: 0.6,
            attack: 0.05, release: 1.5, level: 0.6, pan: 0, pressure: 'both', latch: false,
-           tune: Array(12).fill(0)}          // cents, per strip (added in 0.3)
+           voices: 4,                                  // 1 (mono, legato) to 4
+           filter: 'lowpass', reso: 0.7, drive: 0,     // tone (above) is the cutoff, 0-1
+           lfoShape: 'sine', lfoRate: 5.5, lfoFilter: 0, lfoLevel: 0,   // vibrato (above) is the LFO's pitch depth
+           tune: Array(NUM_KEYS).fill(0)}               // cents, per strip (added in 0.3)
   };
 }
 // Merge an arbitrary (possibly partial / older) patch onto defaults so imports never break the app.
@@ -693,8 +706,9 @@ function rootHz(p){
   return p.root.a4 * Math.pow(2, (midi - 69) / 12);
 }
 // A Keys strip's pitch: root x strip ratio, up the Keys octave (plus any extra octaves), plus its tuning.
+const keysCutoffHz = b => Math.min(20000, 150 * Math.pow(2, 7 * b));   // Keys cutoff, 0-1 -> 150 Hz .. 19 kHz
 function keyHz(p, idx, extraOct = 0){
-  return rootHz(p) * parseRatio(RATIOS[idx][0]) * Math.pow(2, p.keys.octave + extraOct) * Math.pow(2, p.keys.tune[idx] / 1200);
+  return rootHz(p) * parseRatio(KEY_RATIOS[idx][0]) * Math.pow(2, p.keys.octave + extraOct) * Math.pow(2, p.keys.tune[idx] / 1200);
 }
 function oscHz(p, i){
   const o = p.oscs[i];
@@ -855,20 +869,35 @@ class Engine {
       return {osc: o, depth, inv};
     });
 
-    // Keys: two voices (oscillator -> tone low-pass -> pressure gain -> envelope -> pan), mixed in after
-    // the swell envelope. They share the delay and reverb, but not the drone's filter or tremolo.
+    // Keys: four voices, mixed in after the drone's swell envelope. They share the delay and reverb, but
+    // not the drone's filter or tremolo. Each voice:
+    //   osc -> drive (pre gain, tanh shaper, post gain) -> biquad / ladder (crossfaded) -> pressure -> envelope -> pan
+    // One Keys LFO modulates every voice's pitch and filter, and the shared tremolo gain (keysOut).
     this.keysOut = g(1);
     this.keysOut.connect(this.sum); this.keysOut.connect(this.delaySend); this.keysOut.connect(this.revSend);
-    this.vib = ctx.createOscillator(); this.vib.frequency.value = 5.5;
-    this.vibDepth = g(0);
-    this.vib.connect(this.vibDepth); this.vib.start();
+    this.kLfo = ctx.createOscillator(); this.kLfo.frequency.value = 5.5; this.kLfo.start();
+    this.vibDepth = g(0); this.kLfoFilt = g(0); this.kLfoAmp = g(0);
+    this.kLfo.connect(this.vibDepth); this.kLfo.connect(this.kLfoFilt); this.kLfo.connect(this.kLfoAmp);
+    this.kLfoAmp.connect(this.keysOut.gain);
+    const curve = new Float32Array(1025);
+    for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh((i / 512 - 1) * 4);   // input ±1 covers tanh(±4)
     this.keyMap = new Map();                 // note id (pointer or computer key) -> voice
     this.keysLast = -1e9;                    // context time of the last note on or off
-    this.keyVoices = [0, 1].map(() => {
+    this.keyVoices = [0, 1, 2, 3].map(() => {
       const v = this.makeVoice();
-      v.tone = ctx.createBiquadFilter(); v.tone.type = 'lowpass'; v.tone.Q.value = 0.4;
+      v.pre = g(0.075); v.shaper = ctx.createWaveShaper(); v.shaper.curve = curve; v.shaper.oversample = '2x'; v.post = g(1);
+      v.bq = ctx.createBiquadFilter(); v.bqOut = g(1);
       v.press = g(0); v.vca = g(0); v.pan = ctx.createStereoPanner();
-      v.src.connect(v.tone).connect(v.press).connect(v.vca).connect(v.pan).connect(this.keysOut);
+      v.src.connect(v.pre).connect(v.shaper).connect(v.post);
+      v.post.connect(v.bq).connect(v.bqOut).connect(v.press);
+      this.kLfoFilt.connect(v.bq.detune);
+      if (this.dsp){
+        v.ladder = new AudioWorkletNode(ctx, 'db-ladder', {outputChannelCount: [1]});
+        v.ldOut = g(0);
+        v.post.connect(v.ladder).connect(v.ldOut).connect(v.press);
+        this.kLfoFilt.connect(v.ladder.parameters.get('detune'));
+      }
+      v.press.connect(v.vca).connect(v.pan).connect(this.keysOut);
       this.vibDepth.connect(v.detune);
       v.id = null; v.started = 0; v.wave = null;
       return v;
@@ -1044,23 +1073,47 @@ class Engine {
   keyPress(p){ return this.p.keys.pressure === 'tone' ? 1 : 0.25 + 0.75 * p; }      // pressure -> level
   keyCutoff(p){                                                                       // pressure -> brightness
     const K = this.p.keys, b = K.pressure === 'level' ? K.tone : K.tone * 0.55 + p * 0.45;
-    return Math.min(20000, 150 * Math.pow(2, 7 * b));
+    return keysCutoffHz(b);
   }
   keyGlide(){ return Math.max(0.003, this.p.keys.glide / 3); }
+  keyFilter(v, instant){                                                              // cutoff for a voice's pressure
+    const hz = this.keyCutoff(v.p), set = instant ? (q, x) => this.set(q, x) : (q, x) => this.T(q, x, 0.03);
+    set(v.bq.frequency, hz);
+    if (v.ladder) set(v.ladder.parameters.get('frequency'), hz);
+  }
 
   applyKeys(){
     if (!this.ready) return;
     const K = this.p.keys;
-    this.T(this.vibDepth.gain, K.vibrato * 40, 0.05);                                // up to ±40 cents
-    for (const v of this.keyVoices){
+    const ladder = K.filter === 'ladder' && this.dsp;
+    const g = 0.075 + K.drive * 1.2;                                                 // drive: 0.3 .. 5.1 into tanh(4x)
+    this.T(this.kLfo.frequency, K.lfoRate, 0.05);
+    if (this.kLfo.type !== K.lfoShape) this.kLfo.type = K.lfoShape;
+    this.T(this.vibDepth.gain, K.vibrato * 50, 0.05);                                // pitch: up to ±50 cents
+    this.T(this.kLfoFilt.gain, K.lfoFilter * 2400, 0.05);                            // filter: up to ±2 octaves
+    this.T(this.keysOut.gain, 1 - K.lfoLevel / 2, 0.05);                             // tremolo swings 1 - depth .. 1
+    this.T(this.kLfoAmp.gain, K.lfoLevel / 2, 0.05);
+    this.keyVoices.forEach((v, i) => {
       this.setWave(v, K.wave);
       this.T(v.pan.pan, K.pan, 0.05);
-      if (v.id){
-        this.T(v.vca.gain, K.level * 0.4, 0.05);
-        this.T(v.press.gain, this.keyPress(v.p), 0.03);
-        this.T(v.tone.frequency, this.keyCutoff(v.p), 0.03);
+      v.bq.type = K.filter === 'ladder' ? 'lowpass' : K.filter;                     // basic mode: ladder falls back to low-pass
+      this.T(v.bq.Q, K.reso, 0.04);
+      this.T(v.pre.gain, ladder ? 0.075 : g, 0.04);
+      this.T(v.post.gain, 1 / Math.tanh(4 * (ladder ? 0.075 : g)), 0.04);
+      if (v.ladder){
+        const P = n => v.ladder.parameters.get(n);
+        this.T(P('resonance'), qToRes(K.reso), 0.04);
+        this.T(P('drive'), K.drive, 0.04);
+        this.T(v.bqOut.gain, ladder ? 0 : 1, 0.03);
+        this.T(v.ldOut.gain, ladder ? 1 : 0, 0.03);
       }
-    }
+      if (v.id && i >= K.voices) this.keyOff(v.id);                                 // fewer voices: let the extra ones go
+      else if (v.id){
+        this.T(v.vca.gain, K.level * 0.3, 0.05);
+        this.T(v.press.gain, this.keyPress(v.p), 0.03);
+        this.keyFilter(v);
+      }
+    });
   }
 
   // Start (or re-press) a note. A free voice starts at the new pitch; a stolen one glides from where it was.
@@ -1069,7 +1122,8 @@ class Engine {
     const K = this.p.keys, now = this.ctx.currentTime;
     let v = this.keyMap.get(id);
     if (!v){
-      v = this.keyVoices.find(x => !x.id) || this.keyVoices.reduce((a, b) => a.started <= b.started ? a : b);
+      const pool = this.keyVoices.slice(0, Math.max(1, Math.min(4, K.voices)));
+      v = pool.find(x => !x.id) || pool.reduce((a, b) => a.started <= b.started ? a : b);
       if (v.id) this.keyMap.delete(v.id);
       const silent = !v.id && v.vca.gain.value < 0.002;
       v.id = id; v.started = now;
@@ -1078,10 +1132,10 @@ class Engine {
     } else this.T(v.freq, hz, this.keyGlide());
     v.p = p;
     this.set(v.press.gain, this.keyPress(p));
-    this.set(v.tone.frequency, this.keyCutoff(p));
+    this.keyFilter(v, true);
     const g = v.vca.gain;
     if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(now); else { g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); }
-    g.setTargetAtTime(K.level * 0.4, now, Math.max(0.003, K.attack / 4));
+    g.setTargetAtTime(K.level * 0.3, now, Math.max(0.003, K.attack / 4));
     this.keysLast = now;
   }
 
@@ -1092,7 +1146,7 @@ class Engine {
     if (hz) this.T(v.freq, hz, this.keyGlide());
     v.p = p;
     this.T(v.press.gain, this.keyPress(p), 0.03);
-    this.T(v.tone.frequency, this.keyCutoff(p), 0.03);
+    this.keyFilter(v);
   }
 
   keyOff(id){
@@ -1638,12 +1692,19 @@ function renderKeys(){
   const btns = el('div', 'kbtns'); btns.append(latch, tune);
   const left = el('div', 'kleft');
   left.append(btns,
+    buttons({label: 'Voices', name: nm('voices'), color: 'k-cream',
+      options: [[1, 'Mono'], [2, '2'], [3, '3'], [4, '4']], get: () => K.voices, set: v => { K.voices = v; up(); }}),
     buttons({label: 'Pressure', name: nm('pressure'), color: 'k-cream',
       options: [['level', 'Level'], ['tone', 'Tone'], ['both', 'Both']], get: () => K.pressure, set: v => { K.pressure = v; up(); }}),
     el('div', 'khint', 'Keys A–\\ play · Z / X octave'));
 
-  const grid = el('div', 'kgrid2');
-  grid.append(
+  const group = (cls, title, ...kids) => {
+    const g = el('div', 'kgrp ' + cls);
+    g.append(el('div', 'kgt', title), ...kids);
+    return g;
+  };
+  const row = (...kids) => { const r = el('div', 'krow'); r.append(...kids); return r; };
+  const voice = group('kg-voice', 'Voice', row(
     knob({fam: 'tone', label: 'Wave', name: nm('wave'), size: 'sm', options: WAVES, fmt: v => WAVES.find(w => w[0] === v)[1],
       get: () => K.wave, set: v => { K.wave = v; up(); }}),
     knob({fam: 'pitch', label: 'Octave', name: nm('octave'), size: 'sm', options: [0,1,2,3,4].map(x => [x, fmtOct(x)]), fmt: fmtOct,
@@ -1651,11 +1712,7 @@ function renderKeys(){
     knob({fam: 'pitch', label: 'Scale', name: nm('scale'), size: 'sm', options: SCALES.map(s => [s[0], s[1]]), fmt: v => SCALES.find(s => s[0] === v)[1],
       get: () => K.scale, set: v => { K.scale = v; upLabels(); }}),
     knob({fam: 'pitch', label: 'Glide', name: nm('glide'), size: 'sm', min: 0.005, max: 5, scale: 'log', fmt: fmtSec,
-      get: () => K.glide, set: v => { K.glide = v; changed(); }}),
-    knob({fam: 'mod', label: 'Vibrato', name: nm('vibrato'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
-      get: () => K.vibrato, set: v => { K.vibrato = v; up(); }}),
-    knob({fam: 'tone', label: 'Tone', name: nm('tone'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
-      get: () => K.tone, set: v => { K.tone = v; up(); }}),
+      get: () => K.glide, set: v => { K.glide = v; changed(); }})), row(
     knob({label: 'Attack', name: nm('attack'), size: 'sm', min: 0.005, max: 10, scale: 'log', fmt: fmtSec,
       get: () => K.attack, set: v => { K.attack = v; changed(); }}),
     knob({label: 'Release', name: nm('release'), size: 'sm', min: 0.01, max: 20, scale: 'log', fmt: fmtSec,
@@ -1663,12 +1720,33 @@ function renderKeys(){
     knob({label: 'Level', name: nm('level'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
       get: () => K.level, set: v => { K.level = v; up(); }}),
     knob({label: 'Pan', name: nm('pan'), size: 'sm', min: -1, max: 1, fmt: fmtPan,
-      get: () => K.pan, set: v => { K.pan = v; up(); }}));
+      get: () => K.pan, set: v => { K.pan = v; up(); }})));
+  const filter = group('kg-filter', 'Filter',
+    buttons({name: nm('filter type'), color: 'k-orange', options: KEYS_FILTERS, get: () => K.filter, set: v => { K.filter = v; up(); }}),
+    row(
+      knob({fam: 'tone', label: 'Cutoff', name: nm('cutoff'), size: 'sm', min: 0, max: 1, fmt: v => fmtHz(keysCutoffHz(v)),
+        get: () => K.tone, set: v => { K.tone = v; up(); }}),
+      knob({fam: 'tone', label: 'Reso', name: nm('resonance'), size: 'sm', min: 0.1, max: 20, scale: 'log', fmt: v => v.toFixed(1),
+        get: () => K.reso, set: v => { K.reso = v; up(); }}),
+      knob({fam: 'tone', label: 'Drive', name: nm('drive'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
+        get: () => K.drive, set: v => { K.drive = v; up(); }})));
+  const lfo = group('kg-lfo', 'LFO',
+    buttons({name: nm('LFO wave'), color: 'k-cream', options: LFO_SHAPES.map(([v, t]) => [v, t, ICON[v]]),
+      get: () => K.lfoShape, set: v => { K.lfoShape = v; up(); }}),
+    row(
+      knob({fam: 'mod', label: 'Rate', name: nm('LFO rate'), size: 'sm', min: 0.05, max: 12, scale: 'log', fmt: v => v.toFixed(2) + ' Hz',
+        get: () => K.lfoRate, set: v => { K.lfoRate = v; up(); }}),
+      knob({fam: 'mod', label: 'Pitch', name: nm('LFO to pitch (vibrato)'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
+        get: () => K.vibrato, set: v => { K.vibrato = v; up(); }}),
+      knob({fam: 'mod', label: 'Filter', name: nm('LFO to filter'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
+        get: () => K.lfoFilter, set: v => { K.lfoFilter = v; up(); }}),
+      knob({fam: 'mod', label: 'Level', name: nm('LFO to level (tremolo)'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
+        get: () => K.lfoLevel, set: v => { K.lfoLevel = v; up(); }})));
 
-  const ctl = el('div', 'kctl'); ctl.append(left, grid);
+  const ctl = el('div', 'kctl'); ctl.append(left, voice, filter, lfo);
   const bed = el('div', 'kbed');
   keysUI.bed = bed;
-  keysUI.strips = RATIOS.map(([r, label], i) => {
+  keysUI.strips = KEY_RATIOS.map(([r, label], i) => {
     const s = el('div', 'kstrip');
     const top = el('div', 'top'); top.append(el('div', 'lab', r), el('div', 'nm', label.split(' · ')[1]));
     const hz = el('div', 'hz'), kb = el('div', 'kb');
@@ -1689,8 +1767,9 @@ function renderKeys(){
 
 // Strip labels: dark when outside the scale, the frequency (or tuning, in Tune mode), and the computer key.
 function refreshKeyLabels(){
-  const deg = scaleDegrees(), K = patch.keys;
-  const letter = new Map(deg.map((idx, k) => [idx, KEY_LABELS[k]]));
+  const deg = scaleDegrees(), K = patch.keys, walk = deg.slice(0, -1);
+  const letter = new Map(walk.map((idx, k) => [idx, KEY_LABELS[k]]));
+  if (KEY_LABELS[walk.length]) letter.set(NUM_KEYS - 1, KEY_LABELS[walk.length]);    // the key that reaches the octave
   keysUI.strips.forEach((st, i) => {
     st.el.classList.toggle('off', !deg.includes(i) && !keysUI.tuning);
     st.hz.textContent = keysUI.tuning ? fmtCents(K.tune[i]) : fmtHz(keyHz(patch, i)).replace(' Hz', '');
@@ -1700,10 +1779,14 @@ function refreshKeyLabels(){
 
 // Glow on the strips that are sounding, at the height of their pressure.
 function paintStrips(){
-  if (engine.ready) for (const [id, a] of [...keysUI.active]) if (!a.pending && !engine.keyMap.has(id)) keysUI.active.delete(id);   // stolen voices
+  // A held note whose voice was taken by a newer one waits (it comes back when a voice is free);
+  // a latched note that loses its voice is simply dropped.
+  const sounding = (id, a) => a.pending || !engine.ready || engine.keyMap.has(id);
+  const latchedIds = new Set(keysUI.latched.values());
+  for (const [id, a] of [...keysUI.active]) if (!sounding(id, a) && latchedIds.has(id)) keysUI.active.delete(id);
   for (const [k, id] of [...keysUI.latched]) if (!keysUI.active.has(id)) keysUI.latched.delete(k);
   const level = new Map();
-  for (const {idx, p} of keysUI.active.values()) level.set(idx, Math.max(level.get(idx) ?? 0, p));
+  for (const [id, a] of keysUI.active) if (sounding(id, a)) level.set(a.idx, Math.max(level.get(a.idx) ?? 0, a.p));
   keysUI.strips.forEach((st, i) => {
     const on = level.has(i);
     st.el.classList.toggle('on', on);
@@ -1712,10 +1795,10 @@ function paintStrips(){
 }
 
 function noteOn(st){
-  const a = {idx: st.idx, p: st.p, pending: true};             // pending until the audio is awake
+  const a = {idx: st.idx, p: st.p, hz: st.hz, pending: true};   // pending until the audio is awake
   keysUI.active.set(st.id, a);
   paintStrips();
-  lcd.show('Keys ' + RATIOS[st.idx][0], fmtHz(st.hz));
+  lcd.show('Keys ' + KEY_RATIOS[st.idx][0], fmtHz(st.hz));
   engine.wake().then(() => {
     if (st.ended) return;                                     // released before the audio was ready
     engine.keyOn(st.id, st.hz, st.p);
@@ -1725,14 +1808,20 @@ function noteOn(st){
 }
 function noteMove(st){
   const a = keysUI.active.get(st.id);
-  if (a){ a.idx = st.idx; a.p = st.p; }
+  if (a){ a.idx = st.idx; a.p = st.p; a.hz = st.hz; }
   engine.keyMove(st.id, st.hz, st.p);
   paintStrips();
 }
 function noteOff(st){
   st.ended = true;
+  const had = engine.ready && engine.keyMap.has(st.id);
   engine.keyOff(st.id);
   keysUI.active.delete(st.id);
+  if (had){                                                   // a voice came free: the latest waiting note takes it back
+    const latchedIds = new Set(keysUI.latched.values());
+    const waiting = [...keysUI.active].filter(([id, a]) => !a.pending && !engine.keyMap.has(id) && !latchedIds.has(id)).pop();
+    if (waiting) engine.keyOn(waiting[0], waiting[1].hz, waiting[1].p);   // glides from the released note: legato in Mono
+  }
   paintStrips(); ui.setStatus();
 }
 function releaseLatched(){
@@ -1757,9 +1846,9 @@ function bindBed(bed){
     return Math.min(1, Math.max(0, 1 - (e.clientY - q.top) / q.height));
   };
   const freeHz = x => {                                       // continuous pitch between strip centres
-    const r = rects(), c = r.map(q => (q.left + q.right) / 2), hz = RATIOS.map((_, i) => keyHz(patch, i));
+    const r = rects(), c = r.map(q => (q.left + q.right) / 2), hz = KEY_RATIOS.map((_, i) => keyHz(patch, i));
     if (x <= c[0]) return hz[0];
-    if (x >= c[11]) return hz[11];
+    if (x >= c[NUM_KEYS - 1]) return hz[NUM_KEYS - 1];
     const i = c.findIndex((v, k) => x >= v && x < c[k + 1]), t = (x - c[i]) / (c[i + 1] - c[i]);
     return hz[i] * Math.pow(hz[i + 1] / hz[i], t);
   };
@@ -1798,13 +1887,13 @@ function bindBed(bed){
       st.hz = keyHz(patch, st.idx);
       engine.keyMove(st.id, st.hz, st.p);
       refreshKeyLabels();
-      lcd.show(`Keys tune ${RATIOS[st.idx][0]}`, fmtCents(K.tune[st.idx]));
+      lcd.show(`Keys tune ${KEY_RATIOS[st.idx][0]}`, fmtCents(K.tune[st.idx]));
       return;
     }
     if (e.shiftKey){ st.hz = freeHz(e.clientX); st.idx = stripAt(e.clientX); }
     else {
       const i = stripAt(e.clientX);
-      if (i >= 0 && i !== st.idx && playable(i)){ st.idx = i; st.hz = keyHz(patch, i); lcd.show('Keys ' + RATIOS[i][0], fmtHz(st.hz)); }
+      if (i >= 0 && i !== st.idx && playable(i)){ st.idx = i; st.hz = keyHz(patch, i); lcd.show('Keys ' + KEY_RATIOS[i][0], fmtHz(st.hz)); }
     }
     st.p = pressureAt(e, st.idx);
     noteMove(st);
@@ -1847,7 +1936,7 @@ function keysKeyDown(e){
     keysUI.kbHeld.set(e.code, {released: true});
     return true;
   }
-  const deg = scaleDegrees(), idx = deg[k % deg.length], oct = Math.floor(k / deg.length);
+  const deg = scaleDegrees().slice(0, -1), idx = deg[k % deg.length], oct = Math.floor(k / deg.length);
   const st = {id: 'k' + e.code + ':' + performance.now().toFixed(0), idx, p: 0.75, hz: keyHz(patch, idx, oct), k};
   keysUI.kbHeld.set(e.code, st);
   noteOn(st);
@@ -1886,7 +1975,7 @@ function applyView(){
 // browser allows (Document Picture-in-Picture), falling back to an ordinary popup; the rest use popups.
 const POP_SPECS = {
   monitor: {title: 'Monitor', sel: () => $('.monitor'), w: 900, h: 420, pip: false},
-  keys:    {title: 'Keys', sel: () => keysSec, w: 1400, h: 340, pip: true}
+  keys:    {title: 'Keys', sel: () => keysSec, w: 1700, h: 360, pip: true}
 };
 const POP_ICON = '<svg viewBox="0 0 12 12"><path d="M5 2H2v8h8V7M7 1.5h3.5V5M10.5 1.5 5.5 6.5"/></svg>';
 const DOCK_ICON = '<svg viewBox="0 0 12 12"><path d="M5 2H2v8h8V7M10.5 1.5 6 6M6 3v3h3"/></svg>';

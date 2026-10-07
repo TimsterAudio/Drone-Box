@@ -51,8 +51,8 @@ Knob colour shows **what a control does**, and each colour means the same thing 
 | Family | Colour | Controls |
 |---|---|---|
 | Pitch (`fam: 'pitch'`) | blue `#4f8cc9` | Interval, Octave, Detune, Drift; Root Note, Octave, A4, Glide; Keys Octave, Scale, Glide |
-| Tone (`fam: 'tone'`) | green `#5aa86f` | Wave, Fold, FM; Filter Cutoff, Reso, Drive; Keys Wave, Tone |
-| Modulation (`fam: 'mod'`) | red `#d24b33` | LFO Rate and Depth; Keys Vibrato |
+| Tone (`fam: 'tone'`) | green `#5aa86f` | Wave, Fold, FM; Filter Cutoff, Reso, Drive; Keys Wave, Cutoff, Reso, Drive |
+| Modulation (`fam: 'mod'`) | red `#d24b33` | LFO Rate and Depth; Keys LFO Rate, Pitch, Filter, Level |
 | Level and space (no family) | black | Level, Pan, Noise, Swell, Delay, Reverb, Volume; Keys Attack, Release, Level, Pan |
 
 The **Knobs** switch in the top strip picks between two styles, and the choice is remembered:
@@ -66,9 +66,9 @@ In both styles, a fader's cap line takes the family colour.
 | Colour | Used for |
 |---|---|
 | Red `k-red` | Play / Stop (transport) |
-| Orange `k-orange` | Mute, filter type, Keys Tune |
+| Orange `k-orange` | Mute, filter type (drone and Keys), Keys Tune |
 | Yellow `k-yellow` | Solo, LFO destination, Random, Keys Latch |
-| Cream `k-cream` | LFO wave, noise colour, Keys Pressure, Save, Export, Import |
+| Cream `k-cream` | LFO wave (drone and Keys), noise colour, Keys Voices and Pressure, Save, Export, Import |
 | Grey `k-grey` | Delete, and the Panel, Knobs and View switches (utility) |
 
 ## Layout
@@ -100,10 +100,10 @@ In both styles, a fader's cap line takes the family colour.
 
 ## Keys
 
-- **12 touch strips**, one per just-intonation interval above the root, labelled with the ratio, its name, its frequency and its computer key. They're dark, rounded plates (like the Solar's touch plates); a centre hairline marks the pressure axis.
+- **13 touch strips**, one per just-intonation interval above the root plus the octave (2/1), labelled with the ratio, its name, its frequency and its computer key. They're dark, rounded plates (like the Solar's touch plates); a centre hairline marks the pressure axis.
 - A held strip lights from the bottom with a red glow up to the pressure height, with a white dot at the top of the glow.
 - Strips outside the current Scale dim to 30% and don't play. In Tune mode every strip gets an orange outline, and its readout shows its tuning in cents instead of Hz.
-- Controls: Latch and Tune (single LED buttons), Pressure (LED row: Level, Tone, Both), and ten small knobs in two rows of five, coloured by family.
+- Controls, left to right: Latch and Tune (single LED buttons), Voices and Pressure (LED rows), then three groups divided by a thin rule, each with a small title: **Voice** (two rows of four knobs), **Filter** (type buttons over Cutoff, Reso, Drive) and **LFO** (wave buttons over Rate, Pitch, Filter, Level).
 - **Playing:** press to play; the height in the strip is pressure (top is full), or a pen's real pressure. Drag sideways to glide between strips in the scale; Shift + drag slides freely. Computer keys A S D F G H J K L ; ' \ walk up the scale, Z and X change octave.
 - At phone width the controls wrap above the strips, and the strips drop their name and frequency.
 
@@ -112,6 +112,6 @@ In both styles, a fader's cap line takes the family colour.
 - A section that can float has a small **Window** tab on its top frame edge, at the right (opposite the title). In its window, the tab reads **Dock**.
 - The section's place in the panel shows a slim placeholder: the title, "In its own window" and a **Bring back** button.
 - A window looks exactly like the section in the panel: same styles and theme, and the theme and knob switches follow live.
-- A narrow Keys window keeps the strips playable: the knob grid hides below 1150 px, and the side buttons below 640 px (the same controls are on the panel).
+- A narrow Keys window keeps the strips playable: the LFO group hides below 1500 px, Voice below 1250 px, Filter below 1000 px, and the side buttons below 640 px (the same controls are on the panel).
 - A tab that glows orange was in its own window last time; one click reopens it.
 

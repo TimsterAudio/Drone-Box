@@ -45,7 +45,7 @@ Press **Play** or hit **Space**. Browsers only allow audio to start after a clic
 - **Delay:** repeats get darker each time.
 - **Reverb:** a generated impulse response with decay up to 15 s.
 - **Output:** master volume, a safety limiter, L/R meters, a scope and a log-frequency spectrum.
-- **Keys:** 12 touch strips that play a two-voice synth over the drone, one strip per just interval. The height you press at is pressure. Drag sideways to glide. Also: Latch, a microtonal Tune mode, scales, vibrato, and computer-keyboard playing.
+- **Keys:** 13 touch strips (the 12 just intervals plus the octave) that play a 1–4 voice synth over the drone, with its own filter (LPF, BPF, HPF, Ladder; cutoff, resonance, drive) and LFO (pitch, filter, level). The height you press at is pressure. Drag sideways to glide. Also: Latch, a microtonal Tune mode, scales, vibrato, and computer-keyboard playing.
 - **Pop-out windows:** Monitor and Keys can each move into a window of their own. The Keys window can stay on top of other apps.
 - **Patches:** factory presets, Randomize, saving your own patches in browser storage, and Export/Import as JSON.
 

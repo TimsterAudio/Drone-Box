@@ -240,7 +240,7 @@ function check(name, ok, detail = ''){
   const pv = await page.evaluate(() => ({
     h: document.documentElement.scrollHeight, ctrlHidden: $('#ctrlSlot').hidden,
     keys: !!$('#playSlot .keys-sec'), strips: document.querySelectorAll('.kstrip').length }));
-  check('Play view shows Keys and fits 1920x900', pv.h <= 900 && pv.ctrlHidden && pv.keys && pv.strips === 12, JSON.stringify(pv));
+  check('Play view shows Keys and fits 1920x900', pv.h <= 900 && pv.ctrlHidden && pv.keys && pv.strips === 13, JSON.stringify(pv));
   const stripPt = (i, frac, pg = page) => pg.evaluate(([i, frac]) => {
     const q = keysUI.strips[i].el.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height * frac };
   }, [i, frac]);
@@ -310,8 +310,80 @@ function check(name, ok, detail = ''){
   await page.evaluate(() => { patch.keys.tune[4] = 0; renderKeys(); });
 
   // Older patches gain the Keys defaults
-  const oldKeys = await page.evaluate(() => { const p = clone(FACTORY[0]); delete p.keys; const n = normalize(p); return n.keys.tune.length === 12 && n.keys.wave === defaultPatch().keys.wave; });
+  const oldKeys = await page.evaluate(() => { const p = clone(FACTORY[0]); delete p.keys; const n = normalize(p); return n.keys.tune.length === 13 && n.keys.wave === defaultPatch().keys.wave; });
   check('v0.2 patches get the Keys defaults', oldKeys);
+
+  // Octave strip, voices, mono legato, the Keys filter and LFO
+  const oct = await page.evaluate(() => ({ n: document.querySelectorAll('.kstrip').length, r: keyHz(patch, 12) / keyHz(patch, 0) }));
+  check('13th strip plays the octave', oct.n === 13 && Math.abs(oct.r - 2) < 1e-9, JSON.stringify(oct));
+  const held = async (keys, voices) => {
+    await page.evaluate(v => { patch.keys.voices = v; renderKeys(); engine.applyKeys(); }, voices);
+    for (const k of keys){ await page.keyboard.down(k); await page.waitForTimeout(60); }
+    await page.waitForTimeout(150);
+    const n = await page.evaluate(() => engine.keyMap.size);
+    for (const k of keys) await page.keyboard.up(k);
+    await page.waitForTimeout(100);
+    return n;
+  };
+  const n4 = await held(['a', 's', 'd', 'f', 'g'], 4), n2 = await held(['a', 's', 'd'], 2);
+  check('Voices sets how many notes sound together', n4 === 4 && n2 === 2, `4 -> ${n4}, 2 -> ${n2}`);
+  await page.evaluate(() => { patch.keys.voices = 1; renderKeys(); });
+  await page.keyboard.down('a'); await page.waitForTimeout(200);
+  await page.keyboard.down('g'); await page.waitForTimeout(500);
+  const m1 = await voice();
+  await page.keyboard.up('g'); await page.waitForTimeout(600);
+  const m2 = await voice();
+  await page.keyboard.up('a'); await page.waitForTimeout(100);
+  const hzA = await page.evaluate(() => keyHz(patch, 0)), hzG = await page.evaluate(() => keyHz(patch, 4));
+  check('Mono glides back to the note still held', m1.n === 1 && Math.abs(m1.hz - hzG) < 1 && m2.n === 1 && Math.abs(m2.hz - hzA) < 1,
+    `${m1.hz && m1.hz.toFixed(1)} -> ${m2.hz && m2.hz.toFixed(1)} Hz`);
+
+  const holdCentroid = async setup => {
+    await page.evaluate(s => { Object.assign(patch.keys, s); engine.applyKeys(); }, setup);
+    await page.keyboard.down('a'); await page.waitForTimeout(500);
+    const c = await centroid();
+    await page.keyboard.up('a'); await page.waitForTimeout(50);
+    return c;
+  };
+  await page.evaluate(() => { patch.keys.voices = 4; patch.keys.pressure = 'level'; patch.keys.release = 0.05;
+    patch.reverb.mix = 0; patch.delay.mix = 0; engine.applyAll(); });    // no effect tails between measurements
+  const cLp = await holdCentroid({ wave: 'sawtooth', tone: 0.3, filter: 'lowpass', drive: 0 });
+  const cHp = await holdCentroid({ filter: 'highpass' });
+  check('Keys filter type changes the tone', cHp > cLp * 2, `LPF ${cLp.toFixed(0)} Hz, HPF ${cHp.toFixed(0)} Hz`);
+  const cLd = await holdCentroid({ filter: 'ladder' });
+  check('Keys ladder filter sounds', cLd > 0 && cLd < cHp && await page.evaluate(() => engine.keyVoices[0].ldOut.gain.value > 0.9), `${cLd.toFixed(0)} Hz`);
+  // Drive: the level of the 3rd harmonic on a sine, relative to the fundamental (with the filter open)
+  const h3 = async drive => {
+    await page.evaluate(d => { Object.assign(patch.keys, { wave: 'sine', filter: 'lowpass', tone: 1, drive: d }); engine.applyKeys(); }, drive);
+    await page.keyboard.down('a'); await page.waitForTimeout(500);
+    const r = await page.evaluate(() => {
+      const a = engine.analyser, d = new Float32Array(a.frequencyBinCount); a.getFloatFrequencyData(d);
+      const bin = engine.ctx.sampleRate / a.fftSize, f = keyHz(patch, 0);
+      const at = h => Math.max(...[-1, 0, 1].map(o => d[Math.round(h * f / bin) + o]));
+      return at(3) - at(1);
+    });
+    await page.keyboard.up('a'); await page.waitForTimeout(50);
+    return r;
+  };
+  const d0 = await h3(0), d1 = await h3(1);
+  check('Keys drive adds harmonics', d1 > d0 + 20, `3rd harmonic ${d0.toFixed(0)} -> ${d1.toFixed(0)} dB`);
+  await page.evaluate(() => { Object.assign(patch.keys, { lfoRate: 1, lfoLevel: 1, drive: 0 }); engine.applyKeys(); });
+  await page.keyboard.down('a'); await page.waitForTimeout(400);
+  const levels = await page.evaluate(async () => {           // the analyser window is ~1/3 s, so a slow LFO
+    const out = [];
+    for (let i = 0; i < 20; i++){
+      const a = engine.analyser, d = new Float32Array(a.fftSize); a.getFloatTimeDomainData(d);
+      let s = 0; for (const v of d) s += v * v; out.push(Math.sqrt(s / d.length));
+      await new Promise(r => setTimeout(r, 50));
+    }
+    return out;
+  });
+  await page.keyboard.up('a');
+  check('Keys LFO makes tremolo', Math.max(...levels) > Math.min(...levels) * 3, `${Math.min(...levels).toFixed(3)} .. ${Math.max(...levels).toFixed(3)}`);
+  check('Keys LFO filter depth reaches the filter', await page.evaluate(() => { patch.keys.lfoFilter = 0.5; engine.applyKeys(); return true; })
+    && (await page.waitForTimeout(300), await page.evaluate(() => Math.abs(engine.kLfoFilt.gain.value - 1200) < 5)));
+  await page.evaluate(() => loadPatch(FACTORY[0]));
+  await page.waitForTimeout(300);
 
   // Pop-out windows. Headless Chromium has no Picture-in-Picture window, so Keys falls back to a popup too.
   await page.evaluate(() => setView('panel'));
@@ -351,7 +423,7 @@ function check(name, ok, detail = ''){
     d.dispatchEvent(new P.win.KeyboardEvent('keyup', { code: 'KeyS', key: 's', bubbles: true }));
     return { open: true, pip: P.pip, strips: strips.length, n1, n2, ok: Math.abs(hz - keyHz(patch, 5)) < 0.5 };
   });
-  check('Keys open in an always-on-top window and play from it', kp.open && kp.pip && kp.strips === 12 && kp.n1 === 1 && kp.n2 === 1 && kp.ok, JSON.stringify(kp));
+  check('Keys open in an always-on-top window and play from it', kp.open && kp.pip && kp.strips === 13 && kp.n1 === 1 && kp.n2 === 1 && kp.ok, JSON.stringify(kp));
   await page.evaluate(() => setView('play'));
   check('Play view leaves Keys in their window', await page.evaluate(() => !$('#playSlot .keys-sec') && !!$('#playSlot .popholder')));
   await page.click('.popholder button'); await page.waitForTimeout(300);

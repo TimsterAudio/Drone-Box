@@ -58,10 +58,14 @@ noise ─► level ─► pan ┤
 The swell `env` sits on the drone path only (between `amp` and the dry and effect sends), so the delay and reverb tails ring out after Stop, and the Keys are heard whether or not the drone is playing:
 
 ```
-key voice ×2:  osc ─► tone (lowpass) ─► press ─► vca ─► pan ─┐        vibrato LFO (5.5 Hz) ─► vibDepth ─► each voice's detune
-                                                              keysOut ─┬─► sum
-                                                                       ├─► delaySend
-                                                                       └─► revSend
+key voice ×4:  osc ─► pre ─► tanh shaper ─► post ─┬─► biquad ─► bqOut ─┐
+                                                  └─► ladder ─► ldOut ─┴─► press ─► vca ─► pan ─┐
+                                                                                 keysOut (tremolo) ─┬─► sum
+                                                                                                    ├─► delaySend
+                                                                                                    └─► revSend
+Keys LFO (kLfo) ─┬─► vibDepth ─► each voice's osc detune
+                 ├─► kLfoFilt ─► each voice's biquad and ladder detune
+                 └─► kLfoAmp  ─► keysOut.gain
 ```
 
 - The **oscillators run continuously** once the context exists. Play and Stop only move the `env` gain, so there are no clicks from starting or stopping oscillators. After a stop, the context is suspended once the fade-out plus effect tails are done.
@@ -75,7 +79,8 @@ key voice ×2:  osc ─► tone (lowpass) ─► press ─► vca ─► pan ─
 - **Drift** is a JavaScript random walk every 150 ms, written to each oscillator's `detune` on top of the patch detune.
 - **Mute and solo** both go through `Engine.audible(i)`. If any oscillator is soloed, only soloed ones play; otherwise `osc.on` (mute) decides. `engine.solo` is a `Set` and isn't part of the patch. The noise source is silent while any solo is active.
 - **Both filters always run.** `applyFilter()` crossfades `bqOut` and `ldOut`, so switching to or from Ladder never clicks. Filter Q maps to ladder resonance through `qToRes()`, so one Reso fader drives both filters.
-- **Keys** have two voices, separate from the drone and not through its filter. `keyOn(id, hz, p)` takes a free voice or steals the oldest: a silent voice jumps to the new pitch, a sounding one glides (Keys Glide). `keyMove()` slides pitch and pressure, `keyOff()` starts the release. Pressure `p` (0–1) drives `press` (level) and `tone` (cutoff), as the Pressure setting says. `wake()` starts or resumes the context for the Keys, and `scheduleSuspend()` only suspends once the drone is stopped and `keysBusy()` is false.
+- **Held notes that lose their voice** stay in `keysUI.active` and wait. When a sounding note is released, `noteOff()` gives the freed voice to the latest waiting note, which glides from the released pitch (legato in Mono). A latched note that loses its voice is dropped instead.
+- **Keys** have four voices (Voices limits how many are used), separate from the drone and not through its filter. **Drive** is a fixed tanh curve: `pre` scales the signal into it and `post` restores the peak level, so 0% is nearly clean. For Ladder, the shaper stays clean and the ladder's own drive is used; the biquad and ladder outputs crossfade like the drone's. `keyOn(id, hz, p)` takes a free voice or steals the oldest: a silent voice jumps to the new pitch, a sounding one glides (Keys Glide). `keyMove()` slides pitch and pressure, `keyOff()` starts the release. Pressure `p` (0–1) drives `press` (level) and `tone` (cutoff), as the Pressure setting says. `wake()` starts or resumes the context for the Keys, and `scheduleSuspend()` only suspends once the drone is stopped and `keysBusy()` is false.
 - The **reverb impulse** is generated: decaying stereo noise that darkens over time. It's rebuilt, with a debounce, when the decay changes.
 
 ## DSP worklets
@@ -124,7 +129,10 @@ A patch is plain JSON. This is what Export writes and what's stored in localStor
   "keys":   { "wave": "triangle", "octave": 2, "scale": "all",       // added in 0.3; scale: all | penta | major | minor | bhairav | harm
               "glide": 0.15, "vibrato": 0.1, "tone": 0.6, "attack": 0.05, "release": 1.5,
               "level": 0.6, "pan": 0, "pressure": "both",             // pressure: level | tone | both
-              "latch": false, "tune": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }   // cents per strip, ±50
+              "latch": false, "voices": 4,                            // voices: 1 (mono) – 4
+              "filter": "lowpass", "reso": 0.7, "drive": 0,           // tone is the cutoff (0–1 → 150 Hz – 19 kHz); filter: lowpass | bandpass | highpass | ladder
+              "lfoShape": "sine", "lfoRate": 5.5, "lfoFilter": 0, "lfoLevel": 0,   // vibrato is the LFO's pitch depth
+              "tune": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }       // cents per strip (13, the last is the octave), ±50
 }
 ```
 

@@ -51,7 +51,7 @@ body{
 .synth::before{left:-4px} .synth::after{right:-4px}
 
 /* Top strip */
-.strip{display:flex;flex-wrap:wrap;align-items:center;gap:12px 26px;padding:12px 22px 10px}
+.strip{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:12px 22px 10px}
 .logo{display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin-right:auto}
 /* Maker wordmark: same treatment as Spool's header badge */
 .maker{font:500 13px/1.3 'Space Grotesk',system-ui,sans-serif;letter-spacing:.01em;color:var(--legend-dim);border:1px solid var(--frame);border-radius:3px;padding:5px 10px;margin:0 0 5px;display:inline-block;white-space:nowrap}
@@ -213,11 +213,73 @@ footer{max-width:1888px;margin:8px auto 0;color:#8e8a81;font-size:12px;display:f
 :root[data-theme="silver"] footer{color:#2a2926}
 kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:0 5px;font-size:11px;opacity:.85}
 
+
+/* ---------- Keys: 12 touch strips plus controls ---------- */
+[hidden]{display:none !important}
+.keys-sec{flex:1 1 auto;flex-wrap:nowrap;align-items:stretch;gap:14px;justify-content:flex-start}
+.kctl{display:flex;gap:12px;align-items:center}
+.kleft{display:flex;flex-direction:column;gap:12px;align-items:center;min-width:150px}
+.kbtns{display:flex;gap:10px}
+.kgrid2{display:grid;grid-template-columns:repeat(5,auto);gap:0 2px;justify-items:center}
+.kgrid2 .knob{margin:6px 8px}
+.khint{font-size:10.5px;font-weight:600;letter-spacing:.12em;color:var(--legend-dim);text-transform:uppercase;text-align:center;line-height:1.5}
+.kbed{display:flex;gap:6px;flex:1;min-width:0;align-items:stretch;touch-action:none;user-select:none;-webkit-user-select:none;min-height:150px}
+.kstrip{flex:1;min-width:0;position:relative;border-radius:4px;overflow:hidden;cursor:pointer;
+  background:linear-gradient(180deg,#303030,#171717 55%,#0d0d0d);border:1px solid #000;color:#ece8dd;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -3px 6px rgba(0,0,0,.6),0 3px 6px rgba(0,0,0,.45);
+  display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:7px 2px 6px}
+.kstrip::after{content:'';position:absolute;left:50%;top:36px;bottom:32px;width:1px;background:rgba(236,232,221,.12)}
+.kstrip.off{opacity:.3;cursor:default}
+.kstrip .glow,.kstrip .pt{display:none}
+.kstrip.on .glow{display:block;position:absolute;left:3px;right:3px;bottom:3px;height:var(--p);border-radius:3px;
+  background:linear-gradient(0deg,rgba(255,91,54,.9),rgba(255,91,54,.12));box-shadow:0 0 14px rgba(255,80,40,.55)}
+.kstrip.on .pt{display:block;position:absolute;left:50%;margin-left:-6px;width:12px;height:12px;border-radius:50%;
+  bottom:calc(var(--p) - 6px);background:#fff;box-shadow:0 0 10px 3px rgba(255,91,54,.9);z-index:2}
+.kstrip .top,.kstrip .bot{display:flex;flex-direction:column;align-items:center;gap:1px;position:relative;z-index:1}
+.kstrip .lab{font:700 13px 'Barlow Semi Condensed';letter-spacing:.06em;white-space:nowrap}
+.kstrip .nm{font:600 10px 'Barlow Semi Condensed';letter-spacing:.1em;color:#9a958b;text-transform:uppercase;white-space:nowrap}
+.kstrip .hz{font:11px 'Share Tech Mono';color:#ff5b36;text-shadow:0 0 5px rgba(255,80,40,.6);white-space:nowrap}
+.kstrip.on .hz{color:#fff;text-shadow:0 0 4px #000}
+.kstrip .kb{font:600 10px 'Barlow Semi Condensed';border:1px solid rgba(236,232,221,.35);border-radius:3px;padding:0 4px;color:#cfc9bd;min-height:14px}
+.kstrip .kb:empty{visibility:hidden}
+.keys-sec.tuning .kstrip{box-shadow:inset 0 0 0 1px #ec7b24,0 3px 6px rgba(0,0,0,.45)}
+.keys-sec.tuning .kstrip .hz{color:#ec7b24}
+
+/* ---------- Pop-out windows ---------- */
+.switches{display:flex;gap:12px;align-items:center}
+.popbtn{position:absolute;top:-11px;right:12px;display:flex;align-items:center;gap:5px;background:var(--panel);
+  border:1px solid var(--frame);border-radius:3px;color:var(--legend-dim);cursor:pointer;padding:2px 7px;
+  font:700 10px/14px 'Barlow Semi Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;z-index:3}
+.popbtn:hover,.popbtn:focus-visible{color:var(--legend);border-color:#ec7b24;outline:none}
+.popbtn.pending{color:var(--legend);border-color:#ec7b24;box-shadow:0 0 8px rgba(236,123,36,.55)}
+.hwb.pending .key{box-shadow:0 0 0 1px #ec7b24,0 0 9px rgba(236,123,36,.65)}
+.popbtn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:1.6}
+.popholder{flex:0 0 auto;align-items:center !important;justify-content:center !important;gap:14px !important;
+  color:var(--legend-dim);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;min-height:64px}
+.popholder button{font:inherit;text-transform:inherit;letter-spacing:inherit;color:var(--legend);background:var(--panel-hi);border:1px solid var(--frame);border-radius:3px;padding:4px 10px;cursor:pointer}
+.popholder button:hover{border-color:#ec7b24}
+.popbody{margin:0 !important;padding:12px !important;height:100vh;overflow:hidden;box-sizing:border-box;background:var(--tex),var(--panel)}
+.popbody > .sec{height:100%;margin-top:6px;height:calc(100% - 6px)}
+.popbody > .monitor{flex-wrap:nowrap}
+.popbody .screen canvas{min-height:0}
+.popbody .kbed{min-height:0}
+/* A narrow Keys window keeps the strips playable: the knobs go first (they're still on the panel), then the side buttons */
+@media (max-width:1150px){ .popbody .kgrid2{display:none} }
+@media (max-width:640px){ .popbody .kctl{display:none} }
+
 /* Fitted mode (see fitToWindow): fixed design width, scaled as a whole, never scrolls */
 :root.fitted{overflow:hidden}
 :root.fitted body{width:1920px;box-sizing:border-box;margin:0 auto}
 
 @media (max-width:760px){
+  .keys-sec{flex-wrap:wrap}
+  .kbed{flex-basis:100%;min-height:180px}
+  .kbed{gap:3px}
+  .kctl{flex-wrap:wrap;justify-content:center;min-width:0;max-width:100%}
+  .kgrid2{grid-template-columns:repeat(4,auto)}
+  .kgrid2 .knob{margin:6px 4px}
+  .kstrip .nm,.kstrip .hz{display:none}
+  .kstrip .lab{font-size:11px;letter-spacing:0}
   body{padding:8px}
   .synth{border-left-width:6px;border-right-width:6px}
   .strip,.row{padding-left:12px;padding-right:12px}
@@ -254,8 +316,7 @@ kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:
     </div>
     <div class="meter-wrap"><canvas id="meters" aria-label="Output level meters"></canvas><span class="cl" style="margin:0">Output L / R</span></div>
     <div id="masterSlot"></div>
-    <div id="themeSlot"></div>
-    <div id="knobSlot"></div>
+    <div class="switches"><div id="themeSlot"></div><div id="knobSlot"></div><div id="viewSlot"></div></div>
     <button class="hwb big k-red" id="play" aria-pressed="false" type="button">
       <span class="led"></span><span class="key"></span><span class="txt">Play / Stop</span>
     </button>
@@ -275,6 +336,7 @@ kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:
   </div>
 
   <div class="row" id="ctrlSlot"></div>
+  <div class="row" id="playSlot" hidden></div>
 </div>
 
 <footer>
@@ -485,6 +547,15 @@ const WAVES = [['sine','Sine'],['triangle','Triangle'],['warm','Warm'],['sawtoot
 const LFO_TARGETS = [['off','Off'],['filter','Filter'],['pitch','Pitch'],['volume','Volume'],['pan','Pan']];
 const LFO_SHAPES = [['sine','Sine'],['triangle','Triangle'],['square','Square'],['sawtooth','Saw']];
 const NUM_OSC = 6;
+// Keys scales: indexes into RATIOS that are playable (the other strips go dark).
+const SCALES = [
+  ['all', 'All 12', [0,1,2,3,4,5,6,7,8,9,10,11]], ['penta', 'Penta', [0,2,4,7,9]],
+  ['major', 'Major', [0,2,4,5,7,9,11]], ['minor', 'Minor', [0,2,3,5,7,8,10]],
+  ['bhairav', 'Bhairav', [0,1,4,5,7,8,11]], ['harm', 'Harmonic', [0,4,7,10]]
+];
+// Computer keys that play the Keys, in order (they walk up the current scale).
+const KEY_CODES = ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon','Quote','Backslash'];
+const KEY_LABELS = ['A','S','D','F','G','H','J','K','L',';',"'",'\\'];
 const STORE_PATCHES = 'dronebox.patches';
 const STORE_LAST = 'dronebox.last';
 
@@ -507,7 +578,10 @@ function defaultPatch(){
     env: {attack: 4, release: 6},
     delay: {time: 0.6, feedback: 0.35, tone: 3000, mix: 0.15},
     reverb: {decay: 5, mix: 0.35},
-    master: {volume: 0.7}
+    master: {volume: 0.7},
+    keys: {wave: 'triangle', octave: 2, scale: 'all', glide: 0.15, vibrato: 0.1, tone: 0.6,
+           attack: 0.05, release: 1.5, level: 0.6, pan: 0, pressure: 'both', latch: false,
+           tune: Array(12).fill(0)}          // cents, per strip (added in 0.3)
   };
 }
 // Merge an arbitrary (possibly partial / older) patch onto defaults so imports never break the app.
@@ -526,6 +600,8 @@ function normalize(p){
   merge(d, p);
   if (Array.isArray(p.oscs)) for (let i = 0; i < NUM_OSC; i++) if (p.oscs[i]) merge(d.oscs[i], p.oscs[i]);
   if (Array.isArray(p.lfos)) for (let i = 0; i < 2; i++) if (p.lfos[i]) merge(d.lfos[i], p.lfos[i]);
+  if (p.keys && Array.isArray(p.keys.tune))
+    d.keys.tune = d.keys.tune.map((_, i) => typeof p.keys.tune[i] === 'number' ? Math.max(-50, Math.min(50, p.keys.tune[i])) : 0);
   return d;
 }
 function preset(name, over){
@@ -615,6 +691,10 @@ const parseRatio = r => { const [a, b] = r.split('/').map(Number); return a / b;
 function rootHz(p){
   const midi = 12 * (p.root.octave + 1) + p.root.note;
   return p.root.a4 * Math.pow(2, (midi - 69) / 12);
+}
+// A Keys strip's pitch: root x strip ratio, up the Keys octave (plus any extra octaves), plus its tuning.
+function keyHz(p, idx, extraOct = 0){
+  return rootHz(p) * parseRatio(RATIOS[idx][0]) * Math.pow(2, p.keys.octave + extraOct) * Math.pow(2, p.keys.tune[idx] / 1200);
 }
 function oscHz(p, i){
   const o = p.oscs[i];
@@ -722,10 +802,15 @@ class Engine {
       this.bus.connect(this.ladder).connect(this.ldOut).connect(this.amp);
     }
 
+    // Swell envelope on the drone path only: delay and reverb tails ring out after Stop, and the Keys
+    // (mixed in after it) sound whether or not the drone is playing.
+    this.env = g(0);
+    this.amp.connect(this.env);
+
     // Mix bus
     this.sum = g(1);
     this.dry = g(1);
-    this.amp.connect(this.dry).connect(this.sum);
+    this.env.connect(this.dry).connect(this.sum);
 
     // Delay with filtered feedback loop
     this.delaySend = g(0);
@@ -733,25 +818,24 @@ class Engine {
     this.fbTone = ctx.createBiquadFilter(); this.fbTone.type = 'lowpass';
     this.fb = g(0);
     this.delayOut = g(1);
-    this.amp.connect(this.delaySend).connect(this.delay).connect(this.fbTone);
+    this.env.connect(this.delaySend).connect(this.delay).connect(this.fbTone);
     this.fbTone.connect(this.fb).connect(this.delay);
     this.fbTone.connect(this.delayOut).connect(this.sum);
 
     // Reverb (dry signal + delay tails both feed it)
     this.revSend = g(0);
     this.conv = ctx.createConvolver();
-    this.amp.connect(this.revSend);
+    this.env.connect(this.revSend);
     this.delayOut.connect(this.revSend);
     this.revSend.connect(this.conv).connect(this.sum);
     this.revDecay = null;
 
-    // Swell envelope -> master -> safety limiter -> out
-    this.env = g(0);
+    // Master -> safety limiter -> out
     this.master = g(0.7);
     this.limiter = ctx.createDynamicsCompressor();
     this.limiter.threshold.value = -6; this.limiter.knee.value = 6; this.limiter.ratio.value = 12;
     this.limiter.attack.value = 0.003; this.limiter.release.value = 0.25;
-    this.sum.connect(this.env).connect(this.master).connect(this.limiter).connect(ctx.destination);
+    this.sum.connect(this.master).connect(this.limiter).connect(ctx.destination);
 
     // Analysis taps
     this.analyser = ctx.createAnalyser(); this.analyser.fftSize = 16384; this.analyser.smoothingTimeConstant = 0.8;
@@ -769,6 +853,25 @@ class Engine {
       o.connect(depth);
       o.start();
       return {osc: o, depth, inv};
+    });
+
+    // Keys: two voices (oscillator -> tone low-pass -> pressure gain -> envelope -> pan), mixed in after
+    // the swell envelope. They share the delay and reverb, but not the drone's filter or tremolo.
+    this.keysOut = g(1);
+    this.keysOut.connect(this.sum); this.keysOut.connect(this.delaySend); this.keysOut.connect(this.revSend);
+    this.vib = ctx.createOscillator(); this.vib.frequency.value = 5.5;
+    this.vibDepth = g(0);
+    this.vib.connect(this.vibDepth); this.vib.start();
+    this.keyMap = new Map();                 // note id (pointer or computer key) -> voice
+    this.keysLast = -1e9;                    // context time of the last note on or off
+    this.keyVoices = [0, 1].map(() => {
+      const v = this.makeVoice();
+      v.tone = ctx.createBiquadFilter(); v.tone.type = 'lowpass'; v.tone.Q.value = 0.4;
+      v.press = g(0); v.vca = g(0); v.pan = ctx.createStereoPanner();
+      v.src.connect(v.tone).connect(v.press).connect(v.vca).connect(v.pan).connect(this.keysOut);
+      this.vibDepth.connect(v.detune);
+      v.id = null; v.started = 0; v.wave = null;
+      return v;
     });
 
     this.ready = true;
@@ -807,17 +910,21 @@ class Engine {
     this.applyDelay();
     this.applyReverb();
     this.applyMaster();
+    this.applyKeys();
+  }
+
+  setWave(v, wave){
+    if (v.wave === wave) return;
+    if (this.dsp) this.set(v.waveP, WAVE_INDEX[wave] ?? 0);
+    else if (this.waves[wave]) v.src.setPeriodicWave(this.waves[wave]);
+    else v.src.type = wave;
+    v.wave = wave;
   }
 
   applyOsc(i, instant = false){
     if (!this.ready) return;
     const o = this.p.oscs[i], v = this.voices[i];
-    if (v.wave !== o.wave){
-      if (this.dsp) this.set(v.waveP, WAVE_INDEX[o.wave] ?? 0);
-      else if (this.waves[o.wave]) v.src.setPeriodicWave(this.waves[o.wave]);
-      else v.src.type = o.wave;
-      v.wave = o.wave;
-    }
+    this.setWave(v, o.wave);
     const glide = instant && !this.running ? 0.001 : Math.max(0.005, this.p.root.glide / 3);
     this.T(v.freq, oscHz(this.p, i), glide);
     this.T(v.detune, o.detune + v.drift, 0.05);
@@ -933,6 +1040,100 @@ class Engine {
     }
   }
 
+  /* ----- Keys ----- */
+  keyPress(p){ return this.p.keys.pressure === 'tone' ? 1 : 0.25 + 0.75 * p; }      // pressure -> level
+  keyCutoff(p){                                                                       // pressure -> brightness
+    const K = this.p.keys, b = K.pressure === 'level' ? K.tone : K.tone * 0.55 + p * 0.45;
+    return Math.min(20000, 150 * Math.pow(2, 7 * b));
+  }
+  keyGlide(){ return Math.max(0.003, this.p.keys.glide / 3); }
+
+  applyKeys(){
+    if (!this.ready) return;
+    const K = this.p.keys;
+    this.T(this.vibDepth.gain, K.vibrato * 40, 0.05);                                // up to ±40 cents
+    for (const v of this.keyVoices){
+      this.setWave(v, K.wave);
+      this.T(v.pan.pan, K.pan, 0.05);
+      if (v.id){
+        this.T(v.vca.gain, K.level * 0.4, 0.05);
+        this.T(v.press.gain, this.keyPress(v.p), 0.03);
+        this.T(v.tone.frequency, this.keyCutoff(v.p), 0.03);
+      }
+    }
+  }
+
+  // Start (or re-press) a note. A free voice starts at the new pitch; a stolen one glides from where it was.
+  keyOn(id, hz, p){
+    if (!this.ready) return;
+    const K = this.p.keys, now = this.ctx.currentTime;
+    let v = this.keyMap.get(id);
+    if (!v){
+      v = this.keyVoices.find(x => !x.id) || this.keyVoices.reduce((a, b) => a.started <= b.started ? a : b);
+      if (v.id) this.keyMap.delete(v.id);
+      const silent = !v.id && v.vca.gain.value < 0.002;
+      v.id = id; v.started = now;
+      this.keyMap.set(id, v);
+      if (silent) this.set(v.freq, hz); else this.T(v.freq, hz, this.keyGlide());
+    } else this.T(v.freq, hz, this.keyGlide());
+    v.p = p;
+    this.set(v.press.gain, this.keyPress(p));
+    this.set(v.tone.frequency, this.keyCutoff(p));
+    const g = v.vca.gain;
+    if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(now); else { g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); }
+    g.setTargetAtTime(K.level * 0.4, now, Math.max(0.003, K.attack / 4));
+    this.keysLast = now;
+  }
+
+  // Slide a held note: new pitch (gliding) and/or new pressure.
+  keyMove(id, hz, p){
+    const v = this.ready && this.keyMap.get(id);
+    if (!v) return;
+    if (hz) this.T(v.freq, hz, this.keyGlide());
+    v.p = p;
+    this.T(v.press.gain, this.keyPress(p), 0.03);
+    this.T(v.tone.frequency, this.keyCutoff(p), 0.03);
+  }
+
+  keyOff(id){
+    const v = this.ready && this.keyMap.get(id);
+    if (!v) return;
+    this.keyMap.delete(id);
+    v.id = null;
+    const K = this.p.keys, now = this.ctx.currentTime, g = v.vca.gain;
+    if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(now); else { g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); }
+    g.setTargetAtTime(0, now, Math.max(0.005, K.release / 4));
+    this.keysLast = now;
+    if (!this.running) this.scheduleSuspend(K.release * 1.5 + this.p.reverb.decay + 1);
+  }
+
+  keysAllOff(){ for (const id of [...this.keyMap.keys()]) this.keyOff(id); }
+
+  // True while a Keys note is held or its release and effect tails are still sounding.
+  keysBusy(){
+    if (!this.ready) return false;
+    return this.keyMap.size > 0 || this.ctx.currentTime - this.keysLast < this.p.keys.release * 1.5 + this.p.reverb.decay + 1;
+  }
+
+  // Make sure the audio is running (for the Keys, which can play without the drone).
+  async wake(){
+    await this.init();
+    clearTimeout(this.stopTimer);
+    if (this.ctx.state !== 'running') await this.ctx.resume();
+  }
+
+  // Suspend the audio context once nothing is sounding, to save CPU.
+  scheduleSuspend(seconds){
+    clearTimeout(this.stopTimer);
+    this.stopTimer = setTimeout(() => {
+      if (this.running) return;
+      if (this.keysBusy()) return this.scheduleSuspend(1);
+      clearInterval(this.driftTimer); this.driftTimer = null;
+      this.ctx.suspend();
+      ui.setStatus();
+    }, seconds * 1000);
+  }
+
   async play(){
     await this.init();
     clearTimeout(this.stopTimer);
@@ -952,14 +1153,8 @@ class Engine {
     if (gain.cancelAndHoldAtTime) gain.cancelAndHoldAtTime(now);
     else { gain.cancelScheduledValues(now); gain.setValueAtTime(gain.value, now); }
     gain.setTargetAtTime(0, now, Math.max(0.01, rel / 4));
-    // Suspend once the release (plus reverb/delay tails) has died away, to save CPU.
-    const tail = rel * 1.5 + this.p.reverb.decay + 1;
-    this.stopTimer = setTimeout(() => {
-      if (this.running) return;
-      clearInterval(this.driftTimer); this.driftTimer = null;
-      this.ctx.suspend();
-      ui.setStatus();
-    }, tail * 1000);
+    // Suspend once the release (plus reverb/delay tails) has died away, and no Keys are sounding.
+    this.scheduleSuspend(rel * 1.5 + this.p.reverb.decay + 1);
   }
 }
 
@@ -1216,10 +1411,13 @@ const ui = {
     $('#play').setAttribute('aria-pressed', engine.running);
     const st = !engine.ctx ? 'STOP'
       : engine.running ? 'PLAY'
-      : engine.ctx.state === 'running' ? 'FADE' : 'STOP';
+      : engine.ctx.state !== 'running' ? 'STOP'
+      : engine.keyMap.size ? 'KEYS' : 'FADE';
     lcd.status(patch.name, st);
   }
 };
+
+const POPS = {};                                              // pop-out windows: name -> {win, sec, holder}
 
 let saveTimer;
 function changed(){
@@ -1229,12 +1427,14 @@ function changed(){
 
 function setKnobStyle(k){
   document.documentElement.dataset.knobs = k;
+  for (const P of Object.values(POPS)) P.win.document.documentElement.dataset.knobs = k;
   store('dronebox.knobs', k);
 }
 setKnobStyle(store('dronebox.knobs') === 'pointers' ? 'pointers' : 'caps');
 
 function setTheme(t){
   document.documentElement.dataset.theme = t;
+  for (const P of Object.values(POPS)) P.win.document.documentElement.dataset.theme = t;
   store('dronebox.theme', t);
 }
 setTheme(store('dronebox.theme') === 'silver' ? 'silver' : 'dark');
@@ -1252,6 +1452,10 @@ function render(){
   $('#knobSlot').replaceChildren(
     buttons({label: 'Knobs', name: 'Knob colours', options: [['caps', 'Colour'], ['pointers', 'Pointer']], color: 'k-grey',
       get: () => document.documentElement.dataset.knobs, set: setKnobStyle}));
+  const viewGroup = buttons({label: 'View', name: 'Panel view', options: [['panel', 'Panel'], ['play', 'Play']], color: 'k-grey',
+    get: () => view, set: setView});
+  viewGroup.querySelector('.brow').append(keysFloatButton());
+  $('#viewSlot').replaceChildren(viewGroup);
 
   // Oscillator strips
   const hzEls = [];
@@ -1387,11 +1591,425 @@ function render(){
         knob({label: 'Amount', name: 'Reverb amount', min: 0, max: 1, fmt: fmtPct, get: () => R.mix, set: v => { R.mix = v; upR(); }})))
   );
 
+  renderKeys();
+  applyView();
   refreshHz();
   syncStrips();
   lcd.show(`Root ${NOTE_NAMES[P.root.note]}${P.root.octave}`, fmtHz(rootHz(P)));
   ui.setStatus();
 }
+
+/* ---------- Keys: touch strips ---------- */
+// One persistent section element: it's docked in the Play view or moved into its own window, and
+// renderKeys() rebuilds its contents in place wherever it currently lives.
+const keysSec = el('section', 'sec keys-sec');
+const keysUI = {
+  strips: [],               // [{el, hz, kb}] per strip
+  bed: null,
+  active: new Map(),        // note id -> {idx, p}  (for the glow)
+  held: new Map(),          // pointer id -> note state
+  latched: new Map(),       // 's<strip>' or 'k<key>' -> note id, while Latch holds it
+  kbHeld: new Map(),        // keyboard code -> note state
+  tuning: false
+};
+const scaleDegrees = () => (SCALES.find(s => s[0] === patch.keys.scale) || SCALES[0])[2];
+const playable = idx => scaleDegrees().includes(idx);
+
+function renderKeys(){
+  const K = patch.keys, nm = s => 'Keys ' + s;
+  const up = () => { engine.applyKeys(); changed(); };
+  const upLabels = () => { refreshKeyLabels(); changed(); };
+  keysSec.classList.toggle('tuning', keysUI.tuning);
+
+  const latch = hwButton('Latch', 'k-yellow');
+  latch.setAttribute('aria-pressed', K.latch);
+  latch.addEventListener('click', () => {
+    K.latch = !K.latch; latch.setAttribute('aria-pressed', K.latch);
+    if (!K.latch) releaseLatched();
+    lcd.show(nm('latch'), K.latch ? 'ON' : 'OFF'); changed(); latch.blur();
+  });
+  const tune = hwButton('Tune', 'k-orange');
+  tune.setAttribute('aria-pressed', keysUI.tuning);
+  tune.addEventListener('click', () => {
+    keysUI.tuning = !keysUI.tuning; tune.setAttribute('aria-pressed', keysUI.tuning);
+    keysSec.classList.toggle('tuning', keysUI.tuning); refreshKeyLabels();
+    lcd.show(nm('tune mode'), keysUI.tuning ? 'Drag a strip' : 'OFF'); tune.blur();
+  });
+  const btns = el('div', 'kbtns'); btns.append(latch, tune);
+  const left = el('div', 'kleft');
+  left.append(btns,
+    buttons({label: 'Pressure', name: nm('pressure'), color: 'k-cream',
+      options: [['level', 'Level'], ['tone', 'Tone'], ['both', 'Both']], get: () => K.pressure, set: v => { K.pressure = v; up(); }}),
+    el('div', 'khint', 'Keys A–\\ play · Z / X octave'));
+
+  const grid = el('div', 'kgrid2');
+  grid.append(
+    knob({fam: 'tone', label: 'Wave', name: nm('wave'), size: 'sm', options: WAVES, fmt: v => WAVES.find(w => w[0] === v)[1],
+      get: () => K.wave, set: v => { K.wave = v; up(); }}),
+    knob({fam: 'pitch', label: 'Octave', name: nm('octave'), size: 'sm', options: [0,1,2,3,4].map(x => [x, fmtOct(x)]), fmt: fmtOct,
+      get: () => K.octave, set: v => { K.octave = v; upLabels(); }}),
+    knob({fam: 'pitch', label: 'Scale', name: nm('scale'), size: 'sm', options: SCALES.map(s => [s[0], s[1]]), fmt: v => SCALES.find(s => s[0] === v)[1],
+      get: () => K.scale, set: v => { K.scale = v; upLabels(); }}),
+    knob({fam: 'pitch', label: 'Glide', name: nm('glide'), size: 'sm', min: 0.005, max: 5, scale: 'log', fmt: fmtSec,
+      get: () => K.glide, set: v => { K.glide = v; changed(); }}),
+    knob({fam: 'mod', label: 'Vibrato', name: nm('vibrato'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
+      get: () => K.vibrato, set: v => { K.vibrato = v; up(); }}),
+    knob({fam: 'tone', label: 'Tone', name: nm('tone'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
+      get: () => K.tone, set: v => { K.tone = v; up(); }}),
+    knob({label: 'Attack', name: nm('attack'), size: 'sm', min: 0.005, max: 10, scale: 'log', fmt: fmtSec,
+      get: () => K.attack, set: v => { K.attack = v; changed(); }}),
+    knob({label: 'Release', name: nm('release'), size: 'sm', min: 0.01, max: 20, scale: 'log', fmt: fmtSec,
+      get: () => K.release, set: v => { K.release = v; changed(); }}),
+    knob({label: 'Level', name: nm('level'), size: 'sm', min: 0, max: 1, fmt: fmtPct,
+      get: () => K.level, set: v => { K.level = v; up(); }}),
+    knob({label: 'Pan', name: nm('pan'), size: 'sm', min: -1, max: 1, fmt: fmtPan,
+      get: () => K.pan, set: v => { K.pan = v; up(); }}));
+
+  const ctl = el('div', 'kctl'); ctl.append(left, grid);
+  const bed = el('div', 'kbed');
+  keysUI.bed = bed;
+  keysUI.strips = RATIOS.map(([r, label], i) => {
+    const s = el('div', 'kstrip');
+    const top = el('div', 'top'); top.append(el('div', 'lab', r), el('div', 'nm', label.split(' · ')[1]));
+    const hz = el('div', 'hz'), kb = el('div', 'kb');
+    const bot = el('div', 'bot'); bot.append(hz, kb);
+    s.append(el('div', 'glow'), el('div', 'pt'), top, bot);
+    s.addEventListener('dblclick', () => {                    // Tune mode: double-click resets a strip's tuning
+      if (!keysUI.tuning) return;
+      K.tune[i] = 0; refreshKeyLabels(); changed(); lcd.show(`Keys tune ${r}`, fmtCents(0));
+    });
+    bed.append(s);
+    return {el: s, hz, kb};
+  });
+  bindBed(bed);
+  keysSec.replaceChildren(el('h3', null, 'Keys'), popButton('keys'), ctl, bed);
+  refreshKeyLabels();
+  paintStrips();
+}
+
+// Strip labels: dark when outside the scale, the frequency (or tuning, in Tune mode), and the computer key.
+function refreshKeyLabels(){
+  const deg = scaleDegrees(), K = patch.keys;
+  const letter = new Map(deg.map((idx, k) => [idx, KEY_LABELS[k]]));
+  keysUI.strips.forEach((st, i) => {
+    st.el.classList.toggle('off', !deg.includes(i) && !keysUI.tuning);
+    st.hz.textContent = keysUI.tuning ? fmtCents(K.tune[i]) : fmtHz(keyHz(patch, i)).replace(' Hz', '');
+    st.kb.textContent = letter.get(i) || '';
+  });
+}
+
+// Glow on the strips that are sounding, at the height of their pressure.
+function paintStrips(){
+  if (engine.ready) for (const [id, a] of [...keysUI.active]) if (!a.pending && !engine.keyMap.has(id)) keysUI.active.delete(id);   // stolen voices
+  for (const [k, id] of [...keysUI.latched]) if (!keysUI.active.has(id)) keysUI.latched.delete(k);
+  const level = new Map();
+  for (const {idx, p} of keysUI.active.values()) level.set(idx, Math.max(level.get(idx) ?? 0, p));
+  keysUI.strips.forEach((st, i) => {
+    const on = level.has(i);
+    st.el.classList.toggle('on', on);
+    if (on) st.el.style.setProperty('--p', (8 + level.get(i) * 88).toFixed(1) + '%');
+  });
+}
+
+function noteOn(st){
+  const a = {idx: st.idx, p: st.p, pending: true};             // pending until the audio is awake
+  keysUI.active.set(st.id, a);
+  paintStrips();
+  lcd.show('Keys ' + RATIOS[st.idx][0], fmtHz(st.hz));
+  engine.wake().then(() => {
+    if (st.ended) return;                                     // released before the audio was ready
+    engine.keyOn(st.id, st.hz, st.p);
+    a.pending = false;
+    paintStrips(); ui.setStatus();
+  });
+}
+function noteMove(st){
+  const a = keysUI.active.get(st.id);
+  if (a){ a.idx = st.idx; a.p = st.p; }
+  engine.keyMove(st.id, st.hz, st.p);
+  paintStrips();
+}
+function noteOff(st){
+  st.ended = true;
+  engine.keyOff(st.id);
+  keysUI.active.delete(st.id);
+  paintStrips(); ui.setStatus();
+}
+function releaseLatched(){
+  for (const id of keysUI.latched.values()){ engine.keyOff(id); keysUI.active.delete(id); }
+  keysUI.latched.clear();
+  paintStrips(); ui.setStatus();
+}
+
+/* Mouse, pen and touch on the strips. Height in the strip is pressure (top = full); a pen's real
+   pressure is used when it reports one. Drag sideways to glide; Shift + drag for a free slide. */
+function bindBed(bed){
+  const rects = () => keysUI.strips.map(s => s.el.getBoundingClientRect());
+  const stripAt = x => {
+    const r = rects();
+    let best = -1, d = Infinity;
+    r.forEach((q, i) => { const c = Math.abs(x - (q.left + q.right) / 2); if (c < d){ d = c; best = i; } });
+    return best;
+  };
+  const pressureAt = (e, idx) => {
+    if (e.pointerType === 'pen' && e.pressure > 0) return e.pressure;
+    const q = keysUI.strips[idx].el.getBoundingClientRect();
+    return Math.min(1, Math.max(0, 1 - (e.clientY - q.top) / q.height));
+  };
+  const freeHz = x => {                                       // continuous pitch between strip centres
+    const r = rects(), c = r.map(q => (q.left + q.right) / 2), hz = RATIOS.map((_, i) => keyHz(patch, i));
+    if (x <= c[0]) return hz[0];
+    if (x >= c[11]) return hz[11];
+    const i = c.findIndex((v, k) => x >= v && x < c[k + 1]), t = (x - c[i]) / (c[i + 1] - c[i]);
+    return hz[i] * Math.pow(hz[i + 1] / hz[i], t);
+  };
+
+  bed.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    try { bed.setPointerCapture(e.pointerId); } catch (_) {}
+    const idx = stripAt(e.clientX);
+    if (idx < 0) return;
+    const K = patch.keys;
+    if (keysUI.tuning){
+      const st = {id: 'p' + e.pointerId, idx, p: 0.7, hz: keyHz(patch, idx), tune: true, y0: e.clientY, c0: K.tune[idx]};
+      keysUI.held.set(e.pointerId, st); noteOn(st);
+      return;
+    }
+    if (!playable(idx) && !e.shiftKey) return;
+    if (K.latch && keysUI.latched.has('s' + idx)){            // Latch: press a held strip again to release it
+      const id = keysUI.latched.get('s' + idx);
+      keysUI.latched.delete('s' + idx);
+      noteOff({id});
+      return;
+    }
+    const st = {id: 'p' + e.pointerId + ':' + performance.now().toFixed(0), idx, p: pressureAt(e, idx), hz: keyHz(patch, idx)};
+    keysUI.held.set(e.pointerId, st);
+    noteOn(st);
+  });
+
+  bed.addEventListener('pointermove', e => {
+    const st = keysUI.held.get(e.pointerId);
+    if (!st) return;
+    if (st.tune){                                             // Tune mode: drag up/down to retune ±50 cents
+      const K = patch.keys, step = e.shiftKey ? 0.1 : 1;
+      const c = Math.max(-50, Math.min(50, Math.round((st.c0 + (st.y0 - e.clientY) * (e.shiftKey ? 0.05 : 0.25)) / step) * step));
+      K.tune[st.idx] = +c.toFixed(1);
+      st.hz = keyHz(patch, st.idx);
+      engine.keyMove(st.id, st.hz, st.p);
+      refreshKeyLabels();
+      lcd.show(`Keys tune ${RATIOS[st.idx][0]}`, fmtCents(K.tune[st.idx]));
+      return;
+    }
+    if (e.shiftKey){ st.hz = freeHz(e.clientX); st.idx = stripAt(e.clientX); }
+    else {
+      const i = stripAt(e.clientX);
+      if (i >= 0 && i !== st.idx && playable(i)){ st.idx = i; st.hz = keyHz(patch, i); lcd.show('Keys ' + RATIOS[i][0], fmtHz(st.hz)); }
+    }
+    st.p = pressureAt(e, st.idx);
+    noteMove(st);
+  });
+
+  const end = e => {
+    const st = keysUI.held.get(e.pointerId);
+    if (!st) return;
+    keysUI.held.delete(e.pointerId);
+    if (st.tune){ noteOff(st); changed(); return; }
+    if (patch.keys.latch && e.type === 'pointerup') keysUI.latched.set('s' + st.idx, st.id);
+    else noteOff(st);
+  };
+  bed.addEventListener('pointerup', end);
+  bed.addEventListener('pointercancel', end);
+}
+
+/* Computer keyboard: A S D F G H J K L ; ' \ walk up the current scale (into the next octave when the
+   scale has fewer than 12 notes); Z / X move the Keys octave. */
+function keysKeyDown(e){
+  const t = e.target;
+  if (e.ctrlKey || e.metaKey || e.altKey || (t && /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName))) return false;
+  const K = patch.keys;
+  if (e.code === 'KeyZ' || e.code === 'KeyX'){
+    e.preventDefault();
+    if (e.repeat) return true;
+    K.octave = Math.max(0, Math.min(4, K.octave + (e.code === 'KeyX' ? 1 : -1)));
+    renderKeys(); changed();
+    lcd.show('Keys octave', fmtOct(K.octave));
+    return true;
+  }
+  const k = KEY_CODES.indexOf(e.code);
+  if (k < 0) return false;
+  e.preventDefault();
+  if (e.repeat || keysUI.kbHeld.has(e.code)) return true;
+  if (K.latch && keysUI.latched.has('k' + k)){
+    const id = keysUI.latched.get('k' + k);
+    keysUI.latched.delete('k' + k);
+    noteOff({id});
+    keysUI.kbHeld.set(e.code, {released: true});
+    return true;
+  }
+  const deg = scaleDegrees(), idx = deg[k % deg.length], oct = Math.floor(k / deg.length);
+  const st = {id: 'k' + e.code + ':' + performance.now().toFixed(0), idx, p: 0.75, hz: keyHz(patch, idx, oct), k};
+  keysUI.kbHeld.set(e.code, st);
+  noteOn(st);
+  return true;
+}
+function keysKeyUp(e){
+  const st = keysUI.kbHeld.get(e.code);
+  if (!st) return;
+  keysUI.kbHeld.delete(e.code);
+  if (st.released) return;
+  if (patch.keys.latch) keysUI.latched.set('k' + st.k, st.id);
+  else noteOff(st);
+}
+function keysReleaseKeyboard(){                               // a window lost focus: let go of held keys
+  for (const [code, st] of [...keysUI.kbHeld]){ keysUI.kbHeld.delete(code); if (!st.released && !patch.keys.latch) noteOff(st); }
+}
+
+/* ---------- Panel / Play view ---------- */
+let view = store('dronebox.view') === 'play' ? 'play' : 'panel';
+function setView(v){
+  view = v;
+  store('dronebox.view', v);
+  applyView();
+}
+function applyView(){
+  const play = view === 'play';
+  $('#ctrlSlot').hidden = play;
+  $('#playSlot').hidden = !play;
+  if (!POPS.keys && keysSec.parentNode !== $('#playSlot')) $('#playSlot').append(keysSec);
+  fitToWindow();
+}
+
+/* ---------- Pop-out windows ---------- */
+// A section can leave the panel for a window of its own and come back. The live DOM moves (the browser
+// adopts it), so its controls and drawing keep working. Keys asks for the one always-on-top window the
+// browser allows (Document Picture-in-Picture), falling back to an ordinary popup; the rest use popups.
+const POP_SPECS = {
+  monitor: {title: 'Monitor', sel: () => $('.monitor'), w: 900, h: 420, pip: false},
+  keys:    {title: 'Keys', sel: () => keysSec, w: 1400, h: 340, pip: true}
+};
+const POP_ICON = '<svg viewBox="0 0 12 12"><path d="M5 2H2v8h8V7M7 1.5h3.5V5M10.5 1.5 5.5 6.5"/></svg>';
+const DOCK_ICON = '<svg viewBox="0 0 12 12"><path d="M5 2H2v8h8V7M10.5 1.5 6 6M6 3v3h3"/></svg>';
+
+const popGeom = () => store('dronebox.popgeom') || {};
+let restoreQueue = (store('dronebox.pops') || []).filter(n => POP_SPECS[n]);   // open last time, not reopened yet
+let closingAll = false;
+function savePopState(){
+  restoreQueue = restoreQueue.filter(n => !POPS[n]);
+  if (!closingAll) store('dronebox.pops', [...new Set([...Object.keys(POPS), ...restoreQueue])]);
+  syncPopButtons(); syncRestore();
+}
+
+async function popOut(name){
+  const spec = POP_SPECS[name];
+  if (POPS[name] || !spec) return;
+  const g = popGeom()[name] || {};
+  const w = g.w || spec.w, h = g.h || spec.h;
+  let win = null, pip = false;
+  if (spec.pip && window.documentPictureInPicture && !documentPictureInPicture.window){
+    try { win = await documentPictureInPicture.requestWindow({width: w, height: h}); pip = true; }
+    catch (_) { win = null; }
+  }
+  if (!win){
+    const pos = g.x != null ? `,left=${g.x},top=${g.y}` : '';
+    win = window.open('', 'dronebox-' + name, `popup=yes,width=${w},height=${h}${pos}`);
+  }
+  if (!win){ lcd.show('Pop-out blocked', 'Allow pop-ups'); return; }
+  adopt(name, win, pip);
+}
+
+function adopt(name, win, pip){
+  const spec = POP_SPECS[name], sec = spec.sel(), d = win.document;
+  d.title = `${spec.title} · Drone Box`;
+  d.head.replaceChildren();
+  const meta = d.createElement('meta'); meta.setAttribute('charset', 'utf-8'); d.head.append(meta);
+  for (const s of document.querySelectorAll('style')) d.head.append(s.cloneNode(true));
+  d.documentElement.dataset.theme = document.documentElement.dataset.theme;
+  d.documentElement.dataset.knobs = document.documentElement.dataset.knobs;
+  d.body.className = 'popbody';
+  d.body.replaceChildren();
+
+  const holder = el('section', 'sec popholder');
+  const back = el('button', null, 'Bring back');
+  back.type = 'button';
+  back.addEventListener('click', () => popIn(name));
+  holder.append(el('h3', null, spec.title), el('span', null, 'In its own window'), back);
+  sec.replaceWith(holder);
+  d.body.append(sec);
+  POPS[name] = {win, sec, holder, pip};
+
+  d.addEventListener('keydown', onKeyDown);
+  d.addEventListener('keyup', onKeyUp);
+  win.addEventListener('blur', keysReleaseKeyboard);
+  const remember = () => {
+    const all = popGeom();
+    all[name] = {w: win.innerWidth, h: win.innerHeight, ...(pip ? {} : {x: win.screenX, y: win.screenY})};
+    store('dronebox.popgeom', all);
+  };
+  let rz; win.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(remember, 300); });
+  win.addEventListener('pagehide', () => { remember(); popIn(name); });
+  drawLoop(win);
+  win.focus();
+  fitToWindow();
+  savePopState();
+}
+
+function popIn(name){
+  const P = POPS[name];
+  if (!P) return;
+  delete POPS[name];                                          // first, so the window's pagehide can't re-enter
+  keysReleaseKeyboard();
+  P.holder.replaceWith(P.sec);
+  try { P.win.close(); } catch (_) {}
+  savePopState();
+  applyView();
+}
+
+// The small "Window" / "Dock" tab on a section's top edge.
+const popButtons = {};
+function popButton(name){
+  const b = el('button', 'popbtn');
+  b.type = 'button';
+  b.addEventListener('click', () => { POPS[name] ? popIn(name) : popOut(name); b.blur(); });
+  popButtons[name] = b;
+  syncPopButtons(); syncRestore();
+  return b;
+}
+// "Keys" in the View group: floats the Keys over whichever view is showing (lit while they're out).
+let keysFloatBtn;
+function keysFloatButton(){
+  keysFloatBtn = hwButton('Keys', 'k-grey');
+  keysFloatBtn.title = 'Keys in their own always-on-top window';
+  keysFloatBtn.setAttribute('aria-label', 'Keys in their own window');
+  keysFloatBtn.addEventListener('click', () => { POPS.keys ? popIn('keys') : popOut('keys'); keysFloatBtn.blur(); });
+  syncPopButtons();
+  return keysFloatBtn;
+}
+function syncPopButtons(){
+  if (keysFloatBtn) keysFloatBtn.setAttribute('aria-pressed', !!POPS.keys);
+  for (const [name, b] of Object.entries(popButtons)){
+    const out = !!POPS[name];
+    b.innerHTML = (out ? DOCK_ICON : POP_ICON) + `<span>${out ? 'Dock' : 'Window'}</span>`;
+    b.setAttribute('aria-pressed', out);
+    b.setAttribute('aria-label', `${out ? 'Dock' : 'Pop out'} ${POP_SPECS[name].title.toLowerCase()}`);
+    b.title = out ? 'Bring back into the panel' : 'Open in its own window';
+  }
+}
+
+// Windows that were open last time light up their tab: browsers allow one new window per click, so
+// each is reopened with a click on its own tab rather than all at once on load.
+function syncRestore(){
+  if (keysFloatBtn) keysFloatBtn.classList.toggle('pending', restoreQueue.includes('keys') && !POPS.keys);
+  for (const [name, b] of Object.entries(popButtons)){
+    const pending = restoreQueue.includes(name) && !POPS[name];
+    b.classList.toggle('pending', pending);
+    if (pending) b.title = 'This was in its own window last time: click to reopen it';
+  }
+}
+addEventListener('pagehide', () => {                          // closing the panel closes its windows
+  closingAll = true;
+  for (const P of Object.values(POPS)) try { P.win.close(); } catch (_) {}
+});
 
 /* ---------- Patches ---------- */
 function userPatches(){ return store(STORE_PATCHES) || {}; }
@@ -1487,17 +2105,29 @@ async function toggle(){
   if (engine.ready && !engine.dsp) lcd.show('Basic audio mode', 'No worklets');
 }
 $('#play').addEventListener('click', e => { toggle(); e.currentTarget.blur(); });
-document.addEventListener('keydown', e => {
-  if (e.code !== 'Space' || e.repeat) return;
-  const t = e.target;
-  if (t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range')) return;
-  e.preventDefault();
-  toggle();
-});
+// Space plays and stops the drone; the letter keys play the Keys. Both work from the pop-out windows too.
+function onKeyDown(e){
+  if (e.code === 'Space'){
+    if (e.repeat) return;
+    const t = e.target;
+    if (t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range')) return;
+    e.preventDefault();
+    toggle();
+    return;
+  }
+  keysKeyDown(e);
+}
+function onKeyUp(e){ keysKeyUp(e); }
+document.addEventListener('keydown', onKeyDown);
+document.addEventListener('keyup', onKeyUp);
+addEventListener('blur', keysReleaseKeyboard);
 
 /* ---------- Visualisers ---------- */
+// Canvases are held by reference (not looked up by id), because Monitor can move into its own window.
+// Each window runs its own draw loop and draws only the canvases that live in it.
+const VIS = {scope: $('#scope'), spectrum: $('#spectrum'), meters: $('#meters')};
 function fit(c){
-  const dpr = window.devicePixelRatio || 1, r = c.getBoundingClientRect();   // on-screen size, including page zoom
+  const dpr = c.ownerDocument.defaultView.devicePixelRatio || 1, r = c.getBoundingClientRect();   // on-screen size, including page zoom
   const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
   if (c.width !== w || c.height !== h){ c.width = w; c.height = h; }
   return c.getContext('2d');
@@ -1505,7 +2135,7 @@ function fit(c){
 const INK = '#ff5b36', INK_DIM = 'rgba(255,91,54,.16)', INK_GLOW = 'rgba(255,80,40,.6)';
 const SEG = {on: ['#4fd65a', '#f0c43a', '#ff3a24'], off: ['#10260f', '#2b230b', '#2e0d09']};
 const meterState = [{lvl: -Infinity, hold: -Infinity, t: 0}, {lvl: -Infinity, hold: -Infinity, t: 0}];
-let tdBuf, fqBuf, mBuf, lastFrame = performance.now();
+let tdBuf, fqBuf, mBuf, lastMeter = performance.now();
 
 function grid(g, W, H, dpr){
   g.strokeStyle = INK_DIM; g.lineWidth = dpr;
@@ -1514,35 +2144,31 @@ function grid(g, W, H, dpr){
 function trace(g, dpr){
   g.strokeStyle = INK; g.lineWidth = 1.6 * dpr; g.shadowColor = INK_GLOW; g.shadowBlur = 6 * dpr;
 }
+const isLive = () => engine.ready && engine.ctx.state === 'running';
 
-function draw(){
-  requestAnimationFrame(draw);
-  const now = performance.now(), dt = Math.min(0.1, (now - lastFrame) / 1000); lastFrame = now;
-  const live = engine.ready && engine.ctx.state === 'running';
-  const dpr = window.devicePixelRatio || 1;
-
-  // Scope
-  const sc = $('#scope'), s = fit(sc), W = sc.width, H = sc.height;
+function drawScope(sc, dpr){
+  const s = fit(sc), W = sc.width, H = sc.height;
   s.clearRect(0, 0, W, H); s.shadowBlur = 0;
   grid(s, W, H, dpr);
-  if (live){
-    const an = engine.analyser;
-    tdBuf = tdBuf || new Float32Array(an.fftSize);
-    an.getFloatTimeDomainData(tdBuf);
-    let start = 0;
-    for (let i = 1; i < tdBuf.length / 2; i++) if (tdBuf[i - 1] < 0 && tdBuf[i] >= 0){ start = i; break; }
-    const N = 2048;
-    trace(s, dpr);
-    s.beginPath();
-    for (let i = 0; i < N; i++){
-      const x = i / (N - 1) * W, y = H / 2 - tdBuf[start + i] * H * 0.45;
-      i ? s.lineTo(x, y) : s.moveTo(x, y);
-    }
-    s.stroke();
+  if (!isLive()) return;
+  const an = engine.analyser;
+  tdBuf = tdBuf || new Float32Array(an.fftSize);
+  an.getFloatTimeDomainData(tdBuf);
+  let start = 0;
+  for (let i = 1; i < tdBuf.length / 2; i++) if (tdBuf[i - 1] < 0 && tdBuf[i] >= 0){ start = i; break; }
+  const N = 2048;
+  trace(s, dpr);
+  s.beginPath();
+  for (let i = 0; i < N; i++){
+    const x = i / (N - 1) * W, y = H / 2 - tdBuf[start + i] * H * 0.45;
+    i ? s.lineTo(x, y) : s.moveTo(x, y);
   }
+  s.stroke();
+}
 
-  // Spectrum (log frequency)
-  const sp = $('#spectrum'), f = fit(sp), FW = sp.width, FH = sp.height;
+// Spectrum (log frequency)
+function drawSpectrum(sp, dpr){
+  const f = fit(sp), FW = sp.width, FH = sp.height;
   f.clearRect(0, 0, FW, FH); f.shadowBlur = 0;
   const lx = hz => Math.log(hz / 20) / Math.log(1000) * FW;
   f.font = `${10 * dpr}px 'Share Tech Mono', monospace`;
@@ -1551,24 +2177,27 @@ function draw(){
     const x = Math.round(lx(hz)) + 0.5; f.beginPath(); f.moveTo(x, 0); f.lineTo(x, FH); f.stroke();
     f.fillText(hz >= 1000 ? hz / 1000 + 'K' : hz, x + 3 * dpr, FH - 4 * dpr);
   }
-  if (live){
-    const an = engine.analyser;
-    fqBuf = fqBuf || new Float32Array(an.frequencyBinCount);
-    an.getFloatFrequencyData(fqBuf);
-    const binHz = engine.ctx.sampleRate / an.fftSize;
-    trace(f, dpr);
-    f.beginPath();
-    for (let px = 0; px < FW; px++){
-      const hz = 20 * Math.pow(1000, px / FW), bin = Math.round(hz / binHz);
-      if (bin >= fqBuf.length) break;
-      const y = FH - Math.max(0, Math.min(1, (fqBuf[bin] + 110) / 100)) * FH;
-      px ? f.lineTo(px, y) : f.moveTo(px, y);
-    }
-    f.stroke();
+  if (!isLive()) return;
+  const an = engine.analyser;
+  fqBuf = fqBuf || new Float32Array(an.frequencyBinCount);
+  an.getFloatFrequencyData(fqBuf);
+  const binHz = engine.ctx.sampleRate / an.fftSize;
+  trace(f, dpr);
+  f.beginPath();
+  for (let px = 0; px < FW; px++){
+    const hz = 20 * Math.pow(1000, px / FW), bin = Math.round(hz / binHz);
+    if (bin >= fqBuf.length) break;
+    const y = FH - Math.max(0, Math.min(1, (fqBuf[bin] + 110) / 100)) * FH;
+    px ? f.lineTo(px, y) : f.moveTo(px, y);
   }
+  f.stroke();
+}
 
-  // Segmented LED meters, -48..0 dBFS
-  const mc = $('#meters'), m = fit(mc), MW = mc.width, MH = mc.height;
+// Segmented LED meters, -48..0 dBFS
+function drawMeters(mc, dpr){
+  const now = performance.now(), dt = Math.min(0.1, (now - lastMeter) / 1000); lastMeter = now;
+  const live = isLive();
+  const m = fit(mc), MW = mc.width, MH = mc.height;
   m.clearRect(0, 0, MW, MH);
   const NSEG = 24, pad = 3 * dpr, gap = 2 * dpr;
   const segW = (MW - pad * 2 - gap * (NSEG - 1)) / NSEG, barH = (MH - pad * 3) / 2;
@@ -1592,6 +2221,19 @@ function draw(){
       m.fillRect(pad + i * (segW + gap), y, segW, barH);
     }
   });
+}
+
+function drawLoop(win){
+  const frame = () => {
+    if (win.closed) return;
+    win.requestAnimationFrame(frame);
+    const d = win.document, dpr = win.devicePixelRatio || 1;
+    if (VIS.scope.ownerDocument === d) drawScope(VIS.scope, dpr);
+    if (VIS.spectrum.ownerDocument === d) drawSpectrum(VIS.spectrum, dpr);
+    if (VIS.meters.ownerDocument === d) drawMeters(VIS.meters, dpr);
+    if (win === window) paintStrips();
+  };
+  win.requestAnimationFrame(frame);
 }
 
 /* ---------- Fit to window ---------- */
@@ -1622,7 +2264,8 @@ fillPresets(store(STORE_LAST) ? '' : 'f:0');
 render();
 fitToWindow();
 if (document.fonts) document.fonts.ready.then(fitToWindow);
-requestAnimationFrame(draw);
+$('.monitor').append(popButton('monitor'));
+drawLoop(window);
 </script>
 </body>
 </html>

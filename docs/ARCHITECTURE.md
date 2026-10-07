@@ -27,10 +27,13 @@ The `<script>` block is split into sections with `/* ---------- Name ---------- 
 | Audio engine | `class Engine`: loads the worklets, builds the Web Audio graph, applies patch values |
 | Panel display | `lcd`: the two-line LED display |
 | UI controls | `mapper`, `bindControl`, `knob`, `fader`, `hwButton`, `buttons`, `section` |
-| App | the `patch` and `engine` instances, `ui.setStatus`, theme, `render()` |
+| App | the `patch` and `engine` instances, `POPS`, `ui.setStatus`, theme, `render()` |
+| Keys | `keysSec` (one persistent section), `renderKeys()`, the strip bed (`bindBed`), computer-keyboard playing (`keysKeyDown`/`keysKeyUp`) |
+| Panel / Play view | `view`, `setView()`, `applyView()`: the Play view swaps the bottom row for the Keys |
+| Pop-out windows | `POP_SPECS`, `popOut()`, `adopt()`, `popIn()`, the Window/Dock tabs and the reopen glow |
 | Patches | the preset menu, save, delete, export, import, randomize |
-| Transport | Play/Stop and the Space bar |
-| Visualisers | the scope, spectrum and segmented meters (`draw()` on requestAnimationFrame) |
+| Transport | Play/Stop, and `onKeyDown`/`onKeyUp` (Space, plus the Keys), attached to every window |
+| Visualisers | the scope, spectrum and segmented meters; `drawLoop(win)` runs one loop per window and draws the canvases that live in it |
 | Fit to window | `fitToWindow()`: lays the page out at 1920 px and scales it with CSS `zoom` to fit windows ≥ 1000 px wide |
 | Boot | starts everything |
 
@@ -48,8 +51,17 @@ noise ─► level ─► pan ┤
                                                            │                  └── fb ◄──┘    │             │
                                                            └─► revSend ◄───────────────────────────────────┘
                                                                   └─► convolver ────────────►┤
-                                                                                            sum ─► env (swell) ─► master ─► limiter ─► out
-                                                                                                                               └─► analysers
+                                                                                            sum ─► master ─► limiter ─► out
+                                                                                                                 └─► analysers
+```
+
+The swell `env` sits on the drone path only (between `amp` and the dry and effect sends), so the delay and reverb tails ring out after Stop, and the Keys are heard whether or not the drone is playing:
+
+```
+key voice ×2:  osc ─► tone (lowpass) ─► press ─► vca ─► pan ─┐        vibrato LFO (5.5 Hz) ─► vibDepth ─► each voice's detune
+                                                              keysOut ─┬─► sum
+                                                                       ├─► delaySend
+                                                                       └─► revSend
 ```
 
 - The **oscillators run continuously** once the context exists. Play and Stop only move the `env` gain, so there are no clicks from starting or stopping oscillators. After a stop, the context is suspended once the fade-out plus effect tails are done.
@@ -63,6 +75,7 @@ noise ─► level ─► pan ┤
 - **Drift** is a JavaScript random walk every 150 ms, written to each oscillator's `detune` on top of the patch detune.
 - **Mute and solo** both go through `Engine.audible(i)`. If any oscillator is soloed, only soloed ones play; otherwise `osc.on` (mute) decides. `engine.solo` is a `Set` and isn't part of the patch. The noise source is silent while any solo is active.
 - **Both filters always run.** `applyFilter()` crossfades `bqOut` and `ldOut`, so switching to or from Ladder never clicks. Filter Q maps to ladder resonance through `qToRes()`, so one Reso fader drives both filters.
+- **Keys** have two voices, separate from the drone and not through its filter. `keyOn(id, hz, p)` takes a free voice or steals the oldest: a silent voice jumps to the new pitch, a sounding one glides (Keys Glide). `keyMove()` slides pitch and pressure, `keyOff()` starts the release. Pressure `p` (0–1) drives `press` (level) and `tone` (cutoff), as the Pressure setting says. `wake()` starts or resumes the context for the Keys, and `scheduleSuspend()` only suspends once the drone is stopped and `keysBusy()` is false.
 - The **reverb impulse** is generated: decaying stereo noise that darkens over time. It's rebuilt, with a debounce, when the decay changes.
 
 ## DSP worklets
@@ -107,11 +120,15 @@ A patch is plain JSON. This is what Export writes and what's stored in localStor
   "env":    { "attack": 6, "release": 8 },
   "delay":  { "time": 0.45, "feedback": 0.4, "tone": 2500, "mix": 0.2 },
   "reverb": { "decay": 6, "mix": 0.45 },
-  "master": { "volume": 0.7 }
+  "master": { "volume": 0.7 },
+  "keys":   { "wave": "triangle", "octave": 2, "scale": "all",       // added in 0.3; scale: all | penta | major | minor | bhairav | harm
+              "glide": 0.15, "vibrato": 0.1, "tone": 0.6, "attack": 0.05, "release": 1.5,
+              "level": 0.6, "pan": 0, "pressure": "both",             // pressure: level | tone | both
+              "latch": false, "tune": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }   // cents per strip, ±50
 }
 ```
 
-`normalize()` merges any incoming object onto `defaultPatch()`. Missing keys get defaults, unknown keys are dropped, and wrongly typed values are ignored. **That's what keeps old patches loading, so add new fields to `defaultPatch()`. Never rename or repurpose existing ones.** If a breaking change is ever unavoidable, add a format version field first (it's on the backlog).
+`normalize()` merges any incoming object onto `defaultPatch()`. It skips arrays, so `keys.tune` is copied by hand (numbers only, clamped to ±50). Missing keys get defaults, unknown keys are dropped, and wrongly typed values are ignored. **That's what keeps old patches loading, so add new fields to `defaultPatch()`. Never rename or repurpose existing ones.** If a breaking change is ever unavoidable, add a format version field first (it's on the backlog).
 
 ### Browser storage keys
 
@@ -121,6 +138,9 @@ A patch is plain JSON. This is what Export writes and what's stored in localStor
 | `dronebox.patches` | your saved patches, as `{ name: patch }` |
 | `dronebox.theme` | `"dark"` or `"silver"` |
 | `dronebox.knobs` | `"caps"` (Colour) or `"pointers"` (Pointer) |
+| `dronebox.view` | `"panel"` or `"play"` |
+| `dronebox.pops` | names of the sections that were in their own window (they glow, ready to reopen) |
+| `dronebox.popgeom` | each pop-out window's last size (and position, for popups) |
 
 ## UI control system
 
@@ -156,3 +176,15 @@ Colours are CSS custom properties on `:root`. `[data-theme="silver"]` overrides 
 ## Testing
 
 See [TESTING.md](../TESTING.md). `tests/smoke.js` is the automated check run before every merge. `testing/Drone Box Test Checklist.html` is the manual checklist for human testers. It's a separate offline page, not part of the instrument.
+
+## Pop-out windows
+
+A section can move into a window of its own and back. `POP_SPECS` lists the sections that can: **Monitor** (an ordinary popup) and **Keys** (`pip: true`).
+- **Opening:** `popOut(name)` needs a click (browsers allow one new window per click). Keys asks for a Document Picture-in-Picture window first, which stays on top of other windows; only one is allowed per page. If that isn't available, Keys falls back to a `window.open` popup, like Monitor.
+- **Adopting:** `adopt()` copies the page's `<style>` blocks and the theme and knob attributes into the new window, leaves a placeholder (`.popholder`, with a Bring back button) where the section was, and moves the **live** section element into the window. Event handlers, controls and state come along, because nothing is rebuilt.
+  - Code that touches a moved element must hold a reference to it, never look it up with `$()` on the main document. The visualiser canvases live in `VIS` for this reason, and `keysSec` is created once and refilled by `renderKeys()`.
+  - Controls use pointer capture, not document-level listeners, so they work in any window.
+  - Each window gets its own `drawLoop(win)` (its own requestAnimationFrame), plus the key handlers and a blur handler that lets go of held computer keys.
+- **Closing:** the window's `pagehide` calls `popIn()`, which puts the section back in place of the placeholder. `popIn()` removes the entry from `POPS` first, so closing from either side is safe. Closing the main page closes every pop-out.
+- **Next time:** `dronebox.pops` remembers which windows were open. Their Window tab (and View › Keys) glows, and one click reopens each.
+

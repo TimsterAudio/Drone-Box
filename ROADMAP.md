@@ -4,7 +4,7 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 - When something ships, tick it here and record it in [CHANGELOG.md](CHANGELOG.md).
 - New ideas go in the right section, or in **Ideas parking lot** if they don't fit yet.
 
-**Where we are:** v0.2.0 is out for testing (see [TESTING.md](TESTING.md)). **Up next:** feedback from the test round, then **Stage 3: Keys and performance.**
+**Where we are:** v0.2.0 is out for testing (see [TESTING.md](TESTING.md)). **In progress:** **Stage 3: Keys and performance.** The Keys and pop-out windows are built, on the way to v0.3.0.
 
 ---
 
@@ -34,22 +34,31 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 - [x] Panel: knob colours by function (Colour or Pointer style), a readout on every control, the 1920×900 layout with fit-to-window scaling
 - [x] Stand-alone app-window launchers for Windows, macOS and Linux
 
-## Stage 3: Keys and performance (next)
+## Stage 3: Keys and performance (in progress)
 
 Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone buttons, designed for a mouse first.
 
 **Touch-strip keyboard**
-- [ ] 12 tall strips, one per just-intonation interval above the root
-- [ ] A new two-voice **Keys** section to play them: wavetable oscillator, attack/release envelope, filter amount, level and pan, sitting over the drone
-- [ ] Press a strip to start a note, and release it to stop. A **Latch** button holds notes instead.
-- [ ] Vertical position inside a strip stands in for **pressure**: it controls level and brightness, and changes continuously while held
-- [ ] Drag sideways across strips to **glide**, with a Portamento knob for the speed. Shift + drag gives a free pitch slide with no scale.
-- [ ] **Tune mode:** drag a strip up or down to retune it by ±50 cents (the microtonal mode)
-- [ ] A **Scale** stepped knob (all 12, pentatonic, raga-like sets and so on). Strips outside the scale go dark.
-- [ ] Computer-keyboard playing: A S D F G H J K L ; ' play the 12 strips, and Z / X shift the octave
-- [ ] On touchscreens, two fingers play two notes, and real pressure is used where the device reports it
-- [ ] Vibrato (rate and depth) and a simple arpeggiator (up, down, random; rate synced to an LFO)
-- [ ] LED glow on each strip that follows the note's level
+- [x] 12 tall strips, one per just-intonation interval above the root
+- [x] A new two-voice **Keys** section to play them: wavetable oscillator, attack/release envelope, filter amount, level and pan, sitting over the drone
+- [x] Press a strip to start a note, and release it to stop. A **Latch** button holds notes instead.
+- [x] Vertical position inside a strip stands in for **pressure**: it controls level and brightness, and changes continuously while held
+- [x] Drag sideways across strips to **glide**, with a Portamento knob for the speed. Shift + drag gives a free pitch slide with no scale.
+- [x] **Tune mode:** drag a strip up or down to retune it by ±50 cents (the microtonal mode)
+- [x] A **Scale** stepped knob (all 12, pentatonic, raga-like sets and so on). Strips outside the scale go dark.
+- [x] Computer-keyboard playing: A S D F G H J K L ; ' play the 12 strips, and Z / X shift the octave
+- [ ] On touchscreens, two fingers play two notes, and real pressure is used where the device reports it (built, and pen pressure works; needs testing on a real touchscreen)
+- [x] Vibrato depth (rate fixed at 5.5 Hz for now)
+- [ ] Vibrato rate, and a simple arpeggiator (up, down, random; rate synced to an LFO)
+- [x] LED glow on each strip that follows the note's pressure
+
+**Pop-out windows**
+- [x] Monitor in its own window
+- [x] Keys in their own always-on-top window (Document Picture-in-Picture, with a popup fallback)
+- [x] Panel / Play view switch, with the Keys docked in the Play view
+- [x] Windows remember their size, and last session's windows glow ready to reopen
+- [ ] A **Setup** window for set-and-forget settings (A4 tune, glide, swell times, master options)
+- [ ] Test the always-on-top window on Windows, macOS and Linux by hand
 
 **Drone performance**
 - [ ] A **Swell** trigger button on each oscillator, with its own attack and release (the Solar's drone buttons), plus a latch

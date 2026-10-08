@@ -64,7 +64,20 @@ Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone 
 - [ ] Test the always-on-top window on Windows, macOS and Linux by hand
 
 **Drone performance**
-- [ ] A **Swell** trigger button on each oscillator, with its own attack and release (the Solar's drone buttons), plus a latch
+- [ ] **Expression plates** (for review after playing with the Keys): touch plates that shape the drone itself, growing the Solar-style per-oscillator Swell buttons into something more playable. Mock-ups: [Play view](docs/mockups/expression-play-view.png), [Performance window](docs/mockups/expression-performance-window.png), [(a) vs (c)](docs/mockups/expression-a-vs-c.png).
+  - Plates: OSC 1–6, plus Filter (sweep), Space (throw into delay and reverb) and Bloom (a per-patch macro). They're brushed metal with an amber glow, so they read differently from the note Keys.
+  - Each plate is a small XY surface:
+    - **Press / release** starts and ends the gesture (an oscillator plate can swell its oscillator in)
+    - **↕ height** is the main amount, absolute (top is full)
+    - **↔ sideways** is a second amount, relative to where you pressed, so it's good for bipolar controls like bend, detune or pan; it can be set to Off
+    - **Pressure** where a pen or touchscreen reports it
+    - Two chips on each plate pick the ↕ and ↔ targets; they're saved with the patch.
+  - **Release behaviour:** Spring (return on release) is the default, Hold is the option, and Latch holds a plate. Attack and Return times apply to the whole bank.
+  - **Layout (preferred):** a **Keys / Expr / Both** switch in the Play view, and the same switch in a single **Performance** pop-out window. The browser allows only one always-on-top window, so Keys and plates share it. Plates on each oscillator strip of the main panel (option c) is not preferred, because it grows the panel.
+  - Possibly a compact Keys mode for Both, keeping only Latch and Voices so the strips get more width.
+  - Audio cost: negligible. Each plate is a smoothed value added to existing settings, through `Engine.T()`.
+  - In the Stage 4 Patch view, each plate becomes patchable sources: Gate, X, Y and Pressure.
+  - **To decide after playing:** the default target of each plate (does an oscillator plate swell the level, or only shape it?), and whether Bloom stays a macro.
 - [ ] A **Swarm** knob on each oscillator: up to 5 detuned copies inside one oscillator
 - [ ] An **XY pad** that drives two parameters at once (it becomes a matrix source in Stage 4)
 

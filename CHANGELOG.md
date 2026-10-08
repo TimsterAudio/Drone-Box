@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.3.0] — 2026-10-08
+
+Stage 3 begins: Drone Box gets a playable **Keys** section with touch strips, its own filter and LFO, and up to four voices, plus pop-out windows (the Keys can float on top of other apps) and a Panel / Play view. Drone Box now targets desktops, laptops and tablets.
+
 ### Added
 - **Keys (Stage 3).** Thirteen touch strips play a new Keys section over the drone: one strip per just-intonation interval above the root, plus the octave (2/1), so a slide can cross a whole octave.
   - Press a strip to play it. The height you press at is pressure: it sets the level, the tone or both (**Pressure** switch). A pen's real pressure is used.

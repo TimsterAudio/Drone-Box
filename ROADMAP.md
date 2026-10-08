@@ -4,15 +4,16 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 - When something ships, tick it here and record it in [CHANGELOG.md](CHANGELOG.md).
 - New ideas go in the right section, or in **Ideas parking lot** if they don't fit yet.
 
-**Where we are:** v0.2.0 is out for testing (see [TESTING.md](TESTING.md)). **In progress:** **Stage 3: Keys and performance.** The Keys and pop-out windows are built, on the way to v0.3.0.
+**Where we are:** v0.3.0 is out: the Keys and pop-out windows (the first part of Stage 3). **Up next:** test feedback on the Keys, then the rest of Stage 3 (drone performance) and the Setup window.
 
 ---
 
-## Now: the v0.2.0 test round
+## Now: the test round (v0.2.0, continuing with v0.3.0)
 
 - [ ] Hand out the release zip and the tester checklist (`testing/Drone Box Test Checklist.html`)
 - [ ] Collect reports. Log each problem as a GitHub issue (bug or idea).
-- [ ] Fix anything that blocks testing, as v0.2.x patch releases
+- [ ] Fix anything that blocks testing, as patch releases (v0.3.x)
+- [ ] Hand testers v0.3.0 and its updated checklist (Keys and windows sections)
 - [ ] Gather the "what would you want next?" answers, and adjust this roadmap
 
 ## Stage 1: Drone box (v0.1.0) ✅
@@ -34,7 +35,7 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 - [x] Panel: knob colours by function (Colour or Pointer style), a readout on every control, the 1920×900 layout with fit-to-window scaling
 - [x] Stand-alone app-window launchers for Windows, macOS and Linux
 
-## Stage 3: Keys and performance (in progress)
+## Stage 3: Keys and performance (v0.3.0: Keys and windows done; drone performance next)
 
 Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone buttons, designed for a mouse first.
 

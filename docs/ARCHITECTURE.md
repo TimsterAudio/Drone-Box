@@ -202,3 +202,20 @@ A section can move into a window of its own and back. `POP_SPECS` lists the sect
 - **Closing:** the window's `pagehide` calls `popIn()`, which puts the section back in place of the placeholder. `popIn()` removes the entry from `POPS` first, so closing from either side is safe. Closing the main page closes every pop-out.
 - **Next time:** `dronebox.pops` remembers which windows were open. Their Window tab (and View › Keys) glows, and one click reopens each.
 
+## Engine seam (toward a native engine)
+
+The ROADMAP's **Engine pathway** moves the sound engine to Rust, first as WebAssembly in the browser, then natively in a desktop app. It depends on the panel talking to the engine only through a small interface. Keep that interface clean when adding features.
+
+**The panel may call:** `play()`, `stop()`, `wake()`, the `apply…()` methods, `keyOn()` / `keyMove()` / `keyOff()` / `keysAllOff()`, and `audible()`. It may read `running`, `solo` and `p` (the patch).
+
+**Leaks to remove in Phase 1** (the panel reads Web Audio internals directly today):
+
+| Read today | Used for | Replace with |
+|---|---|---|
+| `engine.ctx` (state, sample rate, latency, playoutStats) | status display, footer readout, visualiser liveness | `status()` |
+| `engine.analyser`, `engine.anL`, `engine.anR` | scope, spectrum, meters | `scope(buf)`, `spectrum(buf)`, `levels()` |
+| `engine.keyMap` | Keys glow, KEYS status, held-note logic | `notesSounding()` / `isSounding(id)` |
+| `engine.ready`, `engine.dsp`, `engine.deviceRate` | various checks, footer | `status()` |
+
+The smoke test also reads internals (voice params, gates) to verify the DSP. That's fine for tests, but those checks will move to an engine-level test suite when the engine moves to Rust.
+

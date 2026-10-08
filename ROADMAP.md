@@ -16,6 +16,62 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 - [ ] Hand testers v0.3.0 and its updated checklist (Keys and windows sections)
 - [ ] Gather the "what would you want next?" answers, and adjust this roadmap
 
+## Engine pathway: from browser audio to a native engine
+
+**Decision (October 2026):** Drone Box will move its sound engine out of the browser in stages, toward a desktop app with a native (Rust) audio engine, keeping the current panel as the UI. It's mainly for one player (the author), so the goal is the best instrument, not the widest reach: project rules ("one file, no build step") may change on the way, as noted below.
+
+**Why:** browser audio limits buffer size, drivers (no ASIO), thread priority and device choice, and its garbage collector can cause dropouts. v0.3.0 showed how close to those limits the roadmap's heavier features (looper, granular, Swarm, oversampling) would run. A native engine removes them.
+
+**The seam it builds on:** the panel never makes sound itself. It changes `patch` and calls `engine.apply…()`, `play()`, `stop()` and `keyOn()`/`keyOff()`. Each phase keeps that seam and makes it cleaner, so the engine can be swapped without rebuilding the panel.
+
+### Phase 0: Harden the browser engine (v0.3.x, now)
+- [x] Gate silent DSP, block-rate maths, no allocation in worklets, a 48 kHz cap, and the footer audio readout (v0.3.1)
+- [ ] A **performance budget** in the smoke test: render a worst-case patch offline and fail if it costs more than an agreed share of a core, measured against a reference task so it works on any machine
+- [ ] Rules for new DSP in `CLAUDE.md`: gated when silent, block-rate parameters, no allocation, benchmark before and after
+- [ ] **Audio buffer** choice (Low / Normal / Safe), and an **Eco mode** offered when dropouts are detected
+- [ ] A "Check performance" button (Setup window): renders the current patch offline and reports its cost on this machine
+
+*Exit check:* the heaviest factory patch with four Keys runs clean on the reference Windows machine, and the smoke test guards the budget.
+
+### Phase 1: A clean engine interface (small; do soon)
+- [ ] Document the **engine API** in `ARCHITECTURE.md`: everything the panel may call or read
+- [ ] Stop the panel reaching into Web Audio internals. Today it reads `engine.ctx`, the three analysers, `keyMap`, `ready` and `dsp` directly. Replace them with engine methods:
+  - `status()`: running / fading / stopped, sample rate, latency, dropouts, mode
+  - `scope(buf)`, `spectrum(buf)` and `levels()` for the Monitor and meters
+  - `notesSounding()` for the Keys glow and the KEYS status
+- [ ] A **patch format version** field (from the backlog), ahead of any changes the new engine needs
+- [ ] **Golden renders:** offline renders of the factory patches saved as reference spectra, so a new engine can be checked against the current sound
+
+*Exit check:* the panel uses only the documented API; the smoke test and golden renders pass.
+
+### Phase 2: DSP in Rust, running in the browser as WebAssembly (before Stage 5)
+- [ ] Set up a Rust DSP crate, compiled to WebAssembly and run inside one AudioWorklet
+- [ ] Port the custom processors first (oscillator, ladder, noise), behind the same parameters; check them against the golden renders
+- [ ] Then move the built-in Web Audio parts (filters, delay, reverb, panning, mixing) into Rust as well, so the whole sound engine is one Rust graph in one worklet
+- [ ] New DSP from here on (Stage 5 effects, Swarm, oversampling) is written once, in Rust
+- [ ] **Rule change:** the *source* gets a build step (Rust and wasm-pack, plus a script that embeds the compiled engine as base64). The *shipped* browser version stays one self-contained, offline HTML file. CI builds it on every push.
+- [ ] Retire the "basic mode" fallback (non-worklet browsers), or keep a minimal one; decide then
+
+*Exit check:* the browser version runs the Rust engine, sounds the same (golden renders), and costs less than the JavaScript engine.
+
+*Why before Stage 5:* Stage 5 is the DSP-heavy stage (new reverb, tape delay, shimmer, chorus). Doing Phase 2 first means writing those once, in Rust, instead of in JavaScript and again later. Stage 4 (modulation) is mostly control-rate, so it can come first.
+
+### Phase 3: Desktop app (Tauri + native engine)
+- [ ] A Tauri app for Windows, macOS and Linux: the existing panel as the UI, the same Rust engine running natively, connected through Tauri commands and events in place of Web Audio
+- [ ] Native audio I/O (`cpal`): choice of device and **buffer size**; **ASIO** on Windows, CoreAudio on Mac, ALSA / PipeWire / JACK on Linux; multichannel outputs
+- [ ] Audio **inputs** with known latency (needed by the Stage 6 looper)
+- [ ] Installers built by GitHub Actions for all three systems
+- [ ] Code signing: optional while it's for personal use (unsigned apps can be allowed on your own machines); revisit if it's ever shared widely
+- [ ] The browser version continues from the same Rust engine (WebAssembly), as a no-install option
+
+*Exit check:* all factory patches play on the desktop app at a lower latency than in the browser, on Windows and one other system.
+
+### Phase 4: Optional extras once native
+- [ ] Drone Box as a **plugin** (VST3 / CLAP, via nih-plug) inside a DAW
+- [ ] Use more than one CPU core for heavy parts (granular, many loop tracks)
+
+---
+
 ## Stage 1: Drone box (v0.1.0) ✅
 
 - [x] Six oscillators with just-intonation intervals, detune, drift, level, pan, mute and solo
@@ -136,7 +192,7 @@ A semi-modular patch bay: the modulation matrix drawn as cables. Mock-up: [docs/
 - [ ] A fully free modular (add any number of modules, patch anything): **parked**. It's a different instrument with open-ended audio cost; the Stage 4 Patch view covers patching within fixed modules.
 - [ ] Web MIDI: MIDI learn for any control, and notes in to the Keys section (Chrome, Edge and Brave only)
 - [ ] Multichannel output for audio interfaces with more than two outputs
-- [ ] A real installed app (for example a small Tauri wrapper) with its own icon, if the launchers aren't enough
+- [ ] A real installed app: now planned as the **Engine pathway, Phase 3** (Tauri + native engine), above
 
 ---
 

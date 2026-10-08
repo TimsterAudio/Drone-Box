@@ -1,6 +1,6 @@
 # Drone Box
 
-Timster's Audio Works · **v0.2.0**
+Timster's Audio Works · **v0.3.0**
 
 A drone synthesizer that runs entirely in one browser tab. It has no install, server or account, and nothing is sent anywhere.
 
@@ -23,7 +23,7 @@ The launcher opens Drone Box in a **clean, stand-alone window**, with no address
 
 You can also open `drone-box.html` directly in any browser tab. Chrome, Edge and Brave are tested; Firefox and Safari should work but haven't been tested yet.
 
-**Window size:** the panel scales to fit whatever window it's in, so it never needs scrolling. Resize or maximise the window and the whole instrument grows or shrinks with it. Windows narrower than 1000 px (phones) use a stacked layout instead.
+**Window size:** the panel scales to fit whatever window it's in, so it never needs scrolling. Resize or maximise the window and the whole instrument grows or shrinks with it. Drone Box is made for desktops, laptops and tablets (landscape works best on a tablet). Phones aren't supported: the panel is too dense for a phone screen.
 
 Press **Play** or hit **Space**. Browsers only allow audio to start after a click or key press, so that's always the first step.
 
@@ -45,6 +45,8 @@ Press **Play** or hit **Space**. Browsers only allow audio to start after a clic
 - **Delay:** repeats get darker each time.
 - **Reverb:** a generated impulse response with decay up to 15 s.
 - **Output:** master volume, a safety limiter, L/R meters, a scope and a log-frequency spectrum.
+- **Keys:** 13 touch strips (the 12 just intervals plus the octave) that play a 1–4 voice synth over the drone, with its own filter (LPF, BPF, HPF, Ladder; cutoff, resonance, drive) and LFO (pitch, filter, level). The height you press at is pressure. Drag sideways to glide. Also: Latch, a microtonal Tune mode, scales, vibrato, and computer-keyboard playing.
+- **Pop-out windows:** Monitor and Keys can each move into a window of their own. The Keys window can stay on top of other apps.
 - **Patches:** factory presets, Randomize, saving your own patches in browser storage, and Export/Import as JSON.
 
 ## Playing the panel
@@ -57,7 +59,10 @@ The panel is styled after classic Roland Jupiter-series synths: a black panel (o
 - **Mute / Solo:** each oscillator has a Mute button (saved with the patch) and a Solo button. When any oscillator is soloed, only the soloed ones play, even if they're muted. Solo isn't saved and clears when you load a patch.
 - **Displays:** the red LED display at the top shows the patch name, play state, and the last control you touched. Every knob and fader also has its own small value readout.
 - **Knob colours:** blue for pitch, green for tone, red for modulation. The **Knobs** switch picks tinted knob tops (Colour) or coloured pointers (Pointer).
-- **Screen size:** the panel is designed at 1920 × 900 and scales as a whole to fit any desktop window, from a 1366 × 768 laptop to a 2560 px monitor. Phone-width windows stack the sections instead.
+- **View:** **Panel** shows everything. **Play** swaps the bottom row for the Keys. **Keys** floats the Keys in their own window.
+- **Keys:** press a strip to play it, higher up for louder and brighter. Drag sideways to glide; hold **Shift** to slide freely. **Latch** holds notes until you press them again. **Tune** lets you drag a strip up or down to retune it (double-click resets it). On the computer keyboard, **A S D F G H J K L ; ' \** play up the scale, and **Z** / **X** change the octave.
+- **Windows:** the small **Window** tab on Monitor or Keys opens it in its own window; **Dock** (or closing the window) brings it back.
+- **Screen size:** the panel is designed at 1920 × 900 and scales as a whole to fit any window, from a tablet or a 1366 × 768 laptop to a 2560 px monitor. It never re-wraps, so it always looks the same.
 
 ## Fonts
 

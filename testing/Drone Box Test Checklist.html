@@ -67,7 +67,7 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff;fo
 <body>
 <div class="wrap">
   <h1>Drone Box Test Checklist</h1>
-  <p class="sub">Timster's Audio Works · for Drone Box <b id="verLabel">v0.2.0</b></p>
+  <p class="sub">Timster's Audio Works · for Drone Box <b id="verLabel">v0.3.0</b></p>
 
   <div class="card intro">
     <h2>How this works</h2>
@@ -109,7 +109,7 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff;fo
 
 <script>
 'use strict';
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 const STORE = 'dronebox.testrun.' + VERSION;
 
 // Each check: [id, what to do, what should happen]
@@ -173,6 +173,27 @@ const SECTIONS = [
     ['M6', 'Raise Delay Amount and Feedback; change Time and Tone.', 'Echoes that repeat and get darker; Time changes their spacing.'],
     ['M7', 'Raise Reverb Amount and Decay.', 'A larger, longer space around the sound.'],
   ]],
+  ['Keys (new in 0.3)', [
+    ['K1', 'Click View › Play.', 'The bottom row is replaced by the Keys: controls on the left, 13 strips on the right.'],
+    ['K2', 'With the drone stopped, press and hold a strip, then move up and down inside it.', 'A note sounds and the strip glows; higher in the strip is louder and brighter. The display shows KEYS.'],
+    ['K3', 'Hold a strip and drag sideways across the others. Then try it holding Shift.', 'The note glides from strip to strip; with Shift it slides smoothly between them.'],
+    ['K4', 'Play with the computer keys A S D F G H J K L ; \' \\. Press Z and X.', 'Each key plays the next strip up; Z and X move the Keys octave down and up.'],
+    ['K5', 'Turn on Latch, tap two strips, then tap them again.', 'The notes keep sounding after you let go, and stop when tapped again.'],
+    ['K6', 'Turn on Tune, drag a strip up or down, then double-click it. Turn Tune off.', 'The strip shows its tuning in cents and its pitch moves; double-click resets it to 0.'],
+    ['K7', 'Change Scale (Penta, Major, Bhairav…).', 'Strips outside the scale go dark and do not play. The 2/1 (octave) strip is always playable.'],
+    ['K8', 'Try Voices: 4, then 2, then Mono. In Mono, hold one strip and tap another.', 'With 4 you can hold four notes; with 2 only two. In Mono the note glides back to the strip you are still holding.'],
+    ['K9', 'Try the Keys Filter types (LPF, BPF, HPF, Ladder) and turn Cutoff, Reso and Drive.', 'Each type changes the tone; Reso adds a peak; Drive thickens and distorts.'],
+    ['K10', 'In the Keys LFO, raise Pitch, then Filter, then Level; change Rate and the wave shape.', 'Vibrato, a filter wah and a tremolo, at the speed and shape you choose.'],
+    ['K11', 'Play Keys over a playing drone, with Delay and Reverb up.', 'The Keys sit over the drone and go through the delay and reverb.'],
+  ]],
+  ['Windows and views (new in 0.3)', [
+    ['W1', 'Click the small Window tab on Monitor.', 'Monitor opens in its own window and keeps drawing; the panel shows "In its own window".'],
+    ['W2', 'Close that window (or click Dock or Bring back).', 'Monitor returns to its place on the panel.'],
+    ['W3', 'Click View › Keys.', 'The Keys open in their own window. In Chrome, Edge or Brave it stays on top of other apps.'],
+    ['W4', 'Click into another app, then play the Keys window with the mouse and keyboard.', 'It stays visible and plays (click inside it first for the computer keys).'],
+    ['W5', 'Change Panel (Black / Silver) with a window open.', 'The window changes to match.'],
+    ['W6', 'Leave a window open, close Drone Box, and open it again.', 'The section that was in a window has a glowing tab; one click reopens it at its last size.'],
+  ]],
   ['Patches', [
     ['R1', 'Load every factory patch from the menu in the top strip.', 'Each loads and sounds different, with no errors.'],
     ['R2', 'Click Random a few times.', 'A new, usually consonant patch each time.'],
@@ -183,7 +204,7 @@ const SECTIONS = [
   ['Other browsers and devices (optional)', [
     ['B1', 'Open drone-box.html in Firefox.', 'It works (note anything that looks or sounds different).'],
     ['B2', 'Open drone-box.html in Safari (Mac).', 'It works (note anything that looks or sounds different).'],
-    ['B3', 'Open it on a phone or tablet.', 'Sections stack vertically and the controls can be used by touch.'],
+    ['B3', 'Open it on a tablet, held sideways.', 'The whole panel fits the screen, and the controls can be used by touch.'],
   ]],
 ];
 

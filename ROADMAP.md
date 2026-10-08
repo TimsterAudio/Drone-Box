@@ -4,15 +4,16 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 - When something ships, tick it here and record it in [CHANGELOG.md](CHANGELOG.md).
 - New ideas go in the right section, or in **Ideas parking lot** if they don't fit yet.
 
-**Where we are:** v0.2.0 is out for testing (see [TESTING.md](TESTING.md)). **Up next:** feedback from the test round, then **Stage 3: Keys and performance.**
+**Where we are:** v0.3.0 is out: the Keys and pop-out windows (the first part of Stage 3). **Up next:** test feedback on the Keys, then the rest of Stage 3 (drone performance) and the Setup window.
 
 ---
 
-## Now: the v0.2.0 test round
+## Now: the test round (v0.2.0, continuing with v0.3.0)
 
 - [ ] Hand out the release zip and the tester checklist (`testing/Drone Box Test Checklist.html`)
 - [ ] Collect reports. Log each problem as a GitHub issue (bug or idea).
-- [ ] Fix anything that blocks testing, as v0.2.x patch releases
+- [ ] Fix anything that blocks testing, as patch releases (v0.3.x)
+- [ ] Hand testers v0.3.0 and its updated checklist (Keys and windows sections)
 - [ ] Gather the "what would you want next?" answers, and adjust this roadmap
 
 ## Stage 1: Drone box (v0.1.0) ✅
@@ -34,22 +35,33 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 - [x] Panel: knob colours by function (Colour or Pointer style), a readout on every control, the 1920×900 layout with fit-to-window scaling
 - [x] Stand-alone app-window launchers for Windows, macOS and Linux
 
-## Stage 3: Keys and performance (next)
+## Stage 3: Keys and performance (v0.3.0: Keys and windows done; drone performance next)
 
 Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone buttons, designed for a mouse first.
 
 **Touch-strip keyboard**
-- [ ] 12 tall strips, one per just-intonation interval above the root
-- [ ] A new two-voice **Keys** section to play them: wavetable oscillator, attack/release envelope, filter amount, level and pan, sitting over the drone
-- [ ] Press a strip to start a note, and release it to stop. A **Latch** button holds notes instead.
-- [ ] Vertical position inside a strip stands in for **pressure**: it controls level and brightness, and changes continuously while held
-- [ ] Drag sideways across strips to **glide**, with a Portamento knob for the speed. Shift + drag gives a free pitch slide with no scale.
-- [ ] **Tune mode:** drag a strip up or down to retune it by ±50 cents (the microtonal mode)
-- [ ] A **Scale** stepped knob (all 12, pentatonic, raga-like sets and so on). Strips outside the scale go dark.
-- [ ] Computer-keyboard playing: A S D F G H J K L ; ' play the 12 strips, and Z / X shift the octave
-- [ ] On touchscreens, two fingers play two notes, and real pressure is used where the device reports it
-- [ ] Vibrato (rate and depth) and a simple arpeggiator (up, down, random; rate synced to an LFO)
-- [ ] LED glow on each strip that follows the note's level
+- [x] 12 tall strips, one per just-intonation interval above the root, plus a 13th for the octave
+- [x] A new **Keys** section (1–4 voices, mono legato) to play them: wavetable oscillator, attack/release envelope, filter amount, level and pan, sitting over the drone
+- [x] Press a strip to start a note, and release it to stop. A **Latch** button holds notes instead.
+- [x] Vertical position inside a strip stands in for **pressure**: it controls level and brightness, and changes continuously while held
+- [x] Drag sideways across strips to **glide**, with a Portamento knob for the speed. Shift + drag gives a free pitch slide with no scale.
+- [x] **Tune mode:** drag a strip up or down to retune it by ±50 cents (the microtonal mode)
+- [x] A **Scale** stepped knob (all 12, pentatonic, raga-like sets and so on). Strips outside the scale go dark.
+- [x] Computer-keyboard playing: A S D F G H J K L ; ' play the 12 strips, and Z / X shift the octave
+- [ ] On touchscreens, two fingers play two notes, and real pressure is used where the device reports it (built, and pen pressure works; needs testing on a real touchscreen)
+- [x] A Keys LFO: wave, rate, and depth to pitch (vibrato), filter and level (tremolo)
+- [x] A Keys filter: LPF, BPF, HPF or Ladder, with cutoff, resonance and drive
+- [ ] A simple arpeggiator (up, down, random; rate synced to an LFO)
+- [ ] Let the drone's LFO 1 / 2 drive the Keys too (a Keys destination, or through the Stage 4 matrix)
+- [x] LED glow on each strip that follows the note's pressure
+
+**Pop-out windows**
+- [x] Monitor in its own window
+- [x] Keys in their own always-on-top window (Document Picture-in-Picture, with a popup fallback)
+- [x] Panel / Play view switch, with the Keys docked in the Play view
+- [x] Windows remember their size, and last session's windows glow ready to reopen
+- [ ] A **Setup** window for set-and-forget settings (A4 tune, glide, swell times, master options)
+- [ ] Test the always-on-top window on Windows, macOS and Linux by hand
 
 **Drone performance**
 - [ ] A **Swell** trigger button on each oscillator, with its own attack and release (the Solar's drone buttons), plus a latch
@@ -138,6 +150,7 @@ Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone 
 - High Fold settings can add some harshness (aliasing), because the wavefolder isn't oversampled yet.
 - FM always goes from the previous oscillator to the next (OSC 6 modulates OSC 1). Free routing comes with the matrix.
 - Firefox and Safari haven't been tested yet.
+- Phones aren't supported (desktop, laptop and tablet only). On a tablet in portrait, the panel fits the width and leaves the lower part of the screen empty.
 - The macOS and Linux launchers have only been tested by simulation, not on real machines.
 - Version tags can't be pushed from the Claude Code session, so releases are tagged on GitHub by hand.
 

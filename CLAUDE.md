@@ -26,4 +26,4 @@ Drone Box is a browser drone synthesizer by Timster's Audio Works. The whole ins
 - Until 1.0, a minor bump (0.x.0) means a new stage or feature set, and a patch bump (0.x.y) means fixes and tweaks.
 - Run the smoke test before pushing, and add checks to it for new behaviour:
   `NODE_PATH="$(npm root -g)" node tests/smoke.js`
-- For UI changes, take a headless screenshot at about 1400 px and 390 px wide, and look at it before calling the work done.
+- For UI changes, take headless screenshots at about 1400 px wide and at tablet size (about 1180 × 820), and look at them before calling the work done. Phones aren't supported, so there's no phone layout to check.

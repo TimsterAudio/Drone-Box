@@ -221,9 +221,230 @@ function check(name, ok, detail = ''){
   await page.setViewportSize({ width: 1280, height: 900 });
   const tops = await page.$$eval('.ostrip', a => new Set(a.map(e => Math.round(e.getBoundingClientRect().top))).size);
   check('six strips on one row at 1280px', tops === 1);
-  await page.setViewportSize({ width: 390, height: 900 });
+  // Tablets (and small laptop windows) scale the whole panel too, in both views and orientations
+  for (const [w, h, name] of [[820, 1180, 'tablet portrait'], [1180, 820, 'tablet landscape'], [1024, 768, '1024x768']]) {
+    await page.setViewportSize({ width: w, height: h });
+    for (const v of ['panel', 'play']) {
+      await page.evaluate(v => setView(v), v);
+      await page.waitForTimeout(100);
+      const f = await page.evaluate(() => ({
+        fitted: document.documentElement.classList.contains('fitted'),
+        scroll: document.documentElement.scrollHeight <= innerHeight && document.documentElement.scrollWidth <= innerWidth,
+        strips: new Set([...document.querySelectorAll('.ostrip')].map(e => Math.round(e.getBoundingClientRect().top))).size,
+        zoom: document.body.style.zoom }));
+      check(`${name}: ${v} view scales to fit`, f.fitted && f.scroll && f.strips === 1, `zoom ${f.zoom}`);
+    }
+  }
+  await page.evaluate(() => setView('panel'));
+
+  // Header: everything on one row, including the View switch
+  await page.setViewportSize({ width: 1920, height: 900 });
   await page.waitForTimeout(100);
-  check('no sideways scroll at phone width', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)));
+  const hdrRows = await page.evaluate(() => Math.abs($('#play').getBoundingClientRect().top - $('#lcd').getBoundingClientRect().top) < 60);
+  check('top strip stays on one row', hdrRows);
+
+  // Keys (Stage 3). Played with the drone stopped, so this also checks they sound without it.
+  await page.evaluate(() => { if (engine.running) toggle(); loadPatch(FACTORY[0]); setView('play'); });
+  await page.waitForTimeout(200);
+  const pv = await page.evaluate(() => ({
+    h: document.documentElement.scrollHeight, ctrlHidden: $('#ctrlSlot').hidden,
+    keys: !!$('#playSlot .keys-sec'), strips: document.querySelectorAll('.kstrip').length }));
+  check('Play view shows Keys and fits 1920x900', pv.h <= 900 && pv.ctrlHidden && pv.keys && pv.strips === 13, JSON.stringify(pv));
+  const stripPt = (i, frac, pg = page) => pg.evaluate(([i, frac]) => {
+    const q = keysUI.strips[i].el.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height * frac };
+  }, [i, frac]);
+  const voice = () => page.evaluate(() => {
+    const v = engine.keyVoices.find(v => v.id);
+    return v ? { hz: v.freq.value, gain: v.vca.gain.value, press: v.press.gain.value, n: engine.keyMap.size } : { n: 0 };
+  });
+  let pt = await stripPt(7, 0.2);
+  await page.mouse.move(pt.x, pt.y); await page.mouse.down();
+  await page.waitForTimeout(600);
+  let v1 = await voice();
+  const want7 = await page.evaluate(() => keyHz(patch, 7));
+  check('strip plays its interval (drone stopped)', v1.n === 1 && Math.abs(v1.hz - want7) < 0.5 && v1.gain > 0.1 && !(await page.evaluate(() => engine.running)),
+    `${v1.hz && v1.hz.toFixed(2)} Hz, want ${want7.toFixed(2)}, gain ${v1.gain && v1.gain.toFixed(3)}`);
+  check('Keys sound comes out', (await rms()) > 0.005);
+  check('status shows KEYS', (await page.textContent('#lcd1b')) === 'KEYS');
+  pt = await stripPt(7, 0.9);
+  await page.mouse.move(pt.x, pt.y); await page.waitForTimeout(300);
+  const v2 = await voice();
+  check('height in the strip changes pressure', v2.press < v1.press - 0.3, `${v1.press.toFixed(2)} -> ${v2.press.toFixed(2)}`);
+  pt = await stripPt(9, 0.5);
+  await page.mouse.move(pt.x, pt.y, { steps: 6 }); await page.waitForTimeout(600);
+  const v3 = await voice(), want9 = await page.evaluate(() => keyHz(patch, 9));
+  check('dragging sideways glides to the next strip', v3.n === 1 && Math.abs(v3.hz - want9) < 1, `${v3.hz.toFixed(2)} Hz, want ${want9.toFixed(2)}`);
+  await page.mouse.up(); await page.waitForTimeout(800);
+  const v4 = await page.evaluate(() => ({ n: engine.keyMap.size, g: Math.max(...engine.keyVoices.map(v => v.vca.gain.value)) }));
+  check('releasing a strip lets the note go', v4.n === 0 && v4.g < v3.gain * 0.8, `gain ${v4.g.toFixed(3)}`);
+
+  // Latch
+  await page.evaluate(() => { patch.keys.latch = true; renderKeys(); });
+  pt = await stripPt(0, 0.3);
+  await page.mouse.click(pt.x, pt.y); await page.waitForTimeout(300);
+  const latched = (await voice()).n;
+  await page.mouse.click(pt.x, pt.y); await page.waitForTimeout(200);
+  check('Latch holds a note until pressed again', latched === 1 && (await voice()).n === 0, `held ${latched}`);
+  await page.evaluate(() => { patch.keys.latch = false; renderKeys(); });
+
+  // Computer keyboard and octave keys
+  await page.keyboard.down('a'); await page.waitForTimeout(300);
+  const ka = await voice(), want0 = await page.evaluate(() => keyHz(patch, 0));
+  await page.keyboard.up('a'); await page.waitForTimeout(100);
+  check('computer key A plays the first strip', ka.n === 1 && Math.abs(ka.hz - want0) < 0.5 && (await voice()).n === 0, `${ka.hz && ka.hz.toFixed(2)} Hz`);
+  const oct0 = await page.evaluate(() => patch.keys.octave);
+  await page.keyboard.press('x');
+  check('X raises the Keys octave', (await page.evaluate(() => patch.keys.octave)) === Math.min(4, oct0 + 1));
+  await page.keyboard.press('z');
+
+  // Scale: strips outside it go dark and don't play
+  await page.evaluate(() => { patch.keys.scale = 'penta'; renderKeys(); });
+  const dark = await page.$$eval('.kstrip.off', a => a.length);
+  pt = await stripPt(1, 0.3);
+  await page.mouse.down(); await page.mouse.up();
+  await page.mouse.move(pt.x, pt.y); await page.mouse.down(); await page.waitForTimeout(200);
+  const offPlays = (await voice()).n;
+  await page.mouse.up();
+  check('Scale darkens strips outside it, and they stay silent', dark === 7 && offPlays === 0, `${dark} dark`);
+  await page.evaluate(() => { patch.keys.scale = 'all'; renderKeys(); });
+
+  // Tune mode: drag a strip up to retune it
+  await page.click('.keys-sec .kbtns .hwb:nth-child(2)');
+  pt = await stripPt(4, 0.5);
+  await page.mouse.move(pt.x, pt.y); await page.mouse.down();
+  await page.mouse.move(pt.x, pt.y - 40, { steps: 4 }); await page.mouse.up();
+  const tuned = await page.evaluate(() => patch.keys.tune[4]);
+  check('Tune mode retunes a strip by dragging', tuned === 10, `${tuned} cents`);
+  await page.click('.keys-sec .kbtns .hwb:nth-child(2)');
+  await page.evaluate(() => { patch.keys.tune[4] = 0; renderKeys(); });
+
+  // Older patches gain the Keys defaults
+  const oldKeys = await page.evaluate(() => { const p = clone(FACTORY[0]); delete p.keys; const n = normalize(p); return n.keys.tune.length === 13 && n.keys.wave === defaultPatch().keys.wave; });
+  check('v0.2 patches get the Keys defaults', oldKeys);
+
+  // Octave strip, voices, mono legato, the Keys filter and LFO
+  const oct = await page.evaluate(() => ({ n: document.querySelectorAll('.kstrip').length, r: keyHz(patch, 12) / keyHz(patch, 0) }));
+  check('13th strip plays the octave', oct.n === 13 && Math.abs(oct.r - 2) < 1e-9, JSON.stringify(oct));
+  const held = async (keys, voices) => {
+    await page.evaluate(v => { patch.keys.voices = v; renderKeys(); engine.applyKeys(); }, voices);
+    for (const k of keys){ await page.keyboard.down(k); await page.waitForTimeout(60); }
+    await page.waitForTimeout(150);
+    const n = await page.evaluate(() => engine.keyMap.size);
+    for (const k of keys) await page.keyboard.up(k);
+    await page.waitForTimeout(100);
+    return n;
+  };
+  const n4 = await held(['a', 's', 'd', 'f', 'g'], 4), n2 = await held(['a', 's', 'd'], 2);
+  check('Voices sets how many notes sound together', n4 === 4 && n2 === 2, `4 -> ${n4}, 2 -> ${n2}`);
+  await page.evaluate(() => { patch.keys.voices = 1; renderKeys(); });
+  await page.keyboard.down('a'); await page.waitForTimeout(200);
+  await page.keyboard.down('g'); await page.waitForTimeout(500);
+  const m1 = await voice();
+  await page.keyboard.up('g'); await page.waitForTimeout(600);
+  const m2 = await voice();
+  await page.keyboard.up('a'); await page.waitForTimeout(100);
+  const hzA = await page.evaluate(() => keyHz(patch, 0)), hzG = await page.evaluate(() => keyHz(patch, 4));
+  check('Mono glides back to the note still held', m1.n === 1 && Math.abs(m1.hz - hzG) < 1 && m2.n === 1 && Math.abs(m2.hz - hzA) < 1,
+    `${m1.hz && m1.hz.toFixed(1)} -> ${m2.hz && m2.hz.toFixed(1)} Hz`);
+
+  const holdCentroid = async setup => {
+    await page.evaluate(s => { Object.assign(patch.keys, s); engine.applyKeys(); }, setup);
+    await page.keyboard.down('a'); await page.waitForTimeout(500);
+    const c = await centroid();
+    await page.keyboard.up('a'); await page.waitForTimeout(50);
+    return c;
+  };
+  await page.evaluate(() => { patch.keys.voices = 4; patch.keys.pressure = 'level'; patch.keys.release = 0.05;
+    patch.reverb.mix = 0; patch.delay.mix = 0; engine.applyAll(); });    // no effect tails between measurements
+  const cLp = await holdCentroid({ wave: 'sawtooth', tone: 0.3, filter: 'lowpass', drive: 0 });
+  const cHp = await holdCentroid({ filter: 'highpass' });
+  check('Keys filter type changes the tone', cHp > cLp * 2, `LPF ${cLp.toFixed(0)} Hz, HPF ${cHp.toFixed(0)} Hz`);
+  const cLd = await holdCentroid({ filter: 'ladder' });
+  check('Keys ladder filter sounds', cLd > 0 && cLd < cHp && await page.evaluate(() => engine.keyVoices[0].ldOut.gain.value > 0.9), `${cLd.toFixed(0)} Hz`);
+  // Drive: the level of the 3rd harmonic on a sine, relative to the fundamental (with the filter open)
+  const h3 = async drive => {
+    await page.evaluate(d => { Object.assign(patch.keys, { wave: 'sine', filter: 'lowpass', tone: 1, drive: d }); engine.applyKeys(); }, drive);
+    await page.keyboard.down('a'); await page.waitForTimeout(500);
+    const r = await page.evaluate(() => {
+      const a = engine.analyser, d = new Float32Array(a.frequencyBinCount); a.getFloatFrequencyData(d);
+      const bin = engine.ctx.sampleRate / a.fftSize, f = keyHz(patch, 0);
+      const at = h => Math.max(...[-1, 0, 1].map(o => d[Math.round(h * f / bin) + o]));
+      return at(3) - at(1);
+    });
+    await page.keyboard.up('a'); await page.waitForTimeout(50);
+    return r;
+  };
+  const d0 = await h3(0), d1 = await h3(1);
+  check('Keys drive adds harmonics', d1 > d0 + 20, `3rd harmonic ${d0.toFixed(0)} -> ${d1.toFixed(0)} dB`);
+  await page.evaluate(() => { Object.assign(patch.keys, { lfoRate: 1, lfoLevel: 1, drive: 0 }); engine.applyKeys(); });
+  await page.keyboard.down('a'); await page.waitForTimeout(400);
+  const levels = await page.evaluate(async () => {           // the analyser window is ~1/3 s, so a slow LFO
+    const out = [];
+    for (let i = 0; i < 20; i++){
+      const a = engine.analyser, d = new Float32Array(a.fftSize); a.getFloatTimeDomainData(d);
+      let s = 0; for (const v of d) s += v * v; out.push(Math.sqrt(s / d.length));
+      await new Promise(r => setTimeout(r, 50));
+    }
+    return out;
+  });
+  await page.keyboard.up('a');
+  check('Keys LFO makes tremolo', Math.max(...levels) > Math.min(...levels) * 3, `${Math.min(...levels).toFixed(3)} .. ${Math.max(...levels).toFixed(3)}`);
+  check('Keys LFO filter depth reaches the filter', await page.evaluate(() => { patch.keys.lfoFilter = 0.5; engine.applyKeys(); return true; })
+    && (await page.waitForTimeout(300), await page.evaluate(() => Math.abs(engine.kLfoFilt.gain.value - 1200) < 5)));
+  await page.evaluate(() => loadPatch(FACTORY[0]));
+  await page.waitForTimeout(300);
+
+  // Pop-out windows. Headless Chromium has no Picture-in-Picture window, so Keys falls back to a popup too.
+  await page.evaluate(() => setView('panel'));
+  await page.evaluate(() => engine.play());
+  await page.waitForTimeout(500);
+  const [mon] = await Promise.all([page.context().waitForEvent('page'), page.click('.monitor .popbtn')]);
+  await mon.setViewportSize({ width: 900, height: 420 });
+  await page.waitForTimeout(600);
+  const monState = await mon.evaluate(() => {
+    const c = document.querySelector('#scope'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    let red = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 200 && d[i + 1] < 140) red++;
+    return { here: !!document.querySelector('.monitor'), red, w: c.width };
+  });
+  const holder = await page.evaluate(() => !!$('.popholder') && !$('.monitor'));
+  check('Monitor pops out and keeps drawing', monState.here && monState.red > 50 && holder, JSON.stringify(monState));
+  await mon.close(); await page.waitForTimeout(300);
+  check('closing the window docks Monitor again', await page.evaluate(() => !!$('.side .monitor') && !$('.popholder')));
+
+  await page.evaluate(() => engine.stop());
+  // Headless Chromium gives Keys a real always-on-top (Picture-in-Picture) window, which Playwright can't
+  // drive as a page, so events are sent into it directly.
+  await page.click('#viewSlot .hwb:nth-child(3)');             // View > Keys, from the Panel view
+  await page.waitForTimeout(500);
+  const kp = await page.evaluate(async () => {
+    const P = POPS.keys; if (!P) return { open: false };
+    const d = P.win.document, strips = d.querySelectorAll('.kstrip'), bed = d.querySelector('.kbed');
+    const q = strips[5].getBoundingClientRect();
+    const ev = (type, y) => bed.dispatchEvent(new P.win.PointerEvent(type, { bubbles: true, pointerId: 7, pointerType: 'mouse', button: 0,
+      clientX: q.left + q.width / 2, clientY: q.top + q.height * y }));
+    ev('pointerdown', 0.3);
+    await new Promise(r => setTimeout(r, 400));
+    const n1 = engine.keyMap.size, hz = engine.keyVoices.find(v => v.id)?.freq.value;
+    ev('pointerup', 0.3);
+    d.dispatchEvent(new P.win.KeyboardEvent('keydown', { code: 'KeyS', key: 's', bubbles: true }));
+    await new Promise(r => setTimeout(r, 300));
+    const n2 = engine.keyMap.size;
+    d.dispatchEvent(new P.win.KeyboardEvent('keyup', { code: 'KeyS', key: 's', bubbles: true }));
+    return { open: true, pip: P.pip, strips: strips.length, n1, n2, ok: Math.abs(hz - keyHz(patch, 5)) < 0.5 };
+  });
+  check('Keys open in an always-on-top window and play from it', kp.open && kp.pip && kp.strips === 13 && kp.n1 === 1 && kp.n2 === 1 && kp.ok, JSON.stringify(kp));
+  await page.evaluate(() => setView('play'));
+  check('Play view leaves Keys in their window', await page.evaluate(() => !$('#playSlot .keys-sec') && !!$('#playSlot .popholder')));
+  await page.click('.popholder button'); await page.waitForTimeout(300);
+  check('Bring back docks Keys in the Play view', await page.evaluate(() => !POPS.keys) && await page.evaluate(() => !!$('#playSlot .keys-sec')));
+  await page.evaluate(() => setView('panel'));
+
+  // A window that was open last time lights its tab, ready to reopen with one click
+  await page.evaluate(() => localStorage.setItem('dronebox.pops', JSON.stringify(['monitor'])));
+  await page.reload(); await page.waitForTimeout(300);
+  check('last session\'s windows light their tab', await page.evaluate(() => $('.monitor .popbtn').classList.contains('pending')));
+  await page.evaluate(() => localStorage.removeItem('dronebox.pops'));
+  await page.setViewportSize({ width: 1400, height: 900 });
 
   // Release hygiene: the panel shows VERSION, and the tester checklist is for the same version
   const fs = require('fs');

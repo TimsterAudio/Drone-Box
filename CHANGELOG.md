@@ -8,6 +8,34 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 _Nothing yet._
 
+## [0.3.0] — 2026-10-08
+
+Stage 3 begins: Drone Box gets a playable **Keys** section with touch strips, its own filter and LFO, and up to four voices, plus pop-out windows (the Keys can float on top of other apps) and a Panel / Play view. Drone Box now targets desktops, laptops and tablets.
+
+### Added
+- **Keys (Stage 3).** Thirteen touch strips play a new Keys section over the drone: one strip per just-intonation interval above the root, plus the octave (2/1), so a slide can cross a whole octave.
+  - Press a strip to play it. The height you press at is pressure: it sets the level, the tone or both (**Pressure** switch). A pen's real pressure is used.
+  - Drag sideways to glide to the next strip; Shift + drag slides freely between them.
+  - **Latch** holds notes until you press them again. **Tune** mode lets you drag a strip up or down to retune it by up to ±50 cents (double-click resets it).
+  - **Voices:** Mono, 2, 3 or 4. When a held note loses its voice to a newer one, it comes back when you let go of the newer one. In Mono that gives legato playing: hold one strip, tap another, and it glides back.
+  - **Voice** knobs: Wave, Octave, Scale (all 12, pentatonic, major, minor, Bhairav, harmonic), Glide, Attack, Release, Level and Pan. Strips outside the scale go dark.
+  - **Filter** on each voice: LPF, BPF, HPF or Ladder, with Cutoff, Reso and Drive (a soft-clipping drive before the filter, or the ladder's own drive).
+  - **LFO** for the Keys: four wave shapes, Rate (0.05–12 Hz), and depths for Pitch (vibrato), Filter (up to ±2 octaves) and Level (tremolo).
+  - Computer keys A S D F G H J K L ; ' \ play up the scale, and Z / X change the octave.
+  - Each strip glows up to the pressure while it plays.
+  - The Keys go through the delay and reverb, not the drone's filter, and play even while the drone is stopped (the display shows KEYS).
+- **View switch** in the top strip. **Play** swaps the LFO, filter and effects row for the Keys; **Panel** brings it back.
+- **Pop-out windows.** Monitor and Keys can each move into a window of their own (the **Window** tab on the section's top edge, or **View › Keys**), and come back with **Dock**, **Bring back** or by closing the window.
+  - The Keys window stays on top of other windows where the browser supports it (Chrome, Edge and Brave), so you can play while you work in another app. Elsewhere it's an ordinary window.
+  - Windows remember their size. A section that was in its own window last time glows, ready to reopen with one click.
+
+### Changed
+- The swell fade now applies to the drone only, so delay and reverb tails ring out naturally after Stop.
+- The top strip is slightly tighter to make room for the View switch.
+
+### Removed
+- **Phone layout.** Drone Box now targets desktops, laptops and tablets. Every window, tablets included, gets the same scaled panel, and the stacked phone layout is gone.
+
 ## [0.2.0] — 2026-10-06
 
 The first part of Stage 2 plus a big panel update. Drone Box gets a new alias-free oscillator engine with Fold, FM, a ladder filter and noise; a 1920 × 900 panel that scales to any window; colour-coded knobs; and stand-alone app-window launchers. This is the release for the first round of outside testing.

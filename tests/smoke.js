@@ -394,6 +394,36 @@ function check(name, ok, detail = ''){
   await page.evaluate(() => loadPatch(FACTORY[0]));
   await page.waitForTimeout(300);
 
+  // Gating: DSP nobody can hear is switched off (this is what keeps slower machines from breaking up)
+  const onv = () => page.evaluate(() => ({
+    drone: engine.voices.map(v => v.on.value), droneLadder: engine.ladder.parameters.get('on').value,
+    keys: engine.keyVoices.map(v => v.on.value), keyLadders: engine.keyVoices.map(v => v.ladder.parameters.get('on').value) }));
+  await page.evaluate(async () => { patch.env.release = 0.1; patch.env.attack = 0.05; patch.keys.release = 0.05; patch.filter.type = 'lowpass'; engine.applyAll(); await engine.play(); });
+  await page.waitForTimeout(300);
+  let gs = await onv();
+  check('playing drone runs its oscillators, not the unused ladder', gs.drone.every(x => x === 1) && gs.droneLadder === 0, JSON.stringify(gs));
+  await page.evaluate(() => engine.stop());
+  await page.waitForTimeout(800);
+  gs = await onv();
+  check('stopped drone switches its DSP off after the fade', gs.drone.every(x => x === 0) && gs.droneLadder === 0, JSON.stringify(gs.drone));
+  check('idle Keys voices are switched off', gs.keys.every(x => x === 0) && gs.keyLadders.every(x => x === 0), JSON.stringify(gs.keys));
+  await page.keyboard.down('a'); await page.waitForTimeout(300);
+  gs = await onv();
+  const keyOnSound = await rms();
+  check('a Keys note switches its voice on and sounds', gs.keys.filter(x => x === 1).length === 1 && keyOnSound > 0.003, `rms ${keyOnSound.toFixed(4)}`);
+  await page.evaluate(() => { patch.keys.filter = 'ladder'; engine.applyKeys(); });
+  await page.waitForTimeout(100);
+  check('Keys ladder runs only on a sounding voice', (await onv()).keyLadders.filter(x => x === 1).length === 1);
+  await page.keyboard.up('a'); await page.waitForTimeout(500);
+  check('released Keys voice switches off after its release', (await onv()).keys.every(x => x === 0));
+  await page.evaluate(async () => { patch.filter.type = 'ladder'; engine.applyFilter(); await engine.play(); });
+  await page.waitForTimeout(400);
+  gs = await onv();
+  check('drone comes back on Play, with its ladder when selected', gs.drone.every(x => x === 1) && gs.droneLadder === 1 && (await rms()) > 0.003);
+  check('footer shows the audio engine', /Audio: \d+(\.\d)? kHz/.test(await page.textContent('#audioInfo')), await page.textContent('#audioInfo'));
+  await page.evaluate(() => { engine.stop(); loadPatch(FACTORY[0]); });
+  await page.waitForTimeout(200);
+
   // Pop-out windows. Headless Chromium has no Picture-in-Picture window, so Keys falls back to a popup too.
   await page.evaluate(() => setView('panel'));
   await page.evaluate(() => engine.play());

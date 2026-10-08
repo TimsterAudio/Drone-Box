@@ -103,7 +103,13 @@ The custom DSP lives in `<script type="text/plain" id="dsp-worklet">`, so the pa
 - **Wave order** in `WAVE_IDS` (worklet) must match `WAVES` (main script). `WAVE_INDEX` maps from one to the other.
 - **FM** is linear and through-zero: `freq × (1 + fm × modulator)`. The UI knob is squared and scaled by 4, so 100% gives a peak deviation of 4× the carrier frequency. The FM ring takes each oscillator's **pre-level** output, so a muted oscillator can act as a pure modulator.
 - **Wavefolder:** `x + mix × (sin(π/2 · gain · x) − x)`, with gain from 1 to 8. High fold settings can alias, since there's no oversampling yet.
-- **Cost:** six oscillators with FM and fold, plus the ladder and noise, render about 10× faster than real time offline (roughly 10% of one core).
+- **Gating:** every processor has a k-rate `on` param. At 0 it outputs silence and skips its work. The engine (`gateDrone()`, `gateKey()`, `gateParam()`) schedules it:
+  - drone oscillators, noise and ladder: on while the drone plays, off once the Stop fade has died away (`droneEnd`); noise only while its level is up; the ladder only while Ladder is selected
+  - Keys voices: on while held, off when the release has died away (`v.endAt`); each voice's ladder only while the Keys filter is Ladder
+- **Block-rate maths:** the oscillator and ladder compute pitch and cutoff at the start and end of each 128-sample block and interpolate in between, rather than calling `pow`/`exp`/`log2` per sample. The oscillator picks its wavetable band once per block unless FM is on.
+- **No allocation in `process()`.** Garbage collection on the audio thread causes dropouts, so processors only use buffers made in their constructors.
+- **Sample rate:** if the device runs above 48 kHz, `build()` makes the context at 48 kHz (`engine.deviceRate` keeps the device's rate for the footer readout).
+- **Cost:** measured with an offline render of the full graph (drone with drift, FM and fold, both LFOs, Ladder, noise, 8 s reverb, four Keys notes with the Keys LFO and Ladder), at 48 kHz: v0.2.0 18.5% of one core, v0.3.0 30.6%, now 19.5% with Keys held and 16.1% with Keys idle. Keep new DSP gated and block-rate where possible; real-time audio needs plenty of headroom, especially on Windows.
 
 ## Patch format
 

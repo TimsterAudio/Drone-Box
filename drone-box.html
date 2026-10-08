@@ -329,6 +329,7 @@ kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:
 
 <footer>
   <span><kbd>Space</kbd> play / stop · drag knobs and faders up or down (<kbd>Shift</kbd> for fine) · arrow keys when focused · double-click to reset</span>
+  <span id="audioInfo" title="The audio engine: sample rate, output latency, and (where the browser reports it) how many times the sound dropped out"></span>
   <span>Everything runs locally in your browser. Nothing is sent anywhere.</span>
 </footer>
 
@@ -402,7 +403,8 @@ class DbOsc extends AudioWorkletProcessor {
       {name: 'detune',    defaultValue: 0, automationRate: 'a-rate'},
       {name: 'wave',      defaultValue: 0, minValue: 0, maxValue: WAVE_IDS.length - 1, automationRate: 'k-rate'},
       {name: 'fold',      defaultValue: 0, minValue: 0, maxValue: 1, automationRate: 'k-rate'},
-      {name: 'fm',        defaultValue: 0, minValue: 0, maxValue: 8, automationRate: 'k-rate'}   // peak deviation, in multiples of the frequency
+      {name: 'fm',        defaultValue: 0, minValue: 0, maxValue: 8, automationRate: 'k-rate'},  // peak deviation, in multiples of the frequency
+      {name: 'on',        defaultValue: 1, minValue: 0, maxValue: 1, automationRate: 'k-rate'}   // 0: silent and (nearly) free
     ];
   }
   constructor(){
@@ -410,29 +412,48 @@ class DbOsc extends AudioWorkletProcessor {
     buildTables();
     this.phase = Math.random();
   }
+  // Pitch (frequency and detune) is computed at the start and end of each 128-sample block and
+  // interpolated in between: smooth for glides, drift and vibrato, and far cheaper than per-sample maths.
   process(inputs, outputs, p){
     const out = outputs[0][0];
     if (!out) return true;
+    if (p.on[0] < 0.5){ out.fill(0); return true; }
     const mod = inputs[0] && inputs[0][0];
-    const fq = p.frequency, dt = p.detune;
+    const fq = p.frequency, dt = p.detune, n = out.length;
     const bands = TABLES[WAVE_IDS[Math.round(p.wave[0])]] || TABLES.sine;
     const fm = mod ? p.fm[0] : 0;
     const fold = p.fold[0], foldMix = Math.min(1, fold * 4), foldGain = 1 + fold * 7;
-    const fixed = fq.length === 1 && dt.length === 1;
-    let base = fq[0] * Math.pow(2, dt[0] / 1200);
+    const f0 = fq[0] * Math.pow(2, dt[0] / 1200);
+    const f1 = (fq.length > 1 || dt.length > 1) ? fq[fq.length - 1] * Math.pow(2, dt[dt.length - 1] / 1200) : f0;
+    const step = (f1 - f0) / n, inv = 1 / sampleRate;
+    // Without FM the band choice only depends on the block's pitch, so it's made once per block.
+    const bandOf = f => { const bf = Math.log2(Math.max(Math.abs(f), BASE) / BASE), b0 = Math.min(BANDS - 1, bf | 0);
+                          return [b0, Math.min(BANDS - 1, b0 + 1), Math.min(1, bf - b0)]; };
     let ph = this.phase;
-    for (let i = 0; i < out.length; i++){
-      if (!fixed) base = fq[fq.length > 1 ? i : 0] * Math.pow(2, dt[dt.length > 1 ? i : 0] / 1200);
-      const inst = fm ? base * (1 + fm * mod[i]) : base;
-      ph += inst / sampleRate;
-      ph -= Math.floor(ph);
-      // Pick (and crossfade between) the two octave bands around the instantaneous frequency.
-      const bf = Math.log2(Math.max(Math.abs(inst), BASE) / BASE);
-      const b0 = Math.min(BANDS - 1, bf | 0), b1 = Math.min(BANDS - 1, b0 + 1), bt = Math.min(1, bf - b0);
-      const a = readTable(bands[b0], ph);
-      let x = b1 === b0 ? a : a + (readTable(bands[b1], ph) - a) * bt;
-      if (foldMix > 0) x += foldMix * (Math.sin(HALF_PI * foldGain * x) - x);
-      out[i] = x;
+    if (!fm){
+      const [b0, b1, bt] = bandOf(Math.max(f0, f1));
+      const t0 = bands[b0], t1 = bands[b1], two = b1 !== b0 && bt > 0;
+      for (let i = 0; i < n; i++){
+        ph += (f0 + step * i) * inv;
+        ph -= Math.floor(ph);
+        const a = readTable(t0, ph);
+        let x = two ? a + (readTable(t1, ph) - a) * bt : a;
+        if (foldMix > 0) x += foldMix * (Math.sin(HALF_PI * foldGain * x) - x);
+        out[i] = x;
+      }
+    } else {
+      for (let i = 0; i < n; i++){
+        const inst = (f0 + step * i) * (1 + fm * mod[i]);
+        ph += inst * inv;
+        ph -= Math.floor(ph);
+        // Pick (and crossfade between) the two octave bands around the instantaneous frequency.
+        const bf = Math.log2(Math.max(Math.abs(inst), BASE) / BASE);
+        const b0 = Math.min(BANDS - 1, bf | 0), b1 = Math.min(BANDS - 1, b0 + 1), bt = Math.min(1, bf - b0);
+        const a = readTable(bands[b0], ph);
+        let x = b1 === b0 ? a : a + (readTable(bands[b1], ph) - a) * bt;
+        if (foldMix > 0) x += foldMix * (Math.sin(HALF_PI * foldGain * x) - x);
+        out[i] = x;
+      }
     }
     this.phase = ph;
     return true;
@@ -446,37 +467,42 @@ class DbLadder extends AudioWorkletProcessor {
       {name: 'frequency', defaultValue: 1000, minValue: 20, maxValue: 20000, automationRate: 'a-rate'},
       {name: 'detune',    defaultValue: 0, automationRate: 'a-rate'},
       {name: 'resonance', defaultValue: 0, minValue: 0, maxValue: 1.1, automationRate: 'k-rate'},
-      {name: 'drive',     defaultValue: 0, minValue: 0, maxValue: 1, automationRate: 'k-rate'}
+      {name: 'drive',     defaultValue: 0, minValue: 0, maxValue: 1, automationRate: 'k-rate'},
+      {name: 'on',        defaultValue: 1, minValue: 0, maxValue: 1, automationRate: 'k-rate'}   // 0: silent and (nearly) free
     ];
   }
   constructor(){
     super();
     this.s = [new Float64Array(4), new Float64Array(4)];
   }
+  // The cutoff coefficient is computed at both ends of each block and interpolated in between. Nothing is
+  // allocated while running: garbage collection on the audio thread causes dropouts.
   process(inputs, outputs, p){
     const inp = inputs[0], out = outputs[0];
-    if (!inp || !inp.length){ for (const ch of out) ch.fill(0); return true; }
+    if (p.on[0] < 0.5 || !inp || !inp.length){ for (const ch of out) ch.fill(0); return true; }
     const k = 4 * p.resonance[0];
     const drive = 1 + p.drive[0] * 9, makeup = 1 / Math.sqrt(drive);
-    const fq = p.frequency, dt = p.detune, nyq = sampleRate * 0.45;
+    const fq = p.frequency, dt = p.detune, nyq = sampleRate * 0.45, w = -2 * Math.PI / sampleRate;
     const n = out[0].length;
-    const g = new Float64Array(n);
-    for (let i = 0; i < n; i++){
-      const fc = Math.min(nyq, Math.max(10, fq[fq.length > 1 ? i : 0] * Math.pow(2, dt[dt.length > 1 ? i : 0] / 1200)));
-      g[i] = 1 - Math.exp(-2 * Math.PI * fc / sampleRate);
-    }
+    const coef = (f, d) => 1 - Math.exp(w * Math.min(nyq, Math.max(10, f * Math.pow(2, d / 1200))));
+    const g0 = coef(fq[0], dt[0]);
+    const g1 = (fq.length > 1 || dt.length > 1) ? coef(fq[fq.length - 1], dt[dt.length - 1]) : g0;
+    const gs = (g1 - g0) / n;
     for (let c = 0; c < out.length; c++){
       const src = inp[c] || inp[0], dst = out[c], s = this.s[c];
+      let s0 = s[0], s1 = s[1], s2 = s[2], s3 = s[3];
+      let t0 = fastTanh(s0), t1 = fastTanh(s1), t2 = fastTanh(s2), t3 = fastTanh(s3);
       for (let i = 0; i < n; i++){
-        const x = src[i] * drive;
-        const u = fastTanh(x - k * (s[3] - 0.5 * x));     // feedback with passband gain compensation
-        const gi = g[i];
-        s[0] += gi * (u - fastTanh(s[0]));
-        s[1] += gi * (fastTanh(s[0]) - fastTanh(s[1]));
-        s[2] += gi * (fastTanh(s[1]) - fastTanh(s[2]));
-        s[3] += gi * (fastTanh(s[2]) - fastTanh(s[3]));
-        dst[i] = s[3] * makeup;
+        const gi = g0 + gs * i, x = src[i] * drive;
+        const u = fastTanh(x - k * (s3 - 0.5 * x));       // feedback with passband gain compensation
+        s0 += gi * (u - t0);  const n0 = fastTanh(s0);
+        s1 += gi * (n0 - t1); const n1 = fastTanh(s1);
+        s2 += gi * (n1 - t2); const n2 = fastTanh(s2);
+        s3 += gi * (n2 - t3);
+        t0 = n0; t1 = n1; t2 = n2; t3 = fastTanh(s3);
+        dst[i] = s3 * makeup;
       }
+      s[0] = s0; s[1] = s1; s[2] = s2; s[3] = s3;
     }
     return true;
   }
@@ -485,7 +511,8 @@ class DbLadder extends AudioWorkletProcessor {
 /* ---- Noise: white, pink (Paul Kellet's filter) or brown (leaky integrator) ---- */
 class DbNoise extends AudioWorkletProcessor {
   static get parameterDescriptors(){
-    return [{name: 'color', defaultValue: 1, minValue: 0, maxValue: 2, automationRate: 'k-rate'}];
+    return [{name: 'color', defaultValue: 1, minValue: 0, maxValue: 2, automationRate: 'k-rate'},
+            {name: 'on',    defaultValue: 1, minValue: 0, maxValue: 1, automationRate: 'k-rate'}];
   }
   constructor(){
     super();
@@ -495,6 +522,7 @@ class DbNoise extends AudioWorkletProcessor {
   process(_, outputs, p){
     const out = outputs[0][0];
     if (!out) return true;
+    if (p.on[0] < 0.5){ out.fill(0); return true; }
     const color = Math.round(p.color[0]), b = this.b;
     for (let i = 0; i < out.length; i++){
       const w = Math.random() * 2 - 1;
@@ -719,6 +747,7 @@ class Engine {
     this.stopTimer = null;
     this.driftTimer = null;
     this.solo = new Set();   // soloed oscillator indexes; not saved with the patch
+    this.droneEnd = 0;       // context time the stopped drone finishes fading (its DSP then switches off)
   }
 
   // Any solo wins (and overrides mute); with no solos, mute decides.
@@ -730,7 +759,15 @@ class Engine {
   }
 
   async build(){
-    const ctx = this.ctx = new (window.AudioContext || window.webkitAudioContext)({latencyHint: 'playback'});
+    const AC = window.AudioContext || window.webkitAudioContext;
+    let ctx = new AC({latencyHint: 'playback'});
+    // Devices set to 88.2 kHz or more (common with USB interfaces on Windows) would multiply the DSP work
+    // for no audible gain, so run at 48 kHz there and let the browser resample.
+    this.deviceRate = ctx.sampleRate;
+    if (ctx.sampleRate > 48000){
+      try { const c48 = new AC({latencyHint: 'playback', sampleRate: 48000}); ctx.close(); ctx = c48; } catch (_) {}
+    }
+    this.ctx = ctx;
     const g = v => { const n = ctx.createGain(); n.gain.value = v; return n; };
 
     // Load the worklet module from memory. Chrome refuses blob: URLs for worklets on pages opened
@@ -882,7 +919,7 @@ class Engine {
       }
       v.press.connect(v.vca).connect(v.pan).connect(this.keysOut);
       this.vibDepth.connect(v.detune);
-      v.id = null; v.started = 0; v.wave = null;
+      v.id = null; v.started = 0; v.wave = null; v.endAt = 0;
       return v;
     });
 
@@ -896,7 +933,7 @@ class Engine {
     if (this.dsp){
       const n = new AudioWorkletNode(ctx, 'db-osc', {numberOfInputs: 1, outputChannelCount: [1]});
       const P = name => n.parameters.get(name);
-      return {src: n, freq: P('frequency'), detune: P('detune'), waveP: P('wave'), fold: P('fold'), fm: P('fm')};
+      return {src: n, freq: P('frequency'), detune: P('detune'), waveP: P('wave'), fold: P('fold'), fm: P('fm'), on: P('on')};
     }
     const o = ctx.createOscillator();
     o.start();
@@ -913,6 +950,34 @@ class Engine {
   // Discrete selectors (wave index, noise colour) jump rather than glide through in-between values.
   set(param, v){ if (this.ready) param.setValueAtTime(v, this.ctx.currentTime); }
 
+  /* ----- Gating: DSP that can't be heard is switched off ('on' = 0), so it costs (almost) nothing ----- */
+  // Hold a worklet's 'on' param at 1 until \`end\` (context time; Infinity = for now), then 0. When it
+  // isn't wanted at all, it goes off after \`offDelay\`, to let a crossfade or fade finish first.
+  gateParam(param, want, end, offDelay = 0){
+    if (!param) return;
+    const now = this.ctx.currentTime;
+    param.cancelScheduledValues(now);
+    if (want && end > now){
+      param.setValueAtTime(1, now);
+      if (end < Infinity) param.setValueAtTime(0, end);
+    } else param.setValueAtTime(0, now + offDelay);
+  }
+  // Drone oscillators, noise and ladder run while the drone plays or fades out; the ladder only when selected.
+  gateDrone(){
+    if (!this.ready || !this.dsp) return;
+    const end = this.running ? Infinity : this.droneEnd;
+    for (const v of this.voices) this.gateParam(v.on, true, end);
+    this.gateParam(this.noise.parameters.get('on'), this.p.noise.level > 0 && !this.solo.size, end, 0.5);
+    this.gateParam(this.ladder.parameters.get('on'), this.p.filter.type === 'ladder', end, 0.3);
+  }
+  // A Keys voice runs while held and through its release; its ladder only when Ladder is selected.
+  gateKey(v){
+    if (!this.dsp) return;
+    const end = v.id ? Infinity : v.endAt;
+    this.gateParam(v.on, true, end);
+    this.gateParam(v.ladder.parameters.get('on'), this.p.keys.filter === 'ladder', end, 0.3);
+  }
+
   applyAll(){
     if (!this.ready) return;
     for (let i = 0; i < NUM_OSC; i++) this.applyOsc(i, true);
@@ -923,6 +988,7 @@ class Engine {
     this.applyReverb();
     this.applyMaster();
     this.applyKeys();
+    this.gateDrone();
   }
 
   setWave(v, wave){
@@ -955,6 +1021,7 @@ class Engine {
     this.set(this.noise.parameters.get('color'), {white: 0, pink: 1, brown: 2}[n.color] ?? 1);
     this.T(this.noiseLvl.gain, this.solo.size ? 0 : n.level, 0.06);
     this.T(this.noisePan.pan, n.pan, 0.06);
+    this.gateDrone();
   }
 
   applyFilter(){
@@ -971,6 +1038,7 @@ class Engine {
       this.T(P('drive'), f.drive, 0.04);
       this.T(this.bqOut.gain, ladder ? 0 : 1, 0.03);
       this.T(this.ldOut.gain, ladder ? 1 : 0, 0.03);
+      this.gateDrone();
     }
   }
 
@@ -1081,6 +1149,8 @@ class Engine {
       this.T(v.pan.pan, K.pan, 0.05);
       v.bq.type = K.filter === 'ladder' ? 'lowpass' : K.filter;                     // basic mode: ladder falls back to low-pass
       this.T(v.bq.Q, K.reso, 0.04);
+      const os = K.drive > 0 && !ladder ? '2x' : 'none';             // oversampling only costs when it's needed
+      if (v.shaper.oversample !== os) v.shaper.oversample = os;
       this.T(v.pre.gain, ladder ? 0.075 : g, 0.04);
       this.T(v.post.gain, 1 / Math.tanh(4 * (ladder ? 0.075 : g)), 0.04);
       if (v.ladder){
@@ -1090,6 +1160,7 @@ class Engine {
         this.T(v.bqOut.gain, ladder ? 0 : 1, 0.03);
         this.T(v.ldOut.gain, ladder ? 1 : 0, 0.03);
       }
+      this.gateKey(v);
       if (v.id && i >= K.voices) this.keyOff(v.id);                                 // fewer voices: let the extra ones go
       else if (v.id){
         this.T(v.vca.gain, K.level * 0.3, 0.05);
@@ -1114,6 +1185,7 @@ class Engine {
       if (silent) this.set(v.freq, hz); else this.T(v.freq, hz, this.keyGlide());
     } else this.T(v.freq, hz, this.keyGlide());
     v.p = p;
+    this.gateKey(v);
     this.set(v.press.gain, this.keyPress(p));
     this.keyFilter(v, true);
     const g = v.vca.gain;
@@ -1140,6 +1212,8 @@ class Engine {
     const K = this.p.keys, now = this.ctx.currentTime, g = v.vca.gain;
     if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(now); else { g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); }
     g.setTargetAtTime(0, now, Math.max(0.005, K.release / 4));
+    v.endAt = now + Math.max(0.05, K.release * 2.5);                  // ~ -90 dB, then the voice switches off
+    this.gateKey(v);
     this.keysLast = now;
     if (!this.running) this.scheduleSuspend(K.release * 1.5 + this.p.reverb.decay + 1);
   }
@@ -1176,6 +1250,7 @@ class Engine {
     clearTimeout(this.stopTimer);
     await this.ctx.resume();
     this.running = true;
+    this.gateDrone();
     const now = this.ctx.currentTime, gain = this.env.gain;
     if (gain.cancelAndHoldAtTime) gain.cancelAndHoldAtTime(now);
     else { gain.cancelScheduledValues(now); gain.setValueAtTime(gain.value, now); }
@@ -1190,6 +1265,8 @@ class Engine {
     if (gain.cancelAndHoldAtTime) gain.cancelAndHoldAtTime(now);
     else { gain.cancelScheduledValues(now); gain.setValueAtTime(gain.value, now); }
     gain.setTargetAtTime(0, now, Math.max(0.01, rel / 4));
+    this.droneEnd = now + rel * 2.5 + 0.1;                              // faded to ~ -90 dB: switch the drone DSP off
+    this.gateDrone();
     // Suspend once the release (plus reverb/delay tails) has died away, and no Keys are sounding.
     this.scheduleSuspend(rel * 1.5 + this.p.reverb.decay + 1);
   }
@@ -2308,6 +2385,23 @@ function drawLoop(win){
   win.requestAnimationFrame(frame);
 }
 
+/* ---------- Audio readout (footer) ---------- */
+// Sample rate, output latency and, where the browser reports it (AudioContext.playoutStats), the number of
+// dropouts since the audio started. Handy when sound breaks up on one machine but not another.
+function audioInfo(){
+  const c = engine.ctx, out = $('#audioInfo');
+  if (!c){ out.textContent = 'Audio: not started'; return; }
+  const parts = [`${+(c.sampleRate / 1000).toFixed(1)} kHz`];
+  if (engine.deviceRate && engine.deviceRate !== c.sampleRate) parts[0] += ` (device ${+(engine.deviceRate / 1000).toFixed(1)})`;
+  const lat = (c.baseLatency || 0) + (c.outputLatency || 0);
+  if (lat) parts.push(`${Math.round(lat * 1000)} ms`);
+  const ps = c.playoutStats;
+  if (ps && typeof ps.fallbackFramesEvents === 'number') parts.push(`${ps.fallbackFramesEvents} dropout${ps.fallbackFramesEvents === 1 ? '' : 's'}`);
+  if (!engine.dsp) parts.push('basic mode');
+  out.textContent = 'Audio: ' + parts.join(' · ');
+}
+setInterval(audioInfo, 1000);
+
 /* ---------- Fit to window ---------- */
 // The panel is always laid out at its 1920px design width and the whole page is scaled (CSS zoom) to
 // fit the window, so it never scrolls or re-wraps, whatever the frame or screen: desktop, laptop or
@@ -2336,6 +2430,7 @@ fitToWindow();
 if (document.fonts) document.fonts.ready.then(fitToWindow);
 $('.monitor').append(popButton('monitor'));
 drawLoop(window);
+audioInfo();
 </script>
 </body>
 </html>

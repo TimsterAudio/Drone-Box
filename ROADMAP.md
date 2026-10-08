@@ -130,7 +130,8 @@ Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone 
 ## Backlog: sound engine
 
 - [ ] 2× oversampling for the wavefolder and ladder, to remove aliasing at extreme settings
-- [ ] A CPU or audio-load indicator
+- [x] An audio readout: sample rate, latency, and dropouts where the browser reports them
+- [ ] A real audio-load meter (how close the audio thread is to running out of time)
 - [ ] Handle the audio device or sample rate changing while playing
 - [ ] Cache generated reverb impulses so decay changes are instant
 - [ ] Limiter options: off, soft or hard; show gain reduction on the meter

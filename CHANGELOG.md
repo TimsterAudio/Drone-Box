@@ -6,7 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+- **Sound breaking up**, especially on Windows and when playing the Keys. The audio engine now does far less work: about 35% less than v0.3.0 with the Keys playing, and 45% less when they're idle (less than v0.2.0).
+  - Silent parts are switched off: the four Keys voices when no note is sounding, the drone's oscillators and noise once it has faded out after Stop, and the ladder filters unless Ladder is selected.
+  - The oscillators and ladder filter compute pitch and cutoff once per block instead of for every sample, and the ladder no longer creates garbage that the browser has to clear up mid-sound.
+  - Audio devices set to 88.2 kHz or more (common with USB interfaces) now run the engine at 48 kHz, instead of doubling or quadrupling the work.
+
+### Added
+- An **audio readout** in the footer: the sample rate, the output latency and, in browsers that report it, how many times the sound has dropped out.
 
 ## [0.3.0] — 2026-10-08
 

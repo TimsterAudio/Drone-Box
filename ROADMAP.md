@@ -79,6 +79,22 @@ Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone 
 - [ ] More LFOs, with phase offset, retrigger and tempo or clock sync
 - [ ] Modulation shown on the panel: a moving ring around each knob that's being modulated
 
+**Patch view (for later review)**
+
+A semi-modular patch bay: the modulation matrix drawn as cables. Mock-up: [docs/mockups/patch-view.png](docs/mockups/patch-view.png).
+- A third View option: Panel / Play / **Patch**
+- **Audio lane:** Oscillators (Pitch, FM, Fold in; Out), Noise, Filter, Swell, Delay, Reverb, Output
+- **Modulation lane:** LFO 1 and 2 (with Rate inputs), Random, Slow Envelope, Keys (Pitch, Pressure, Gate), XY pad
+- Built-in (normalled) connections shown dotted, so it plays with no cables; a cable into the same input replaces its dotted line
+- Orange cables for audio, blue for modulation; output sockets have an inverted label plate
+- A **Cables / Matrix** switch: the same connections as a list or a grid, with a cable limit (24?) to keep the audio cost bounded
+- Builds on the modulation matrix above: the matrix does the sound, this view draws it
+- Open questions:
+  - Which sockets? The mock-up has about 40 musically useful ones, not every knob.
+  - Where's the amount set: on a small knob at the destination socket (as in the mock-up), or on the cable?
+  - What's the cable limit?
+  - How do busy patches stay readable: fade all but the hovered cable, or a "hide cables" toggle?
+
 ## Stage 5: Effects and space
 
 - [ ] Better reverb: a feedback delay network with size, damping, modulation and freeze
@@ -104,7 +120,7 @@ Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone 
 - [ ] Granular processing of loops and samples
 - [ ] A generative **Evolve** mode, where the patch slowly mutates itself within limits you set
 - [ ] Scenes or snapshots, with slow morphing between them
-- [ ] A patch-cable modular view
+- [ ] A fully free modular (add any number of modules, patch anything): **parked**. It's a different instrument with open-ended audio cost; the Stage 4 Patch view covers patching within fixed modules.
 - [ ] Web MIDI: MIDI learn for any control, and notes in to the Keys section (Chrome, Edge and Brave only)
 - [ ] Multichannel output for audio interfaces with more than two outputs
 - [ ] A real installed app (for example a small Tauri wrapper) with its own icon, if the launchers aren't enough

@@ -596,7 +596,7 @@ registerProcessor('db-noise', DbNoise);
 'use strict';
 
 /* ---------- Constants ---------- */
-const VERSION = '0.4.0';   // keep in step with CHANGELOG.md
+const VERSION = '0.4.1';   // keep in step with CHANGELOG.md
 const NOTE_NAMES = ['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
 const RATIOS = [
   ['1/1','1/1 · unison'], ['16/15','16/15 · min 2nd'], ['9/8','9/8 · maj 2nd'], ['6/5','6/5 · min 3rd'],
@@ -1325,13 +1325,33 @@ class Engine {
   // Suspend the audio context once nothing is sounding, to save CPU.
   scheduleSuspend(seconds){
     clearTimeout(this.stopTimer);
-    this.stopTimer = setTimeout(() => {
-      if (this.running) return;
-      if (this.keysBusy()) return this.scheduleSuspend(1);
-      clearInterval(this.driftTimer); this.driftTimer = null;
-      this.ctx.suspend();
-      ui.setStatus();
-    }, seconds * 1000);
+    this.quietSince = null;
+    this.stopTimer = setTimeout(() => this.trySuspend(), seconds * 1000);
+  }
+  // The timer above only covers the expected fades. Before suspending, listen: the output must have stayed
+  // below about -66 dB for at least one delay time (so a gap between echoes can't fool it), otherwise long
+  // delay echoes, reverb tails and Space throws would be cut off dead.
+  trySuspend(){
+    if (this.running || !this.ready) return;
+    if (this.keysBusy()) return this.scheduleSuspend(1);
+    const now = this.ctx.currentTime;
+    if (this.outputPeak() > 5e-4) this.quietSince = null;
+    else if (this.quietSince == null) this.quietSince = now;
+    if (this.quietSince == null || now - this.quietSince < Math.max(1, this.p.delay.time + 0.5)){
+      this.stopTimer = setTimeout(() => this.trySuspend(), 500);
+      return;
+    }
+    clearInterval(this.driftTimer); this.driftTimer = null;
+    this.ctx.suspend();
+    ui.setStatus();
+  }
+  outputPeak(){
+    const a = this.analyser;
+    this.peakBuf = this.peakBuf || new Float32Array(a.fftSize);
+    a.getFloatTimeDomainData(this.peakBuf);
+    let pk = 0;
+    for (const v of this.peakBuf){ const x = v < 0 ? -v : v; if (x > pk) pk = x; }
+    return pk;
   }
 
   async play(){

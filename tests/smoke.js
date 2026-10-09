@@ -446,6 +446,7 @@ function check(name, ok, detail = ''){
     p.env.attack = 0.05; p.env.release = 0.1;
     p.expr.attack = 0.02; p.expr.ret = 0.1;
     loadPatch(p); await engine.play();
+    engine.analyser.smoothingTimeConstant = 0;   // each spectrum reading shows only the present, not the last one
   });
   await page.waitForTimeout(700);
   const platePt = (i, fy, dx = 0) => page.evaluate(([i, fy, dx]) => {
@@ -529,7 +530,7 @@ function check(name, ok, detail = ''){
     return { kept: back.expr.plates[2].y === 'fm' && back.expr.plates[2].x === 'pan', old: n.expr.plates.length === 9 && n.expr.release === 'spring' };
   });
   check('plate targets are saved; older patches get the plate defaults', tg.kept && tg.old, JSON.stringify(tg));
-  await page.evaluate(() => { engine.stop(); setView('panel'); loadPatch(FACTORY[0]); });
+  await page.evaluate(() => { engine.analyser.smoothingTimeConstant = 0.8; engine.stop(); setView('panel'); loadPatch(FACTORY[0]); });
   await page.waitForTimeout(300);
   }
 
@@ -595,6 +596,26 @@ function check(name, ok, detail = ''){
   check('last session\'s windows light their tab', await page.evaluate(() => $('.monitor .popbtn').classList.contains('pending')));
   await page.evaluate(() => localStorage.removeItem('dronebox.pops'));
   await page.setViewportSize({ width: 1400, height: 900 });
+
+  // After Stop, delay echoes ring out instead of being cut off when the audio engine suspends itself,
+  // and it still suspends once the output is silent
+  {
+    const peakDb = () => page.evaluate(() => 20 * Math.log10(engine.outputPeak() || 1e-9));
+    await page.evaluate(async () => {
+      const P = clone(FACTORY[0]);
+      P.env.attack = 0.05; P.env.release = 0.2; P.reverb.decay = 2; P.reverb.mix = 0.2;
+      P.delay = {time: 0.5, feedback: 0.5, tone: 4000, mix: 0.6};
+      loadPatch(P); await engine.play();
+    });
+    await page.waitForTimeout(1200);
+    await page.evaluate(() => engine.stop());
+    await page.waitForTimeout(3800);                 // the old timer suspended at 0.2 x 1.5 + 2 + 1 = 3.3 s
+    const mid = await page.evaluate(() => engine.ctx.state), midDb = await peakDb();
+    let state = mid;
+    for (let i = 0; i < 24 && state === 'running'; i++){ await page.waitForTimeout(500); state = await page.evaluate(() => engine.ctx.state); }
+    check('delay echoes ring out after Stop, then the audio suspends', mid === 'running' && midDb > -60 && state === 'suspended',
+      `at 3.8 s: ${mid}, ${midDb.toFixed(0)} dB; later: ${state}`);
+  }
 
   // Release hygiene: the panel shows VERSION, and the tester checklist is for the same version
   const fs = require('fs');

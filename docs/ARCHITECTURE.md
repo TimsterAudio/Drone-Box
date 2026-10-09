@@ -70,7 +70,7 @@ Keys LFO (kLfo) ─┬─► vibDepth ─► each voice's osc detune
                  └─► kLfoAmp  ─► keysOut.gain
 ```
 
-- The **oscillators run continuously** once the context exists. Play and Stop only move the `env` gain, so there are no clicks from starting or stopping oscillators. After a stop, the context is suspended once the fade-out plus effect tails are done.
+- The **oscillators run continuously** once the context exists. Play and Stop only move the `env` gain, so there are no clicks from starting or stopping oscillators. After a stop, the context is suspended to save CPU, but only once the output is silent: `scheduleSuspend()` waits for the expected fades, then `trySuspend()` listens (`outputPeak()` on the analyser) until the output has stayed below about −66 dB for at least one delay time, so delay echoes, reverb tails and Space throws ring out instead of being cut off.
 - **Every continuous parameter change goes through `Engine.T()`** (`setTargetAtTime`), so knob moves never click. Pitch changes use the patch's glide time.
   - **Discrete selectors** use `Engine.set()` (`setValueAtTime`) instead, so they jump rather than gliding through in-between values. These are the wavetable index and the noise colour.
 - **LFOs** are oscillators feeding a depth gain, which is connected to the target AudioParam:

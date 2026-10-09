@@ -103,7 +103,13 @@ The custom DSP lives in `<script type="text/plain" id="dsp-worklet">`, so the pa
 - **Wave order** in `WAVE_IDS` (worklet) must match `WAVES` (main script). `WAVE_INDEX` maps from one to the other.
 - **FM** is linear and through-zero: `freq × (1 + fm × modulator)`. The UI knob is squared and scaled by 4, so 100% gives a peak deviation of 4× the carrier frequency. The FM ring takes each oscillator's **pre-level** output, so a muted oscillator can act as a pure modulator.
 - **Wavefolder:** `x + mix × (sin(π/2 · gain · x) − x)`, with gain from 1 to 8. High fold settings can alias, since there's no oversampling yet.
-- **Cost:** six oscillators with FM and fold, plus the ladder and noise, render about 10× faster than real time offline (roughly 10% of one core).
+- **Gating:** every processor has a k-rate `on` param. At 0 it outputs silence and skips its work. The engine (`gateDrone()`, `gateKey()`, `gateParam()`) schedules it:
+  - drone oscillators, noise and ladder: on while the drone plays, off once the Stop fade has died away (`droneEnd`); noise only while its level is up; the ladder only while Ladder is selected
+  - Keys voices: on while held, off when the release has died away (`v.endAt`); each voice's ladder only while the Keys filter is Ladder
+- **Block-rate maths:** the oscillator and ladder compute pitch and cutoff at the start and end of each 128-sample block and interpolate in between, rather than calling `pow`/`exp`/`log2` per sample. The oscillator picks its wavetable band once per block unless FM is on.
+- **No allocation in `process()`.** Garbage collection on the audio thread causes dropouts, so processors only use buffers made in their constructors.
+- **Sample rate:** if the device runs above 48 kHz, `build()` makes the context at 48 kHz (`engine.deviceRate` keeps the device's rate for the footer readout).
+- **Cost:** measured with an offline render of the full graph (drone with drift, FM and fold, both LFOs, Ladder, noise, 8 s reverb, four Keys notes with the Keys LFO and Ladder), at 48 kHz: v0.2.0 18.5% of one core, v0.3.0 30.6%, now 19.5% with Keys held and 16.1% with Keys idle. Keep new DSP gated and block-rate where possible; real-time audio needs plenty of headroom, especially on Windows.
 
 ## Patch format
 
@@ -195,4 +201,21 @@ A section can move into a window of its own and back. `POP_SPECS` lists the sect
   - Each window gets its own `drawLoop(win)` (its own requestAnimationFrame), plus the key handlers and a blur handler that lets go of held computer keys.
 - **Closing:** the window's `pagehide` calls `popIn()`, which puts the section back in place of the placeholder. `popIn()` removes the entry from `POPS` first, so closing from either side is safe. Closing the main page closes every pop-out.
 - **Next time:** `dronebox.pops` remembers which windows were open. Their Window tab (and View › Keys) glows, and one click reopens each.
+
+## Engine seam (toward a native engine)
+
+The ROADMAP's **Engine pathway** moves the sound engine to Rust, first as WebAssembly in the browser, then natively in a desktop app. It depends on the panel talking to the engine only through a small interface. Keep that interface clean when adding features.
+
+**The panel may call:** `play()`, `stop()`, `wake()`, the `apply…()` methods, `keyOn()` / `keyMove()` / `keyOff()` / `keysAllOff()`, and `audible()`. It may read `running`, `solo` and `p` (the patch).
+
+**Leaks to remove in Phase 1** (the panel reads Web Audio internals directly today):
+
+| Read today | Used for | Replace with |
+|---|---|---|
+| `engine.ctx` (state, sample rate, latency, playoutStats) | status display, footer readout, visualiser liveness | `status()` |
+| `engine.analyser`, `engine.anL`, `engine.anR` | scope, spectrum, meters | `scope(buf)`, `spectrum(buf)`, `levels()` |
+| `engine.keyMap` | Keys glow, KEYS status, held-note logic | `notesSounding()` / `isSounding(id)` |
+| `engine.ready`, `engine.dsp`, `engine.deviceRate` | various checks, footer | `status()` |
+
+The smoke test also reads internals (voice params, gates) to verify the DSP. That's fine for tests, but those checks will move to an engine-level test suite when the engine moves to Rust.
 

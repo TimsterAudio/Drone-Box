@@ -67,7 +67,7 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff;fo
 <body>
 <div class="wrap">
   <h1>Drone Box Test Checklist</h1>
-  <p class="sub">Timster's Audio Works · for Drone Box <b id="verLabel">v0.3.0</b></p>
+  <p class="sub">Timster's Audio Works · for Drone Box <b id="verLabel">v0.3.1</b></p>
 
   <div class="card intro">
     <h2>How this works</h2>
@@ -109,7 +109,7 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff;fo
 
 <script>
 'use strict';
-const VERSION = '0.3.0';
+const VERSION = '0.3.1';
 const STORE = 'dronebox.testrun.' + VERSION;
 
 // Each check: [id, what to do, what should happen]
@@ -185,6 +185,10 @@ const SECTIONS = [
     ['K9', 'Try the Keys Filter types (LPF, BPF, HPF, Ladder) and turn Cutoff, Reso and Drive.', 'Each type changes the tone; Reso adds a peak; Drive thickens and distorts.'],
     ['K10', 'In the Keys LFO, raise Pitch, then Filter, then Level; change Rate and the wave shape.', 'Vibrato, a filter wah and a tremolo, at the speed and shape you choose.'],
     ['K11', 'Play Keys over a playing drone, with Delay and Reverb up.', 'The Keys sit over the drone and go through the delay and reverb.'],
+  ]],
+  ['Audio health (new in 0.3.1)', [
+    ['A1', 'Press Play and look at the footer, bottom centre. Note what it says in the comments.', 'It shows "Audio:" with the sample rate and latency (for example "48 kHz · 84 ms"), and "(device …)" if your audio device runs faster.'],
+    ['A2', 'Load the heaviest patch you can make (Ladder filter, Fold and FM up, noise, long reverb) and play four Keys notes for two minutes.', 'No crackles or breaks. If the footer shows a dropout count, it stays at 0 (note it if not).'],
   ]],
   ['Windows and views (new in 0.3)', [
     ['W1', 'Click the small Window tab on Monitor.', 'Monitor opens in its own window and keeps drawing; the panel shows "In its own window".'],

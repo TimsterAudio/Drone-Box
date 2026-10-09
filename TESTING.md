@@ -5,7 +5,7 @@ There are two kinds of testing: **people playing it** (the test round), and an *
 ## For testers: the test round
 
 Thanks for helping! You'll need:
-- the release zip (for example `Drone-Box-v0.3.0.zip`)
+- the release zip (for example `Drone-Box-v0.3.1.zip`)
 - a computer with **Chrome, Edge, Brave or Vivaldi** (Firefox and Safari reports are welcome too)
 - headphones or speakers. Start at a **low volume**, because drones build up.
 

@@ -77,7 +77,7 @@ In both styles, a fader's cap line takes the family colour.
 - The top strip holds the logo, the LED display, Memory (patch menu and buttons), the meters, master volume, the Panel, Knobs and View switches (grouped tightly in `.switches`), and Play/Stop. It has almost no room to spare at 1920 px; the smoke test checks it stays on one row.
 - Row 2: the six oscillator strips on the left, and a side column with Monitor (the scope and spectrum, which stretch to fill it) above Root and Noise.
 - Row 3: LFO 1, LFO 2, Filter, Swell, Delay and Reverb.
-- **View › Play** swaps row 3 for the **Keys** (layout B from the mock-ups): its controls on the left, then the 12 strips across the rest of the width. **View › Keys** floats the Keys in their own window from either view.
+- **View › Play** swaps row 3 for the **Performance** block: the expression plates and/or the Keys, chosen by the Keys / Expression / Both tabs on its top edge. **View › Perform** floats the block in its own always-on-top window from either view.
 - **Fit to window:** the page is always laid out at the 1920 px design width, and the whole page is scaled with CSS `zoom` to fit the window (`fitToWindow()`). It never scrolls and never re-wraps, so the panel looks the same on a laptop, in the app window and on a large monitor; only the size changes.
 - **Devices:** desktops, laptops and tablets. A tablet in landscape gets the same panel at about 60% scale; portrait works, but leaves the lower part of the screen empty. **Phones aren't supported**, so there's no stacked or wrapping layout to maintain.
 - **Width budget:** the bottom row (LFO 1, LFO 2, Filter, Swell, Delay, Reverb) has only about 40 px to spare at 1920 px. Widen anything there with care; the smoke test checks that it stays on one row at several zoom levels.
@@ -105,11 +105,20 @@ In both styles, a fader's cap line takes the family colour.
 - Controls, left to right: Latch and Tune (single LED buttons), Voices and Pressure (LED rows), then three groups divided by a thin rule, each with a small title: **Voice** (two rows of four knobs), **Filter** (type buttons over Cutoff, Reso, Drive) and **LFO** (wave buttons over Rate, Pitch, Filter, Level).
 - **Playing:** press to play; the height in the strip is pressure (top is full), or a pen's real pressure. Drag sideways to glide between strips in the scale; Shift + drag slides freely. Computer keys A S D F G H J K L ; ' \ walk up the scale, Z and X change octave.
 
+## Expression plates
+
+- **Nine plates:** OSC 1–6, a thin divider, then Filter, Space and Bloom. They're **brushed metal** with an **amber** glow, so they never look like the black note Keys with their red glow.
+- Each plate shows its name and (for oscillators) its interval at the top. Readouts sit above the two chips at the foot: ↕ for height, ↔ for sideways. A chip opens the browser's own list. A dotted chip has only one choice.
+- While played: an amber glow up to the height, a white dot under the finger, and a faint vertical line through it. A held plate (Hold) lights its corner LED.
+- The bank's controls sit on the left in a compact block: Swell and Clear (single LED buttons), Release (Spring / Hold), Attack and Return knobs.
+- **Keys / Expression / Both** are tabs on the top edge of the Performance block, next to its Window tab. The same tabs travel with it into the Performance window.
+
 ## Pop-out windows
 
 - A section that can float has a small **Window** tab on its top frame edge, at the right (opposite the title). In its window, the tab reads **Dock**.
 - The section's place in the panel shows a slim placeholder: the title, "In its own window" and a **Bring back** button.
 - A window looks exactly like the section in the panel: same styles and theme, and the theme and knob switches follow live.
+- The Performance window holds the expression plates above the Keys (or either alone).
 - A narrow Keys window keeps the strips playable: the LFO group hides below 1500 px, Voice below 1250 px, Filter below 1000 px, and the side buttons below 640 px (the same controls are on the panel).
 - A tab that glows orange was in its own window last time; one click reopens it.
 

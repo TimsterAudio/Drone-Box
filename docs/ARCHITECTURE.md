@@ -29,6 +29,8 @@ The `<script>` block is split into sections with `/* ---------- Name ---------- 
 | UI controls | `mapper`, `bindControl`, `knob`, `fader`, `hwButton`, `buttons`, `section` |
 | App | the `patch` and `engine` instances, `POPS`, `ui.setStatus`, theme, `render()` |
 | Keys | `keysSec` (one persistent section), `renderKeys()`, the strip bed (`bindBed`), computer-keyboard playing (`keysKeyDown`/`keysKeyUp`) |
+| Expression plates | `exprSec`, `EXPR_PLATES`, `renderExpr()`, `exprContrib()` (what each plate does), `exprApply()` (sends offsets to the engine), `bindPlates()` |
+| Performance | `perfWrap` (holds the plates and the Keys), `buildPerf()`, the Keys / Expression / Both tabs (`setStrips()`) |
 | Panel / Play view | `view`, `setView()`, `applyView()`: the Play view swaps the bottom row for the Keys |
 | Pop-out windows | `POP_SPECS`, `popOut()`, `adopt()`, `popIn()`, the Window/Dock tabs and the reopen glow |
 | Patches | the preset menu, save, delete, export, import, randomize |
@@ -79,6 +81,7 @@ Keys LFO (kLfo) ─┬─► vibDepth ─► each voice's osc detune
 - **Drift** is a JavaScript random walk every 150 ms, written to each oscillator's `detune` on top of the patch detune.
 - **Mute and solo** both go through `Engine.audible(i)`. If any oscillator is soloed, only soloed ones play; otherwise `osc.on` (mute) decides. `engine.solo` is a `Set` and isn't part of the patch. The noise source is silent while any solo is active.
 - **Both filters always run.** `applyFilter()` crossfades `bqOut` and `ldOut`, so switching to or from Ladder never clicks. Filter Q maps to ladder resonance through `qToRes()`, so one Reso fader drives both filters.
+- **Expression plates** don't change the patch. They add **offsets** on top of it: `engine.setExpr(vals)` creates a `ConstantSourceNode` per target the first time it's used (oscillator level, fold, FM, detune and pan; filter detune and Q; ladder detune and resonance; delay and reverb sends, delay feedback and the dry level, which Space ducks), connected into the AudioParam, and moves its offset with `Engine.T()`. The panel's own values and knob moves are untouched, letting go returns exactly to them, and nothing clicks. Drift is a JavaScript random walk, so its offset (`exprDrift`) is read by `driftTick()`. The UI sums every active plate's contributions per target (`exprContrib`) and chooses the time constant: the Attack time just after a press, fast while moving, the Return time when a plate lets go.
 - **Held notes that lose their voice** stay in `keysUI.active` and wait. When a sounding note is released, `noteOff()` gives the freed voice to the latest waiting note, which glides from the released pitch (legato in Mono). A latched note that loses its voice is dropped instead.
 - **Keys** have four voices (Voices limits how many are used), separate from the drone and not through its filter. **Drive** is a fixed tanh curve: `pre` scales the signal into it and `post` restores the peak level, so 0% is nearly clean. For Ladder, the shaper stays clean and the ladder's own drive is used; the biquad and ladder outputs crossfade like the drone's. `keyOn(id, hz, p)` takes a free voice or steals the oldest: a silent voice jumps to the new pitch, a sounding one glides (Keys Glide). `keyMove()` slides pitch and pressure, `keyOff()` starts the release. Pressure `p` (0–1) drives `press` (level) and `tone` (cutoff), as the Pressure setting says. `wake()` starts or resumes the context for the Keys, and `scheduleSuspend()` only suspends once the drone is stopped and `keysBusy()` is false.
 - The **reverb impulse** is generated: decaying stereo noise that darkens over time. It's rebuilt, with a debounce, when the decay changes.
@@ -138,7 +141,10 @@ A patch is plain JSON. This is what Export writes and what's stored in localStor
               "latch": false, "voices": 4,                            // voices: 1 (mono) – 4
               "filter": "lowpass", "reso": 0.7, "drive": 0,           // tone is the cutoff (0–1 → 150 Hz – 19 kHz); filter: lowpass | bandpass | highpass | ladder
               "lfoShape": "sine", "lfoRate": 5.5, "lfoFilter": 0, "lfoLevel": 0,   // vibrato is the LFO's pitch depth
-              "tune": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }       // cents per strip (13, the last is the octave), ±50
+              "tune": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },      // cents per strip (13, the last is the octave), ±50
+  "expr":   { "release": "spring", "attack": 0.3, "ret": 1.5,         // added in 0.4; release: spring | hold
+              "swell": true,                                          // pressing an OSC plate brings its oscillator in
+              "plates": [ { "y": "fold", "x": "bend" } ] }           // always 9: OSC 1-6, Filter, Space, Bloom; y and x pick each plate's controls
 }
 ```
 
@@ -153,6 +159,7 @@ A patch is plain JSON. This is what Export writes and what's stored in localStor
 | `dronebox.theme` | `"dark"` or `"silver"` |
 | `dronebox.knobs` | `"caps"` (Colour) or `"pointers"` (Pointer) |
 | `dronebox.view` | `"panel"` or `"play"` |
+| `dronebox.strips` | what the Play view and Performance window show: `"keys"`, `"expr"` or `"both"` |
 | `dronebox.pops` | names of the sections that were in their own window (they glow, ready to reopen) |
 | `dronebox.popgeom` | each pop-out window's last size (and position, for popups) |
 
@@ -200,7 +207,7 @@ A section can move into a window of its own and back. `POP_SPECS` lists the sect
   - Controls use pointer capture, not document-level listeners, so they work in any window.
   - Each window gets its own `drawLoop(win)` (its own requestAnimationFrame), plus the key handlers and a blur handler that lets go of held computer keys.
 - **Closing:** the window's `pagehide` calls `popIn()`, which puts the section back in place of the placeholder. `popIn()` removes the entry from `POPS` first, so closing from either side is safe. Closing the main page closes every pop-out.
-- **Next time:** `dronebox.pops` remembers which windows were open. Their Window tab (and View › Keys) glows, and one click reopens each.
+- **Next time:** `dronebox.pops` remembers which windows were open. Their Window tab (and View › Perform) glows, and one click reopens each.
 
 ## Engine seam (toward a native engine)
 

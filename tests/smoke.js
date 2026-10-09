@@ -503,6 +503,23 @@ function check(name, ok, detail = ''){
   const cOpen = await h3rel(8);
   await page.mouse.up();
   check('Filter plate sweeps the cutoff open', cOpen > cClosed + 20, `8th harmonic ${cClosed.toFixed(0)} -> ${cOpen.toFixed(0)} dB`);
+  // Space throws the drone into the delay and reverb: with both at 0 on the panel, holding Space and then
+  // stopping the drone leaves echoes and reverb ringing; without it, it goes quiet
+  const tail = async useSpace => {
+    await page.evaluate(async () => { patch.delay.mix = 0; patch.reverb.mix = 0; patch.delay.feedback = 0.3; engine.applyDelay(); engine.applyReverb(); patch.filter.cutoff = 4000; engine.applyFilter(); await engine.play(); });
+    await page.waitForTimeout(500);
+    const sp = await platePt(7, 0.1);
+    if (useSpace){ await page.mouse.move(sp.x, sp.y); await page.mouse.down(); }
+    await page.waitForTimeout(700);
+    await page.evaluate(() => engine.stop());
+    await page.waitForTimeout(450);
+    const r = await rms();
+    if (useSpace) await page.mouse.up();
+    await page.waitForTimeout(2500);
+    return r;
+  };
+  const dryTail = await tail(false), thrown = await tail(true);
+  check('Space throws the sound into the delay and reverb', thrown > 0.01 && thrown > dryTail * 10, `tail ${dryTail.toFixed(4)} -> ${thrown.toFixed(4)}`);
   // Plate targets are saved with the patch; older patches get the defaults
   const tg = await page.evaluate(() => {
     patch.expr.plates[2].y = 'fm'; patch.expr.plates[2].x = 'pan';

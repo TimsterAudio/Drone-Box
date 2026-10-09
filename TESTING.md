@@ -5,7 +5,7 @@ There are two kinds of testing: **people playing it** (the test round), and an *
 ## For testers: the test round
 
 Thanks for helping! You'll need:
-- the release zip (for example `Drone-Box-v0.3.1.zip`)
+- the release zip (for example `Drone-Box-v0.4.0.zip`)
 - a computer with **Chrome, Edge, Brave or Vivaldi** (Firefox and Safari reports are welcome too)
 - headphones or speakers. Start at a **low volume**, because drones build up.
 
@@ -38,6 +38,10 @@ Your answers are saved in the browser as you go, so you can stop and continue la
 - **old patches:** v0.1 patches still load
 - **panel:** readouts on every control, the knob style and panel switches
 - **layout:** the 1920 × 900 fit, and scaling at laptop, monitor and tablet sizes (both orientations, both views)
+- **Keys:** strips play their intervals (including the octave strip), pressure, glide, latch, computer keys, octave keys, scales, Tune mode, voices and mono legato, the Keys filter, drive and LFO
+- **audio health:** silent parts switch off (idle Keys voices, the faded-out drone, unused ladders) and come back when needed; the footer audio readout
+- **expression plates:** Fold, Bend, Swell (including a muted oscillator), the Filter sweep and the Space throw, measured on the output; Spring returning exactly to the panel; Hold and tap; plate targets saved with patches; older patches getting the defaults
+- **windows and views:** Monitor and the Performance window pop out, play, and dock again; the Keys / Expression / Both tabs; the always-on-top window playing Keys and plates
 
 Run it from the repo root:
 

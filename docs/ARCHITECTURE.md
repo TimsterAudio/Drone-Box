@@ -207,7 +207,7 @@ A section can move into a window of its own and back. `POP_SPECS` lists the sect
   - Controls use pointer capture, not document-level listeners, so they work in any window.
   - Each window gets its own `drawLoop(win)` (its own requestAnimationFrame), plus the key handlers and a blur handler that lets go of held computer keys.
 - **Closing:** the window's `pagehide` calls `popIn()`, which puts the section back in place of the placeholder. `popIn()` removes the entry from `POPS` first, so closing from either side is safe. Closing the main page closes every pop-out.
-- **Next time:** `dronebox.pops` remembers which windows were open. Their Window tab (and View › Keys) glows, and one click reopens each.
+- **Next time:** `dronebox.pops` remembers which windows were open. Their Window tab (and View › Perform) glows, and one click reopens each.
 
 ## Engine seam (toward a native engine)
 

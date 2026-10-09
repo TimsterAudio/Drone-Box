@@ -4,10 +4,10 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 - When something ships, tick it here and record it in [CHANGELOG.md](CHANGELOG.md).
 - New ideas go in the right section, or in **Ideas parking lot** if they don't fit yet.
 
-**Where we are:** v0.3.1 is out: the Keys and pop-out windows (the first part of Stage 3), plus the audio break-up fix.
+**Where we are:** v0.4.0 is out: the Keys, the expression plates and the Performance window (most of Stage 3), on top of v0.3.1's audio fix.
 
 **Up next, in order:**
-1. **Expression plates** (Stage 3, drone performance): built on `claude/expression-plates`, being played and reviewed; then v0.4.0
+1. Play with the plates, then settle their defaults and ranges (as v0.4.x tweaks)
 2. Engine pathway Phases 0 and 1 (the rest of the browser hardening; a clean engine interface)
 3. The rest of Stage 3: Setup window, Swarm, XY pad
 4. Stage 4 (modulation), then Engine pathway Phase 2 (Rust DSP), then Stage 5 onward
@@ -97,7 +97,7 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 - [x] Panel: knob colours by function (Colour or Pointer style), a readout on every control, the 1920×900 layout with fit-to-window scaling
 - [x] Stand-alone app-window launchers for Windows, macOS and Linux
 
-## Stage 3: Keys and performance (v0.3.0: Keys and windows done; drone performance next)
+## Stage 3: Keys and performance (v0.3.0: Keys and windows; v0.4.0: expression plates)
 
 Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone buttons, designed for a mouse first.
 
@@ -126,7 +126,7 @@ Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone 
 - [ ] Test the always-on-top window on Windows, macOS and Linux by hand
 
 **Drone performance**
-- [ ] **Expression plates** (**built, in review**; v0.4.0): touch plates that shape the drone itself, growing the Solar-style per-oscillator Swell buttons into something more playable. Mock-ups: [Play view](docs/mockups/expression-play-view.png), [Performance window](docs/mockups/expression-performance-window.png), [(a) vs (c)](docs/mockups/expression-a-vs-c.png).
+- [x] **Expression plates** (v0.4.0): touch plates that shape the drone itself, growing the Solar-style per-oscillator Swell buttons into something more playable. Mock-ups: [Play view](docs/mockups/expression-play-view.png), [Performance window](docs/mockups/expression-performance-window.png), [(a) vs (c)](docs/mockups/expression-a-vs-c.png).
   - Plates: OSC 1–6, plus Filter (sweep), Space (throw into delay and reverb) and Bloom (a per-patch macro). They're brushed metal with an amber glow, so they read differently from the note Keys.
   - Each plate is a small XY surface:
     - **Press / release** starts and ends the gesture (an oscillator plate can swell its oscillator in)
@@ -135,13 +135,16 @@ Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone 
     - **Pressure** where a pen or touchscreen reports it
     - Two chips on each plate pick the ↕ and ↔ targets; they're saved with the patch.
   - **Release behaviour:** Spring (return on release) is the default; Hold keeps plates where you leave them (tap to let go, or Clear). Attack and Return times apply to the whole bank.
-  - Built so far: all nine plates with height and sideways controls, the chips, Swell, Spring / Hold, Attack / Return, the Keys / Expression / Both tabs in the Play view and the Performance window.
-  - Not yet: pen and touchscreen **pressure** as a control, and a compact Keys mode for Both.
+  - Shipped in v0.4.0: all nine plates with height and sideways controls, the chips, Swell, Spring / Hold, Attack / Return, Clear, and the Keys / Expression / Both tabs in the Play view and the Performance window. Space was strengthened into a dub-style throw (dry duck, sends past the panel's maximum, rising delay feedback).
   - **Layout (decided):** a **Keys / Expr / Both** switch in the Play view, and the same three options in a single **Performance** pop-out window. The browser allows only one always-on-top window, so Keys and plates share it. Plates on each oscillator strip of the main panel (option c) is not preferred, because it grows the panel.
-  - Possibly a compact Keys mode for Both, keeping only Latch and Voices so the strips get more width.
   - Audio cost: negligible. Each plate is a smoothed value added to existing settings, through `Engine.T()`.
   - In the Stage 4 Patch view, each plate becomes patchable sources: Gate, X, Y and Pressure.
   - **To decide after playing:** the default target of each plate (does an oscillator plate swell the level, or only shape it?), and whether Bloom stays a macro.
+- [ ] Expression plates, follow-ups:
+  - [ ] Settle each plate's default controls and ranges after playing (does Swell stay on by default? is Bloom right as a macro?)
+  - [ ] Pen and touchscreen **pressure** as a plate control
+  - [ ] A compact Keys mode for Both (only Latch and Voices), so the strips get more width
+  - [ ] Plates playable from the computer keyboard (for example, number keys 1–9)
 - [ ] A **Swarm** knob on each oscillator: up to 5 detuned copies inside one oscillator
 - [ ] An **XY pad** that drives two parameters at once (it becomes a matrix source in Stage 4)
 

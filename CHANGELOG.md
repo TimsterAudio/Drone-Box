@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.4.0] — 2026-10-09
+
+Drone performance arrives: nine **expression plates** let you play the drone itself (fold, FM, swell, bend, a filter sweep, a dub-style throw into the delay and reverb, and a Bloom macro), alongside the Keys. The Keys window becomes the **Performance** window, showing the Keys, the plates or both.
+
 ### Added
 - **Expression plates.** Nine brushed-metal touch plates that shape the drone itself: OSC 1–6, Filter, Space and Bloom.
   - **Height** plays each plate's main control (top is full). **Sliding sideways** plays a second one, measured from where you pressed, so there's no jump. One plate-width either way is the full amount.

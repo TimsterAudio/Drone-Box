@@ -1,6 +1,6 @@
 # Drone Box
 
-Timster's Audio Works · **v0.3.1**
+Timster's Audio Works · **v0.4.0**
 
 A drone synthesizer that runs entirely in one browser tab. It has no install, server or account, and nothing is sent anywhere.
 

@@ -424,6 +424,98 @@ function check(name, ok, detail = ''){
   await page.evaluate(() => { engine.stop(); loadPatch(FACTORY[0]); });
   await page.waitForTimeout(200);
 
+  {
+  // Expression plates (0.4)
+  await page.setViewportSize({ width: 1920, height: 900 });
+  await page.evaluate(() => { setView('play'); setStrips('both'); });
+  await page.waitForTimeout(200);
+  const ev = await page.evaluate(() => ({ plates: document.querySelectorAll('#playSlot .eplate').length, h: document.documentElement.scrollHeight }));
+  check('Play view shows nine expression plates and fits 1920x900', ev.plates === 9 && ev.h <= 900, JSON.stringify(ev));
+  await page.evaluate(() => setStrips('expr'));
+  const sx = await page.evaluate(() => [exprSec.hidden, keysSec.hidden, store('dronebox.strips')]);
+  await page.evaluate(() => setStrips('keys'));
+  const sk = await page.evaluate(() => [exprSec.hidden, keysSec.hidden]);
+  await page.evaluate(() => setStrips('both'));
+  check('Keys / Expression / Both switch shows the right banks', sx[0] === false && sx[1] === true && sx[2] === 'expr' && sk[0] === true && sk[1] === false);
+  // A test patch: OSC 1 alone, a sine at C4, filter wide open, no effects
+  await page.evaluate(async () => {
+    const p = clone(FACTORY[0]);
+    p.root.octave = 4; p.filter = {type: 'lowpass', cutoff: 18000, q: 0.7, drive: 0};
+    p.delay.mix = 0; p.reverb.mix = 0; p.lfos.forEach(l => l.depth = 0); p.noise.level = 0;
+    p.oscs.forEach((o, i) => { o.on = i === 0; o.wave = 'sine'; o.fold = 0; o.fm = 0; o.drift = 0; o.detune = 0; o.ratio = '1/1'; o.oct = 0; o.level = 0.6; });
+    p.env.attack = 0.05; p.env.release = 0.1;
+    p.expr.attack = 0.02; p.expr.ret = 0.1;
+    loadPatch(p); await engine.play();
+  });
+  await page.waitForTimeout(700);
+  const platePt = (i, fy, dx = 0) => page.evaluate(([i, fy, dx]) => {
+    const q = exprUI.plates[i].el.getBoundingClientRect(); return { x: q.left + q.width / 2 + dx * q.width, y: q.top + q.height * fy, w: q.width };
+  }, [i, fy, dx]);
+  const h3rel = (n = 3) => page.evaluate(n => {
+    const a = engine.analyser, d = new Float32Array(a.frequencyBinCount); a.getFloatFrequencyData(d);
+    const bin = engine.ctx.sampleRate / a.fftSize, f = oscHz(patch, 0);
+    const at = h => Math.max(...[-1, 0, 1].map(o => d[Math.round(h * f / bin) + o]));
+    return at(n) - at(1);
+  }, n);
+  const peakHz = () => page.evaluate(() => {
+    const a = engine.analyser, d = new Float32Array(a.frequencyBinCount); a.getFloatFrequencyData(d);
+    const bin = engine.ctx.sampleRate / a.fftSize, f = oscHz(patch, 0), lo = Math.floor(f * 0.9 / bin), hi = Math.ceil(f * 1.1 / bin);
+    let k = lo; for (let i = lo; i <= hi; i++) if (d[i] > d[k]) k = i;
+    const y0 = d[k - 1], y1 = d[k], y2 = d[k + 1], off = 0.5 * (y0 - y2) / (y0 - 2 * y1 + y2);
+    return (k + off) * bin;
+  });
+  const fold0 = await h3rel();
+  let pp = await platePt(0, 0.05);
+  await page.mouse.move(pp.x, pp.y); await page.mouse.down(); await page.waitForTimeout(600);
+  const fold1 = await h3rel();
+  check('OSC plate height folds its oscillator', fold1 > fold0 + 20, `3rd harmonic ${fold0.toFixed(0)} -> ${fold1.toFixed(0)} dB`);
+  const hz0 = await page.evaluate(() => oscHz(patch, 0));
+  await page.mouse.move(pp.x + pp.w * 1.2, pp.y, { steps: 5 }); await page.waitForTimeout(600);
+  const bent = await peakHz();
+  const cents = 1200 * Math.log2(bent / hz0);
+  check('sliding sideways bends the pitch', cents > 35 && cents < 65, `${cents.toFixed(1)} cents`);
+  await page.mouse.up(); await page.waitForTimeout(800);
+  const fold2 = await h3rel(), back = await peakHz();
+  check('Spring: letting go returns to the panel settings', fold2 < fold0 + 6 && Math.abs(1200 * Math.log2(back / hz0)) < 5, `${fold2.toFixed(0)} dB, ${(1200 * Math.log2(back / hz0)).toFixed(1)} cents`);
+  // Hold: stays after letting go; a tap lets it go
+  await page.evaluate(() => { patch.expr.release = 'hold'; });
+  await page.mouse.move(pp.x, pp.y); await page.mouse.down(); await page.waitForTimeout(300); await page.mouse.up(); await page.waitForTimeout(600);
+  const held = await h3rel(), led = await page.evaluate(() => exprUI.plates[0].el.classList.contains('latched'));
+  await page.mouse.down(); await page.mouse.up(); await page.waitForTimeout(700);
+  const freed = await h3rel();
+  check('Hold keeps a plate until it is tapped again', held > fold0 + 20 && led && freed < fold0 + 6, `${held.toFixed(0)} -> ${freed.toFixed(0)} dB`);
+  await page.evaluate(() => { patch.expr.release = 'spring'; });
+  // Swell: a muted oscillator comes in while its plate is held
+  await page.evaluate(() => { patch.oscs[0].on = false; engine.applyOsc(0); });
+  await page.waitForTimeout(500);
+  const quiet = await rms();
+  pp = await platePt(0, 0.7);
+  await page.mouse.move(pp.x, pp.y); await page.mouse.down(); await page.waitForTimeout(500);
+  const swelled = await rms();
+  await page.mouse.up(); await page.waitForTimeout(600);
+  check('Swell brings a muted oscillator in while its plate is held', swelled > 0.02 && quiet < swelled / 5 && (await rms()) < swelled / 3, `${quiet.toFixed(4)} -> ${swelled.toFixed(4)}`);
+  // Filter plate opens a closed filter
+  await page.evaluate(() => { patch.oscs[0].on = true; patch.oscs[0].wave = 'sawtooth'; patch.filter.cutoff = 300; engine.applyOsc(0); engine.applyFilter(); });
+  await page.waitForTimeout(500);
+  const cClosed = await h3rel(8);
+  pp = await platePt(6, 0.05);
+  await page.mouse.move(pp.x, pp.y); await page.mouse.down(); await page.waitForTimeout(500);
+  const cOpen = await h3rel(8);
+  await page.mouse.up();
+  check('Filter plate sweeps the cutoff open', cOpen > cClosed + 20, `8th harmonic ${cClosed.toFixed(0)} -> ${cOpen.toFixed(0)} dB`);
+  // Plate targets are saved with the patch; older patches get the defaults
+  const tg = await page.evaluate(() => {
+    patch.expr.plates[2].y = 'fm'; patch.expr.plates[2].x = 'pan';
+    const back = normalize(JSON.parse(JSON.stringify(patch)));
+    const old = clone(FACTORY[0]); delete old.expr;
+    const n = normalize(old);
+    return { kept: back.expr.plates[2].y === 'fm' && back.expr.plates[2].x === 'pan', old: n.expr.plates.length === 9 && n.expr.release === 'spring' };
+  });
+  check('plate targets are saved; older patches get the plate defaults', tg.kept && tg.old, JSON.stringify(tg));
+  await page.evaluate(() => { engine.stop(); setView('panel'); loadPatch(FACTORY[0]); });
+  await page.waitForTimeout(300);
+  }
+
   // Pop-out windows. Headless Chromium has no Picture-in-Picture window, so Keys falls back to a popup too.
   await page.evaluate(() => setView('panel'));
   await page.evaluate(() => engine.play());
@@ -463,6 +555,17 @@ function check(name, ok, detail = ''){
     return { open: true, pip: P.pip, strips: strips.length, n1, n2, ok: Math.abs(hz - keyHz(patch, 5)) < 0.5 };
   });
   check('Keys open in an always-on-top window and play from it', kp.open && kp.pip && kp.strips === 13 && kp.n1 === 1 && kp.n2 === 1 && kp.ok, JSON.stringify(kp));
+  const pw = await page.evaluate(async () => {
+    const P = POPS.keys, d = P.win.document, plate = d.querySelectorAll('.eplate')[0], bed = d.querySelector('.ebed');
+    const q = plate.getBoundingClientRect();
+    const ev = type => plate.dispatchEvent(new P.win.PointerEvent(type, { bubbles: true, pointerId: 9, pointerType: 'mouse', button: 0, clientX: q.left + q.width / 2, clientY: q.top + q.height * 0.3 }));
+    ev('pointerdown');
+    await new Promise(r => setTimeout(r, 100));
+    const on = plate.classList.contains('on'), keys = engine.exprSrc ? [...engine.exprSrc.keys()] : [];
+    ev('pointerup');
+    return { plates: d.querySelectorAll('.eplate').length, on, fold: keys.includes('o0.fold') };
+  });
+  check('expression plates play from the Performance window', pw.plates === 9 && pw.on && pw.fold, JSON.stringify(pw));
   await page.evaluate(() => setView('play'));
   check('Play view leaves Keys in their window', await page.evaluate(() => !$('#playSlot .keys-sec') && !!$('#playSlot .popholder')));
   await page.click('.popholder button'); await page.waitForTimeout(300);

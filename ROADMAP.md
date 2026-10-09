@@ -7,7 +7,7 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 **Where we are:** v0.3.1 is out: the Keys and pop-out windows (the first part of Stage 3), plus the audio break-up fix.
 
 **Up next, in order:**
-1. **Expression plates** (Stage 3, drone performance): next build, as v0.4.0
+1. **Expression plates** (Stage 3, drone performance): built on `claude/expression-plates`, being played and reviewed; then v0.4.0
 2. Engine pathway Phases 0 and 1 (the rest of the browser hardening; a clean engine interface)
 3. The rest of Stage 3: Setup window, Swarm, XY pad
 4. Stage 4 (modulation), then Engine pathway Phase 2 (Rust DSP), then Stage 5 onward
@@ -126,7 +126,7 @@ Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone 
 - [ ] Test the always-on-top window on Windows, macOS and Linux by hand
 
 **Drone performance**
-- [ ] **Expression plates** (**next up**, v0.4.0): touch plates that shape the drone itself, growing the Solar-style per-oscillator Swell buttons into something more playable. Mock-ups: [Play view](docs/mockups/expression-play-view.png), [Performance window](docs/mockups/expression-performance-window.png), [(a) vs (c)](docs/mockups/expression-a-vs-c.png).
+- [ ] **Expression plates** (**built, in review**; v0.4.0): touch plates that shape the drone itself, growing the Solar-style per-oscillator Swell buttons into something more playable. Mock-ups: [Play view](docs/mockups/expression-play-view.png), [Performance window](docs/mockups/expression-performance-window.png), [(a) vs (c)](docs/mockups/expression-a-vs-c.png).
   - Plates: OSC 1–6, plus Filter (sweep), Space (throw into delay and reverb) and Bloom (a per-patch macro). They're brushed metal with an amber glow, so they read differently from the note Keys.
   - Each plate is a small XY surface:
     - **Press / release** starts and ends the gesture (an oscillator plate can swell its oscillator in)
@@ -134,7 +134,9 @@ Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone 
     - **↔ sideways** is a second amount, relative to where you pressed, so it's good for bipolar controls like bend, detune or pan; it can be set to Off
     - **Pressure** where a pen or touchscreen reports it
     - Two chips on each plate pick the ↕ and ↔ targets; they're saved with the patch.
-  - **Release behaviour:** Spring (return on release) is the default, Hold is the option, and Latch holds a plate. Attack and Return times apply to the whole bank.
+  - **Release behaviour:** Spring (return on release) is the default; Hold keeps plates where you leave them (tap to let go, or Clear). Attack and Return times apply to the whole bank.
+  - Built so far: all nine plates with height and sideways controls, the chips, Swell, Spring / Hold, Attack / Return, the Keys / Expression / Both tabs in the Play view and the Performance window.
+  - Not yet: pen and touchscreen **pressure** as a control, and a compact Keys mode for Both.
   - **Layout (decided):** a **Keys / Expr / Both** switch in the Play view, and the same three options in a single **Performance** pop-out window. The browser allows only one always-on-top window, so Keys and plates share it. Plates on each oscillator strip of the main panel (option c) is not preferred, because it grows the panel.
   - Possibly a compact Keys mode for Both, keeping only Latch and Voices so the strips get more width.
   - Audio cost: negligible. Each plate is a smoothed value added to existing settings, through `Engine.T()`.

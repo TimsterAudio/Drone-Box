@@ -6,7 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **Expression plates.** Nine brushed-metal touch plates that shape the drone itself: OSC 1–6, Filter, Space and Bloom.
+  - **Height** plays each plate's main control (top is full). **Sliding sideways** plays a second one, measured from where you pressed, so there's no jump. One plate-width either way is the full amount.
+  - **OSC plates:** height plays Fold, FM, Swell (level), Detune or Drift. Sideways plays Bend (±50 cents), Pan or Detune. With **Swell** on, pressing an oscillator plate also brings that oscillator in, even a muted one.
+  - **Filter** opens the cutoff (sideways: resonance). **Space** throws the sound into the delay and reverb (sideways: delay or reverb). **Bloom** opens fold, the filter and the reverb together (sideways: bend).
+  - Each plate has two chips (↕ and ↔) that pick its controls; they're saved with the patch.
+  - **Release:** Spring (the default) returns to the panel's settings over the **Return** time when you let go. Hold keeps a plate where you left it (its LED lights); tap it to let go, or press **Clear**. **Attack** sets how fast a plate comes in.
+  - Several plates can be played at once with several fingers on a touchscreen, and plates work while you play the Keys from the computer keyboard.
+- **Keys / Expression / Both** tabs on the Play view's top edge choose what it shows; the choice is remembered.
+
+### Changed
+- The Keys window is now the **Performance** window, with the same Keys / Expression / Both tabs. View › **Keys** is now View › **Perform**.
+- Fit to window rounds its scale down and leaves 2 px spare, so tall layouts never need a scrollbar.
 
 ## [0.3.1] — 2026-10-09
 

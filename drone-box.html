@@ -248,6 +248,51 @@ kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:
 .keys-sec.tuning .kstrip{box-shadow:inset 0 0 0 1px #ec7b24,0 3px 6px rgba(0,0,0,.45)}
 .keys-sec.tuning .kstrip .hz{color:#ec7b24}
 
+/* ---------- Expression plates ---------- */
+.expr-sec{flex:1 1 auto;flex-wrap:nowrap;align-items:stretch;gap:14px;justify-content:flex-start}
+.ectl{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:8px 14px;width:236px;flex:0 0 236px}
+.ectl .khint{flex-basis:100%}
+.ectl .krow{display:flex;gap:2px}
+.ectl .krow .knob{margin:4px 5px}
+.ebed{display:flex;gap:8px;flex:1;min-width:0;align-items:stretch;min-height:150px;touch-action:none;user-select:none;-webkit-user-select:none}
+.egap{flex:0 0 1px;background:var(--frame);margin:0 3px}
+.eplate{flex:1;min-width:0;position:relative;border-radius:6px;overflow:hidden;cursor:crosshair;color:#ece8dd;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),linear-gradient(180deg,#56534d,#36342f 45%,#211f1c);
+  border:1px solid #000;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -3px 6px rgba(0,0,0,.55),0 3px 6px rgba(0,0,0,.45);
+  display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:7px 4px 6px}
+.eplate::after{content:'';position:absolute;left:10px;right:10px;top:50%;height:1px;background:rgba(236,232,221,.10);pointer-events:none}
+.eplate .glow,.eplate .pt,.eplate .cross{display:none;pointer-events:none}
+.eplate.on .glow{display:block;position:absolute;left:3px;right:3px;bottom:3px;height:var(--p);border-radius:4px;
+  background:linear-gradient(0deg,rgba(240,196,58,.85),rgba(240,196,58,.10));box-shadow:0 0 16px rgba(240,196,58,.45)}
+.eplate.on .pt{display:block;position:absolute;left:var(--x,50%);margin-left:-7px;width:14px;height:14px;border-radius:50%;bottom:calc(var(--p) - 7px);
+  background:#fff;box-shadow:0 0 10px 3px rgba(240,196,58,.95);z-index:2}
+.eplate.on .cross{display:block;position:absolute;inset:0;z-index:1;
+  background:linear-gradient(90deg,transparent calc(var(--x,50%) - .5px),rgba(255,255,255,.18) calc(var(--x,50%) - .5px),rgba(255,255,255,.18) calc(var(--x,50%) + .5px),transparent calc(var(--x,50%) + .5px))}
+.eplate .top,.eplate .bot{display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;z-index:3;pointer-events:none}
+.eplate .et{font:13px 'Michroma',sans-serif;letter-spacing:.03em;white-space:nowrap;text-transform:uppercase}
+.eplate.wide .et{font-size:12px}
+.eplate .es{font:600 10px 'Barlow Semi Condensed';letter-spacing:.12em;text-transform:uppercase;color:#bdb8ad;white-space:nowrap;min-height:12px}
+.eplate .val{font:11px 'Share Tech Mono';color:#f0c43a;text-shadow:0 0 5px rgba(240,196,58,.6);min-height:13px;white-space:nowrap}
+.eplate.on .val{color:#fff;text-shadow:0 0 4px #000}
+.eplate .val.x{min-height:0}
+.eplate .chips{display:flex;flex-direction:column;gap:3px;align-items:center;pointer-events:auto}
+.eplate .chip{position:relative;font:700 10px/14px 'Barlow Semi Condensed';letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(236,232,221,.45);
+  border-radius:3px;padding:0 5px;color:#ece8dd;background:rgba(0,0,0,.4);white-space:nowrap;cursor:pointer}
+.eplate .chip:hover,.eplate .chip:focus-within{border-color:#f0c43a}
+.eplate .chip.fixed{cursor:default;border-style:dotted}
+.eplate .chip svg{width:8px;height:8px;margin-right:4px;vertical-align:-1px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.eplate .chip select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:14px}
+.eplate .eled{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#3a2c0c;z-index:3}
+.eplate.latched .eled{background:#f0c43a;box-shadow:0 0 6px 2px rgba(240,196,58,.8)}
+/* The Performance wrapper: Keys and plates, in the Play view or the Performance window */
+.perf{position:relative;display:flex;flex-direction:column;gap:22px;flex:1 1 100%;min-width:0}
+.perfbar{position:absolute;top:-11px;right:12px;display:flex;gap:6px;z-index:4}
+.perfbar .popbtn{position:static}
+.popbtn.tab[aria-pressed="true"]{color:var(--legend);border-color:#ec7b24}
+.popbody > .perf{height:calc(100% - 6px);margin-top:6px}
+.popbody > .perf > .sec{flex:1 1 0;min-height:0}
+.popbody .ebed{min-height:0}
+
 /* ---------- Pop-out windows ---------- */
 .switches{display:flex;gap:12px;align-items:center}
 .popbtn{position:absolute;top:-11px;right:12px;display:flex;align-items:center;gap:5px;background:var(--panel);
@@ -605,7 +650,12 @@ function defaultPatch(){
            voices: 4,                                  // 1 (mono, legato) to 4
            filter: 'lowpass', reso: 0.7, drive: 0,     // tone (above) is the cutoff, 0-1
            lfoShape: 'sine', lfoRate: 5.5, lfoFilter: 0, lfoLevel: 0,   // vibrato (above) is the LFO's pitch depth
-           tune: Array(NUM_KEYS).fill(0)}               // cents, per strip (added in 0.3)
+           tune: Array(NUM_KEYS).fill(0)},              // cents, per strip (added in 0.3)
+    // Expression plates (added in 0.4): OSC 1-6, Filter, Space, Bloom. y = what height plays, x = what
+    // sideways movement plays ('off' for none). release: 'spring' (return when let go) or 'hold'.
+    expr: {release: 'spring', attack: 0.3, ret: 1.5, swell: true,
+           plates: [...Array(NUM_OSC)].map(() => ({y: 'fold', x: 'bend'}))
+                     .concat([{y: 'cut', x: 'res'}, {y: 'throw', x: 'bal'}, {y: 'bloom', x: 'off'}])}
   };
 }
 // Merge an arbitrary (possibly partial / older) patch onto defaults so imports never break the app.
@@ -624,6 +674,7 @@ function normalize(p){
   merge(d, p);
   if (Array.isArray(p.oscs)) for (let i = 0; i < NUM_OSC; i++) if (p.oscs[i]) merge(d.oscs[i], p.oscs[i]);
   if (Array.isArray(p.lfos)) for (let i = 0; i < 2; i++) if (p.lfos[i]) merge(d.lfos[i], p.lfos[i]);
+  if (p.expr && Array.isArray(p.expr.plates)) d.expr.plates.forEach((pl, i) => { if (p.expr.plates[i]) merge(pl, p.expr.plates[i]); });
   if (p.keys && Array.isArray(p.keys.tune))
     d.keys.tune = d.keys.tune.map((_, i) => typeof p.keys.tune[i] === 'number' ? Math.max(-50, Math.min(50, p.keys.tune[i])) : 0);
   return d;
@@ -1112,12 +1163,50 @@ class Engine {
 
   driftTick(){
     for (let i = 0; i < NUM_OSC; i++){
-      const o = this.p.oscs[i], v = this.voices[i], amt = o.drift;
+      const o = this.p.oscs[i], v = this.voices[i], amt = o.drift + (this.exprDrift ? this.exprDrift[i] : 0);
       v.drift += (Math.random() - 0.5) * amt * 0.15;
       v.drift *= 0.985;
       v.drift = Math.max(-amt, Math.min(amt, v.drift));
       this.T(v.detune, o.detune + v.drift, 0.4);
     }
+  }
+
+  /* ----- Expression plates ----- */
+  // Plates add offsets on top of the panel's settings, through ConstantSource nodes summed into the
+  // AudioParams, so the panel's own values (and knob moves) are untouched and nothing clicks. Nodes are made
+  // the first time a target is used. \`vals\` maps target keys to {v: offset, tc: time constant}; targets not
+  // listed go back to 0. Drift is a JavaScript random walk, so its offset is just stored.
+  exprTargets(key){
+    const m = /^o(\d)\.(\w+)$/.exec(key);
+    if (m){
+      const v = this.voices[+m[1]];
+      return {level: [v.lvl.gain], fold: [v.fold], fm: [v.fm], det: [v.detune], pan: [v.pan.pan]}[m[2]] || [];
+    }
+    const lad = n => this.dsp ? [this.ladder.parameters.get(n)] : [];
+    return {'f.cut': [this.filter.detune, ...lad('detune')], 'f.res': [this.filter.Q], 'f.lres': lad('resonance'),
+            'sp.dly': [this.delaySend.gain], 'sp.rev': [this.revSend.gain]}[key] || [];
+  }
+  setExpr(vals){
+    if (!this.ready) return;
+    this.exprSrc = this.exprSrc || new Map();
+    this.exprDrift = this.exprDrift || new Array(NUM_OSC).fill(0);
+    for (const [key, {v, tc}] of Object.entries(vals)){
+      const d = /^o(\d)\.drift$/.exec(key);
+      if (d){ this.exprDrift[+d[1]] = v; continue; }
+      let src = this.exprSrc.get(key);
+      if (!src){
+        const targets = this.exprTargets(key).filter(Boolean);
+        if (!targets.length) continue;
+        src = this.ctx.createConstantSource();
+        src.offset.value = 0;
+        for (const t of targets) src.connect(t);
+        src.start();
+        this.exprSrc.set(key, src);
+      }
+      this.T(src.offset, v, tc);
+    }
+    for (const [key, src] of this.exprSrc) if (!(key in vals)) this.T(src.offset, 0, 0.3);
+    for (let i = 0; i < NUM_OSC; i++) if (!(`o${i}.drift` in vals)) this.exprDrift[i] = 0;
   }
 
   /* ----- Keys ----- */
@@ -1706,6 +1795,7 @@ function render(){
   );
 
   renderKeys();
+  renderExpr();
   applyView();
   refreshHz();
   syncStrips();
@@ -1820,7 +1910,7 @@ function renderKeys(){
     return {el: s, hz, kb};
   });
   bindBed(bed);
-  keysSec.replaceChildren(el('h3', null, 'Keys'), popButton('keys'), ctl, bed);
+  keysSec.replaceChildren(el('h3', null, 'Keys'), ctl, bed);
   refreshKeyLabels();
   paintStrips();
 }
@@ -2014,6 +2104,252 @@ function keysReleaseKeyboard(){                               // a window lost f
   for (const [code, st] of [...keysUI.kbHeld]){ keysUI.kbHeld.delete(code); if (!st.released && !patch.keys.latch) noteOff(st); }
 }
 
+/* ---------- Expression plates ---------- */
+// Nine touch plates that shape the drone itself: OSC 1-6, Filter, Space and Bloom. Height (absolute: top is
+// full) plays each plate's main target; sideways movement (relative to where you pressed) plays a second one.
+// Plates add offsets on top of the panel's settings (engine.setExpr), so letting go returns to the panel.
+const EXPR_OSC_Y = [['fold', 'Fold'], ['fm', 'FM'], ['level', 'Swell'], ['det', 'Detune'], ['drift', 'Drift']];
+const EXPR_OSC_X = [['bend', 'Bend'], ['pan', 'Pan'], ['det', 'Detune'], ['off', 'Off']];
+const EXPR_PLATES = [
+  ...[...Array(NUM_OSC)].map((_, i) => ({title: `OSC ${i + 1}`, ys: EXPR_OSC_Y, xs: EXPR_OSC_X})),
+  {title: 'Filter', sub: 'Sweep', ys: [['cut', 'Cutoff']], xs: [['res', 'Reso'], ['off', 'Off']]},
+  {title: 'Space', sub: 'Throw', ys: [['throw', 'Throw']], xs: [['bal', 'Dly / Rev'], ['off', 'Off']]},
+  {title: 'Bloom', sub: 'Macro', ys: [['bloom', 'Bloom']], xs: [['bend', 'Bend'], ['off', 'Off']]}
+];
+const exprSec = el('section', 'sec expr-sec');
+const AXIS_ICON = {   // the panel font has no arrow glyphs, so the chips draw their own
+  y: '<svg viewBox="0 0 8 10"><path d="M4 .8v8.4M1.5 3 4 .8 6.5 3M1.5 7 4 9.2 6.5 7"/></svg>',
+  x: '<svg viewBox="0 0 10 8"><path d="M.8 4h8.4M3 1.5.8 4 3 6.5M7 1.5 9.2 4 7 6.5"/></svg>'};
+const exprUI = {plates: [], state: [], held: new Map()};   // state[i]: {on, y, x, px, t0}; held: pointer -> gesture
+
+// Each plate's offsets, as {target key: value}. y is 0..1 (height), x is -1..1 (sideways).
+function exprContrib(i, y, x){
+  const P = patch, E = P.expr, pl = E.plates[i], out = {};
+  const add = (k, v) => { out[k] = (out[k] || 0) + v; };
+  const openCents = f => Math.max(0, 1200 * Math.log2(18000 / Math.max(20, f)));
+  if (i < NUM_OSC){
+    const o = P.oscs[i], base = engine.audible(i) ? o.level : 0;
+    if (pl.y === 'level') add(`o${i}.level`, (1 - base) * y);
+    else if (E.swell) add(`o${i}.level`, Math.max(0, 0.8 - base));          // pressing brings the oscillator in
+    if (pl.y === 'fold') add(`o${i}.fold`, (1 - o.fold) * y);
+    if (pl.y === 'fm') { const f = o.fm + (1 - o.fm) * y; add(`o${i}.fm`, (f * f - o.fm * o.fm) * 4); }
+    if (pl.y === 'det') add(`o${i}.det`, y * 25);
+    if (pl.y === 'drift') add(`o${i}.drift`, y * 20);
+    if (pl.x === 'bend') add(`o${i}.det`, x * 50);
+    if (pl.x === 'det') add(`o${i}.det`, x * 25);
+    if (pl.x === 'pan') add(`o${i}.pan`, x);
+  } else if (i === NUM_OSC){                                                 // Filter
+    add('f.cut', y * openCents(P.filter.cutoff));
+    if (pl.x === 'res'){ add('f.res', x * 6); add('f.lres', x * 0.4); }
+  } else if (i === NUM_OSC + 1){                                             // Space
+    const bal = pl.x === 'bal' ? x : 0;
+    add('sp.dly', y * (1 - P.delay.mix) * (bal < 0 ? 1 + bal : 1));
+    add('sp.rev', y * (1 - P.reverb.mix) * (bal > 0 ? 1 - bal : 1));
+  } else {                                                                   // Bloom: fold, filter and reverb together
+    P.oscs.forEach((o, j) => add(`o${j}.fold`, 0.5 * y * (1 - o.fold)));
+    add('f.cut', 0.6 * y * openCents(P.filter.cutoff));
+    add('sp.rev', 0.5 * y * (1 - P.reverb.mix));
+    if (pl.x === 'bend') P.oscs.forEach((_, j) => add(`o${j}.det`, x * 30));
+  }
+  return out;
+}
+
+// Send every plate's offsets to the engine. A plate rises with the Attack time just after it's pressed,
+// then follows the hand closely; a released (Spring) plate's offsets return over the Return time.
+const exprKeys = new Set();
+function exprApply(){
+  const E = patch.expr, now = performance.now(), vals = {};
+  exprUI.state.forEach((st, i) => {
+    if (!st || !st.on) return;
+    const tc = now - st.t0 < E.attack * 1000 ? Math.max(0.01, E.attack / 4) : 0.03;
+    for (const [k, v] of Object.entries(exprContrib(i, st.y, st.x))){
+      exprKeys.add(k);
+      if (!vals[k]) vals[k] = {v: 0, tc};
+      vals[k].v += v; vals[k].tc = Math.min(vals[k].tc, tc);
+    }
+  });
+  for (const k of exprKeys) if (!vals[k]) vals[k] = {v: 0, tc: Math.max(0.01, E.ret / 4)};
+  engine.setExpr(vals);
+}
+
+function exprFmt(i, which, v){
+  const pl = patch.expr.plates[i], t = which === 'y' ? pl.y : pl.x, pct = Math.round(Math.abs(v) * 100) + '%';
+  const sgn = n => (n >= 0 ? '+' : '−') + Math.abs(n).toFixed(n && Math.abs(n) < 10 ? 1 : 0);
+  switch (t){
+    case 'det':   return 'DETUNE ' + sgn(v * 25) + '¢';
+    case 'drift': return 'DRIFT ' + Math.round(v * 20) + '¢';
+    case 'bend':  return 'BEND ' + sgn(v * (i < NUM_OSC ? 50 : 30)) + '¢';
+    case 'pan':   return 'PAN ' + fmtPan(v);
+    case 'cut':   return fmtHz(Math.min(18000, patch.filter.cutoff * Math.pow(18000 / patch.filter.cutoff, v)));
+    case 'res':   return 'RESO ' + sgn(v * 6);
+    case 'bal':   return v < 0 ? 'REV ' + pct : 'DLY ' + pct;
+    case 'off':   return '';
+    default:      return (EXPR_PLATES[i].ys.find(o => o[0] === t) || [, t])[1].toUpperCase() + ' ' + pct;
+  }
+}
+
+function paintPlate(i){
+  const p = exprUI.plates[i], st = exprUI.state[i];
+  if (!p) return;
+  const on = !!(st && st.on);
+  p.el.classList.toggle('on', on);
+  p.el.classList.toggle('latched', on && patch.expr.release === 'hold' && !st.down);
+  if (on){
+    p.el.style.setProperty('--p', (st.y * 100).toFixed(1) + '%');
+    p.el.style.setProperty('--x', (st.px * 100).toFixed(1) + '%');
+  }
+  p.val.textContent = on ? exprFmt(i, 'y', st.y) : '';
+  p.xval.textContent = on && patch.expr.plates[i].x !== 'off' && Math.abs(st.x) > 0.01 ? exprFmt(i, 'x', st.x) : '';
+}
+
+// A chip with an invisible <select> over it: shows the current target, opens the browser's own list.
+function exprChip(i, which){
+  const spec = EXPR_PLATES[i], opts = which === 'y' ? spec.ys : spec.xs, pl = patch.expr.plates[i];
+  if (!opts.some(o => o[0] === pl[which])) pl[which] = opts[0][0];
+  const chip = el('label', 'chip');
+  const txt = el('span', null, opts.find(o => o[0] === pl[which])[1]);
+  chip.innerHTML = AXIS_ICON[which];
+  const sel = el('select');
+  sel.setAttribute('aria-label', `${spec.title} ${which === 'y' ? 'height' : 'sideways'} control`);
+  for (const [v, t] of opts){ const o = el('option', null, t); o.value = v; sel.append(o); }
+  sel.value = pl[which];
+  sel.addEventListener('pointerdown', e => e.stopPropagation());
+  sel.addEventListener('change', () => {
+    pl[which] = sel.value;
+    txt.textContent = opts.find(o => o[0] === sel.value)[1];
+    lcd.show(`${spec.title} ${which === 'y' ? 'height' : 'sideways'}`, opts.find(o => o[0] === sel.value)[1]);
+    exprApply(); paintPlate(i); changed(); sel.blur();
+  });
+  chip.append(txt, sel);
+  if (opts.length < 2) chip.classList.add('fixed');
+  return chip;
+}
+
+function renderExpr(){
+  const E = patch.expr, nm = s => 'Expression ' + s;
+  exprUI.state = []; exprUI.held.clear(); exprApply();
+  const release = buttons({label: 'Release', name: nm('release'), color: 'k-cream',
+    options: [['spring', 'Spring'], ['hold', 'Hold']], get: () => E.release,
+    set: v => { E.release = v; if (v === 'spring') exprReleaseAll(); changed(); }});
+  const swell = hwButton('Swell', 'k-yellow');
+  swell.title = 'Pressing an oscillator plate brings that oscillator in';
+  swell.setAttribute('aria-pressed', E.swell);
+  swell.addEventListener('click', () => {
+    E.swell = !E.swell; swell.setAttribute('aria-pressed', E.swell);
+    lcd.show(nm('swell'), E.swell ? 'ON' : 'OFF'); exprApply(); changed(); swell.blur();
+  });
+  const clear = hwButton('Clear', 'k-grey');
+  clear.title = 'Let go of every held plate';
+  clear.addEventListener('click', () => { exprReleaseAll(); lcd.show(nm('plates'), 'Cleared'); clear.blur(); });
+  const btns = el('div', 'kbtns'); btns.append(swell, clear);
+  const kr = el('div', 'krow');
+  kr.append(
+    knob({label: 'Attack', name: nm('attack'), size: 'sm', min: 0.005, max: 5, scale: 'log', fmt: fmtSec, get: () => E.attack, set: v => { E.attack = v; changed(); }}),
+    knob({label: 'Return', name: nm('return'), size: 'sm', min: 0.02, max: 10, scale: 'log', fmt: fmtSec, get: () => E.ret, set: v => { E.ret = v; changed(); }}));
+  const ctl = el('div', 'ectl');
+  ctl.append(btns, release, kr, el('div', 'khint', 'Height = amount · slide sideways'));
+
+  const bed = el('div', 'ebed');
+  exprUI.plates = EXPR_PLATES.map((spec, i) => {
+    const p = el('div', 'eplate' + (i >= NUM_OSC ? ' wide' : ''));
+    const sub = i < NUM_OSC ? KEY_RATIOS.find(r => r[0] === patch.oscs[i].ratio)?.[0] || '' : spec.sub;
+    const top = el('div', 'top'); top.append(el('div', 'et', spec.title), el('div', 'es', sub));
+    const val = el('div', 'val'), xval = el('div', 'val x');
+    const chips = el('div', 'chips'); chips.append(exprChip(i, 'y'), exprChip(i, 'x'));
+    const bot = el('div', 'bot'); bot.append(xval, val, chips);
+    p.append(el('div', 'glow'), el('div', 'cross'), el('div', 'pt'), el('div', 'eled'), top, bot);
+    if (i === NUM_OSC) bed.append(el('div', 'egap'));
+    bed.append(p);
+    return {el: p, val, xval};
+  });
+  bindPlates(bed);
+  exprSec.replaceChildren(el('h3', null, 'Expression'), ctl, bed);
+}
+
+function exprReleaseAll(){
+  exprUI.state.forEach((st, i) => { if (st && st.on && !st.down){ st.on = false; paintPlate(i); } });
+  exprApply();
+}
+
+/* Mouse, pen and touch on the plates. Each pointer plays one plate; several fingers play several plates. */
+function bindPlates(bed){
+  const plateAt = e => exprUI.plates.findIndex(p => p.el.contains(e.target));
+  bed.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const i = plateAt(e);
+    if (i < 0) return;
+    e.preventDefault();
+    try { bed.setPointerCapture(e.pointerId); } catch (_) {}
+    const r = exprUI.plates[i].el.getBoundingClientRect();
+    const prev = exprUI.state[i];
+    const wasHeld = !!(prev && prev.on);
+    const y = Math.min(1, Math.max(0, 1 - (e.clientY - r.top) / r.height));
+    const x = wasHeld ? prev.x : 0;
+    exprUI.state[i] = {on: true, down: true, y, x, px: (e.clientX - r.left) / r.width, t0: wasHeld ? 0 : performance.now()};
+    exprUI.held.set(e.pointerId, {i, x0: e.clientX - x * r.width, cx: e.clientX, cy: e.clientY, moved: false, wasHeld});
+    exprApply(); paintPlate(i);
+    lcd.show(EXPR_PLATES[i].title, exprFmt(i, 'y', y));
+  });
+  bed.addEventListener('pointermove', e => {
+    const g = exprUI.held.get(e.pointerId);
+    if (!g) return;
+    const st = exprUI.state[g.i], r = exprUI.plates[g.i].el.getBoundingClientRect();
+    if (Math.abs(e.clientX - g.cx) > 4 || Math.abs(e.clientY - g.cy) > 4) g.moved = true;
+    st.y = Math.min(1, Math.max(0, 1 - (e.clientY - r.top) / r.height));
+    st.x = Math.min(1, Math.max(-1, (e.clientX - g.x0) / r.width));          // one plate-width each way = full
+    st.px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    exprApply(); paintPlate(g.i);
+    const xs = patch.expr.plates[g.i].x !== 'off' && Math.abs(st.x) > 0.01 ? '  ' + exprFmt(g.i, 'x', st.x) : '';
+    lcd.show(EXPR_PLATES[g.i].title, exprFmt(g.i, 'y', st.y) + xs);
+  });
+  const end = e => {
+    const g = exprUI.held.get(e.pointerId);
+    if (!g) return;
+    exprUI.held.delete(e.pointerId);
+    const st = exprUI.state[g.i];
+    st.down = false;
+    // Spring: let go and it returns. Hold: it stays; tap a held plate (without sliding) to let it go.
+    if (patch.expr.release !== 'hold' || (g.wasHeld && !g.moved) || e.type === 'pointercancel') st.on = false;
+    exprApply(); paintPlate(g.i);
+  };
+  bed.addEventListener('pointerup', end);
+  bed.addEventListener('pointercancel', end);
+}
+
+/* ---------- Performance: Keys, Expression or both ---------- */
+// The Keys and the plates live together in one wrapper. It sits in the Play view, or moves as a whole into
+// the Performance window (the one always-on-top window the browser allows). Tabs on its top edge choose
+// what it shows; the choice is a preference, not part of the patch.
+const perfWrap = el('div', 'perf');
+let strips = ['keys', 'expr', 'both'].includes(store('dronebox.strips')) ? store('dronebox.strips') : 'both';
+const stripTabs = {};
+function setStrips(v){
+  strips = v;
+  store('dronebox.strips', v);
+  applyStrips();
+  lcd.show('Show', {keys: 'Keys', expr: 'Expression', both: 'Keys + Expression'}[v]);
+}
+function applyStrips(){
+  exprSec.hidden = strips === 'keys';
+  keysSec.hidden = strips === 'expr';
+  for (const [v, b] of Object.entries(stripTabs)) b.setAttribute('aria-pressed', v === strips);
+  fitToWindow();
+}
+function buildPerf(){
+  const bar = el('div', 'perfbar');
+  for (const [v, t] of [['keys', 'Keys'], ['expr', 'Expression'], ['both', 'Both']]){
+    const b = el('button', 'popbtn tab', t);
+    b.type = 'button';
+    b.title = 'Show ' + {keys: 'the Keys', expr: 'the expression plates', both: 'the Keys and the expression plates'}[v];
+    b.addEventListener('click', () => { setStrips(v); b.blur(); });
+    stripTabs[v] = b;
+    bar.append(b);
+  }
+  bar.append(popButton('keys'));
+  perfWrap.replaceChildren(bar, exprSec, keysSec);
+  applyStrips();
+}
+
 /* ---------- Panel / Play view ---------- */
 let view = store('dronebox.view') === 'play' ? 'play' : 'panel';
 function setView(v){
@@ -2025,7 +2361,7 @@ function applyView(){
   const play = view === 'play';
   $('#ctrlSlot').hidden = play;
   $('#playSlot').hidden = !play;
-  if (!POPS.keys && keysSec.parentNode !== $('#playSlot')) $('#playSlot').append(keysSec);
+  if (!POPS.keys && perfWrap.parentNode !== $('#playSlot')) $('#playSlot').append(perfWrap);
   fitToWindow();
 }
 
@@ -2035,7 +2371,7 @@ function applyView(){
 // browser allows (Document Picture-in-Picture), falling back to an ordinary popup; the rest use popups.
 const POP_SPECS = {
   monitor: {title: 'Monitor', sel: () => $('.monitor'), w: 900, h: 420, pip: false},
-  keys:    {title: 'Keys', sel: () => keysSec, w: 1700, h: 360, pip: true}
+  keys:    {title: 'Performance', sel: () => perfWrap, w: 1700, h: 620, pip: true}   // Keys and expression plates
 };
 const POP_ICON = '<svg viewBox="0 0 12 12"><path d="M5 2H2v8h8V7M7 1.5h3.5V5M10.5 1.5 5.5 6.5"/></svg>';
 const DOCK_ICON = '<svg viewBox="0 0 12 12"><path d="M5 2H2v8h8V7M10.5 1.5 6 6M6 3v3h3"/></svg>';
@@ -2124,12 +2460,12 @@ function popButton(name){
   syncPopButtons(); syncRestore();
   return b;
 }
-// "Keys" in the View group: floats the Keys over whichever view is showing (lit while they're out).
+// "Perform" in the View group: floats the Keys and plates over whichever view is showing (lit while out).
 let keysFloatBtn;
 function keysFloatButton(){
-  keysFloatBtn = hwButton('Keys', 'k-grey');
-  keysFloatBtn.title = 'Keys in their own always-on-top window';
-  keysFloatBtn.setAttribute('aria-label', 'Keys in their own window');
+  keysFloatBtn = hwButton('Perform', 'k-grey');
+  keysFloatBtn.title = 'The Keys and expression plates in their own always-on-top window';
+  keysFloatBtn.setAttribute('aria-label', 'Performance window');
   keysFloatBtn.addEventListener('click', () => { POPS.keys ? popIn('keys') : popOut('keys'); keysFloatBtn.blur(); });
   syncPopButtons();
   return keysFloatBtn;
@@ -2412,8 +2748,8 @@ function fitToWindow(){
   body.style.zoom = '';
   root.classList.add('fitted');
   const naturalH = body.scrollHeight;                       // height at zoom 1, laid out at the design width
-  const z = Math.min(innerWidth / DESIGN_W, innerHeight / naturalH);
-  body.style.zoom = z.toFixed(4);
+  const z = Math.min(innerWidth / DESIGN_W, (innerHeight - 2) / naturalH);   // 2px spare for rounding at odd zooms
+  body.style.zoom = (Math.floor(z * 1e4) / 1e4).toFixed(4);         // round down, so it never overshoots
 }
 let fitQueued = false;
 addEventListener('resize', () => {
@@ -2424,6 +2760,7 @@ addEventListener('resize', () => {
 
 /* ---------- Boot ---------- */
 $('#ver').textContent = 'v' + VERSION;
+buildPerf();
 fillPresets(store(STORE_LAST) ? '' : 'f:0');
 render();
 fitToWindow();

@@ -105,11 +105,20 @@ In both styles, a fader's cap line takes the family colour.
 - Controls, left to right: Latch and Tune (single LED buttons), Voices and Pressure (LED rows), then three groups divided by a thin rule, each with a small title: **Voice** (two rows of four knobs), **Filter** (type buttons over Cutoff, Reso, Drive) and **LFO** (wave buttons over Rate, Pitch, Filter, Level).
 - **Playing:** press to play; the height in the strip is pressure (top is full), or a pen's real pressure. Drag sideways to glide between strips in the scale; Shift + drag slides freely. Computer keys A S D F G H J K L ; ' \ walk up the scale, Z and X change octave.
 
+## Expression plates
+
+- **Nine plates:** OSC 1–6, a thin divider, then Filter, Space and Bloom. They're **brushed metal** with an **amber** glow, so they never look like the black note Keys with their red glow.
+- Each plate shows its name and (for oscillators) its interval at the top. Readouts sit above the two chips at the foot: ↕ for height, ↔ for sideways. A chip opens the browser's own list. A dotted chip has only one choice.
+- While played: an amber glow up to the height, a white dot under the finger, and a faint vertical line through it. A held plate (Hold) lights its corner LED.
+- The bank's controls sit on the left in a compact block: Swell and Clear (single LED buttons), Release (Spring / Hold), Attack and Return knobs.
+- **Keys / Expression / Both** are tabs on the top edge of the Performance block, next to its Window tab. The same tabs travel with it into the Performance window.
+
 ## Pop-out windows
 
 - A section that can float has a small **Window** tab on its top frame edge, at the right (opposite the title). In its window, the tab reads **Dock**.
 - The section's place in the panel shows a slim placeholder: the title, "In its own window" and a **Bring back** button.
 - A window looks exactly like the section in the panel: same styles and theme, and the theme and knob switches follow live.
+- The Performance window holds the expression plates above the Keys (or either alone).
 - A narrow Keys window keeps the strips playable: the LFO group hides below 1500 px, Voice below 1250 px, Filter below 1000 px, and the side buttons below 640 px (the same controls are on the panel).
 - A tab that glows orange was in its own window last time; one click reopens it.
 

@@ -6,7 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+- **Delay echoes stopping dead a few seconds after Stop** (or after the last Key note, or a Space throw). To save CPU, Drone Box switches the audio off once nothing is sounding, but it only allowed time for the fade-out and the reverb, not for delay feedback. It now listens to the output and waits until it's truly silent, for at least one full delay time, before switching off, so echoes and tails always ring out naturally.
 
 ## [0.4.0] — 2026-10-09
 

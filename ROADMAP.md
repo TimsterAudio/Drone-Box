@@ -4,23 +4,32 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 - When something ships, tick it here and record it in [CHANGELOG.md](CHANGELOG.md).
 - New ideas go in the right section, or in **Ideas parking lot** if they don't fit yet.
 
-**Where we are:** v0.4.1 is out (v0.4.0 plus a fix for delay echoes being cut off): the Keys, the expression plates and the Performance window (most of Stage 3), on top of v0.3.1's audio fix.
+**Where we are (2026-10-12):** v0.4.1 is on `main` (the Keys, the expression plates and the Performance window: most of Stage 3, on top of v0.3.1's audio fix). GitHub has releases for v0.1.0, v0.2.0 and v0.4.0 only; v0.3.0, v0.3.1 and v0.4.1 still need publishing. Only Windows has been tested by hand.
 
-**Up next, in order:**
-1. Play with the plates, then settle their defaults and ranges (as v0.4.x tweaks)
-2. Engine pathway Phases 0 and 1 (the rest of the browser hardening; a clean engine interface)
-3. The rest of Stage 3: Setup window, Swarm, XY pad
-4. Stage 4 (modulation), then Engine pathway Phase 2 (Rust DSP), then Stage 5 onward
+**Sizes:** S = one session · M = two or three · L = a release of its own.
+
+## The pipeline, in order
+
+| Release | Theme | Size |
+|---|---|---|
+| v0.4.x | Housekeeping and playing: publish the missing releases, settle the plates' defaults, a WAV recorder | S–M |
+| v0.5.0 | Engine pathway Phases 0 and 1 (budget, buffer / Eco, a clean engine API, golden renders), plus the Setup window | L |
+| v0.6.0 | The rest of Stage 3: Swarm, XY pad, arpeggiator, plates from the computer keyboard | L |
+| v0.7.0 | Stage 4: modulation (random, slow envelopes, the matrix, rings on modulated knobs) | L |
+| v0.8.0 | Engine pathway Phase 2: DSP in Rust as WebAssembly (shares `eq-core` with EQ Box where it can) | L+ |
+| v0.9.0+ | Stage 5 effects, written once in Rust; then Phase 3 (Tauri desktop app), Stage 6 (looper) | L+ each |
+
+Phase 2 is the big bet. Phases 0 and 1 are worth doing whatever is decided about it, and they're the point to review it again.
 
 ---
 
-## Now: the test round (v0.2.0, continuing with v0.3.0)
+## Now: v0.4.x — housekeeping and playing
 
-- [ ] Hand out the release zip and the tester checklist (`testing/Drone Box Test Checklist.html`)
-- [ ] Collect reports. Log each problem as a GitHub issue (bug or idea).
-- [ ] Fix anything that blocks testing, as patch releases (v0.3.x)
-- [ ] Hand testers v0.3.0 and its updated checklist (Keys and windows sections)
-- [ ] Gather the "what would you want next?" answers, and adjust this roadmap
+- [ ] Publish GitHub releases for v0.3.0, v0.3.1 and v0.4.1 (tags and zips)
+- [ ] **Play with the plates**, then settle their defaults and ranges (see "Expression plates, follow-ups" below)
+- [ ] **Record the output to a WAV file** (from the backlog): small, and it lets testers share what they hear
+- [ ] The test round: hand out the release zip and the tester checklist (`testing/Drone Box Test Checklist.html`), log each report as a GitHub issue, fix blockers as patch releases, and gather "what would you want next?" answers
+- [ ] Test the launchers on macOS and Linux (Linux Mint + Brave is to hand)
 
 ## Engine pathway: from browser audio to a native engine
 
@@ -30,7 +39,7 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 
 **The seam it builds on:** the panel never makes sound itself. It changes `patch` and calls `engine.apply…()`, `play()`, `stop()` and `keyOn()`/`keyOff()`. Each phase keeps that seam and makes it cleaner, so the engine can be swapped without rebuilding the panel.
 
-### Phase 0: Harden the browser engine (v0.3.x, now)
+### Phase 0: Harden the browser engine (v0.3.1 started it; the rest in v0.5.0)
 - [x] Gate silent DSP, block-rate maths, no allocation in worklets, a 48 kHz cap, and the footer audio readout (v0.3.1)
 - [ ] A **performance budget** in the smoke test: render a worst-case patch offline and fail if it costs more than an agreed share of a core, measured against a reference task so it works on any machine
 - [ ] Rules for new DSP in `CLAUDE.md`: gated when silent, block-rate parameters, no allocation, benchmark before and after
@@ -39,7 +48,7 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 
 *Exit check:* the heaviest factory patch with four Keys runs clean on the reference Windows machine, and the smoke test guards the budget.
 
-### Phase 1: A clean engine interface (small; do soon)
+### Phase 1: A clean engine interface (v0.5.0)
 - [ ] Document the **engine API** in `ARCHITECTURE.md`: everything the panel may call or read
 - [ ] Stop the panel reaching into Web Audio internals. Today it reads `engine.ctx`, the three analysers, `keyMap`, `ready` and `dsp` directly. Replace them with engine methods:
   - `status()`: running / fading / stopped, sample rate, latency, dropouts, mode
@@ -50,8 +59,8 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 
 *Exit check:* the panel uses only the documented API; the smoke test and golden renders pass.
 
-### Phase 2: DSP in Rust, running in the browser as WebAssembly (before Stage 5)
-- [ ] Set up a Rust DSP crate, compiled to WebAssembly and run inside one AudioWorklet
+### Phase 2: DSP in Rust, running in the browser as WebAssembly (v0.8.0, before Stage 5)
+- [ ] Set up a Rust DSP crate, compiled to WebAssembly and run inside one AudioWorklet. Look first at EQ Box's `eq-core` (biquads, smoothing), which is already plain, tested Rust
 - [ ] Port the custom processors first (oscillator, ladder, noise), behind the same parameters; check them against the golden renders
 - [ ] Then move the built-in Web Audio parts (filters, delay, reverb, panning, mixing) into Rust as well, so the whole sound engine is one Rust graph in one worklet
 - [ ] New DSP from here on (Stage 5 effects, Swarm, oversampling) is written once, in Rust
@@ -97,7 +106,7 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 - [x] Panel: knob colours by function (Colour or Pointer style), a readout on every control, the 1920×900 layout with fit-to-window scaling
 - [x] Stand-alone app-window launchers for Windows, macOS and Linux
 
-## Stage 3: Keys and performance (v0.3.0: Keys and windows; v0.4.0: expression plates)
+## Stage 3: Keys and performance (v0.3.0: Keys and windows; v0.4.0: expression plates; the rest in v0.6.0)
 
 Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone buttons, designed for a mouse first.
 
@@ -148,7 +157,7 @@ Keyboard-style playing, inspired by the Elta Solar 42N's touch plates and drone 
 - [ ] A **Swarm** knob on each oscillator: up to 5 detuned copies inside one oscillator
 - [ ] An **XY pad** that drives two parameters at once (it becomes a matrix source in Stage 4)
 
-## Stage 4: Modulation
+## Stage 4: Modulation (v0.7.0)
 
 - [ ] Random modulators: sample-and-hold, random walk and smooth random, each with a rate
 - [ ] Very long envelopes (seconds to many minutes) as modulation sources
@@ -236,7 +245,7 @@ A semi-modular patch bay: the modulation matrix drawn as cables. Mock-up: [docs/
 
 - [ ] Test on Firefox and Safari, and note any differences in the README
 - [ ] Test on macOS and Linux with the launchers (so far only Windows has been tested by hand)
-- [ ] Bring the default-browser and encoded-address launcher fixes to **Spool** (in Spool's own repo)
+- [ ] Bring the default-browser and encoded-address launcher fixes to **Spool** and **Drum Box** (on their roadmaps)
 - [ ] A patch format version field, for future migrations
 - [ ] Build the release zip automatically when a version is tagged (a GitHub Action)
 - [ ] Keep the tester checklist up to date with each release

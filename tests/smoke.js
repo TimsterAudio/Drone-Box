@@ -622,6 +622,8 @@ function check(name, ok, detail = ''){
   const ver = f => (fs.readFileSync(path.resolve(__dirname, '..', f), 'utf8').match(/const VERSION = '([\d.]+)'/) || [])[1];
   const appVer = ver('drone-box.html'), listVer = ver('testing/Drone Box Test Checklist.html');
   check('tester checklist version matches the app', appVer && appVer === listVer, `app ${appVer}, checklist ${listVer}`);
+  const guideVer = (fs.readFileSync(path.resolve(__dirname, '..', 'Drone Box User Guide.html'), 'utf8').match(/For Drone Box <b>v([\d.]+)<\/b>/) || [])[1];
+  check('user guide is for the same version as the app', guideVer === appVer, `app ${appVer}, guide ${guideVer}`);
   check('panel shows the version', (await page.textContent('#ver')) === 'v' + appVer);
 
   check('no page errors', errors.length === 0, errors.join(' | '));

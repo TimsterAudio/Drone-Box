@@ -4,7 +4,7 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 - When something ships, tick it here and record it in [CHANGELOG.md](CHANGELOG.md).
 - New ideas go in the right section, or in **Ideas parking lot** if they don't fit yet.
 
-**Where we are:** v0.4.1 is out (v0.4.0 plus a fix for delay echoes being cut off): the Keys, the expression plates and the Performance window (most of Stage 3), on top of v0.3.1's audio fix.
+**Where we are:** v0.4.2 is out (v0.4.0, plus a fix for delay echoes being cut off and a user guide): the Keys, the expression plates and the Performance window (most of Stage 3), on top of v0.3.1's audio fix.
 
 **Up next, in order:**
 1. Play with the plates, then settle their defaults and ranges (as v0.4.x tweaks)
@@ -240,7 +240,7 @@ A semi-modular patch bay: the modulation matrix drawn as cables. Mock-up: [docs/
 - [ ] A patch format version field, for future migrations
 - [ ] Build the release zip automatically when a version is tagged (a GitHub Action)
 - [ ] Keep the tester checklist up to date with each release
-- [ ] A user guide (like Spool's `User Guide.txt`) once the panel settles
+- [x] A user guide: `Drone Box User Guide.html` ("Drone Box for Dummies"), shipped in the release zip. Keep it in step with each release.
 
 ## Known issues
 

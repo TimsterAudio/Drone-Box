@@ -1,6 +1,6 @@
 # Drone Box
 
-Timster's Audio Works · **v0.4.1**
+Timster's Audio Works · **v0.4.2**
 
 A drone synthesizer that runs entirely in one browser tab. It has no install, server or account, and nothing is sent anywhere.
 
@@ -26,6 +26,8 @@ You can also open `drone-box.html` directly in any browser tab. Chrome, Edge and
 **Window size:** the panel scales to fit whatever window it's in, so it never needs scrolling. Resize or maximise the window and the whole instrument grows or shrinks with it. Drone Box is made for desktops, laptops and tablets (landscape works best on a tablet). Phones aren't supported: the panel is too dense for a phone screen.
 
 Press **Play** or hit **Space**. Browsers only allow audio to start after a click or key press, so that's always the first step.
+
+**New to it?** Open **`Drone Box User Guide.html`** ("Drone Box for Dummies"): everything on the panel explained, with recipes, troubleshooting and a fair amount of cheek.
 
 ## Features
 

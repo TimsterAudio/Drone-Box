@@ -5,7 +5,7 @@ There are two kinds of testing: **people playing it** (the test round), and an *
 ## For testers: the test round
 
 Thanks for helping! You'll need:
-- the release zip (for example `Drone-Box-v0.4.1.zip`)
+- the release zip (for example `Drone-Box-v0.4.2.zip`)
 - a computer with **Chrome, Edge, Brave or Vivaldi** (Firefox and Safari reports are welcome too)
 - headphones or speakers. Start at a **low volume**, because drones build up.
 
@@ -57,4 +57,4 @@ Every check prints PASS or FAIL. The script exits non-zero if anything fails. Ad
 1. The smoke test passes.
 2. Headless screenshots at about 1400 px wide and at tablet size (about 1180 × 820) have been looked at.
 3. The tester checklist (`testing/Drone Box Test Checklist.html`) covers any new features, and its `VERSION` matches.
-4. The release zip contains: `drone-box.html`, the three launchers, `README.md`, `CHANGELOG.md`, `TESTING.md`, and the `testing/` folder.
+4. The release zip contains: `drone-box.html`, `Drone Box User Guide.html`, the three launchers, `README.md`, `CHANGELOG.md`, `TESTING.md`, and the `testing/` folder.

@@ -67,7 +67,7 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff;fo
 <body>
 <div class="wrap">
   <h1>Drone Box Test Checklist</h1>
-  <p class="sub">Timster's Audio Works · for Drone Box <b id="verLabel">v0.4.1</b></p>
+  <p class="sub">Timster's Audio Works · for Drone Box <b id="verLabel">v0.4.2</b></p>
 
   <div class="card intro">
     <h2>How this works</h2>
@@ -109,7 +109,7 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff;fo
 
 <script>
 'use strict';
-const VERSION = '0.4.1';
+const VERSION = '0.4.2';
 const STORE = 'dronebox.testrun.' + VERSION;
 
 // Each check: [id, what to do, what should happen]
@@ -218,6 +218,11 @@ const SECTIONS = [
     ['R3', 'Click Save and give the patch a name; load another patch; then load yours again.', 'Your patch comes back exactly as you saved it.'],
     ['R4', 'Click Export, then Import the file you just saved.', 'A .dronebox.json file downloads, and importing it restores the patch.'],
     ['R5', 'Delete your saved patch.', 'It disappears from the menu.'],
+  ]],
+  ['User guide (new in 0.4.2)', [
+    ['G1', 'Open "Drone Box User Guide.html" from the Drone Box folder.', 'It opens in the browser, styled like the panel, with working links in "What\'s in this book".'],
+    ['G2', 'Try a recipe from Part 10 (for example "The beating heart").', 'Following the steps gives the sound the guide describes.'],
+    ['G3', 'Note anything in the guide that is unclear, wrong or not funny.', 'Use the comments box; all feedback welcome, especially about the jokes.'],
   ]],
   ['Other browsers and devices (optional)', [
     ['B1', 'Open drone-box.html in Firefox.', 'It works (note anything that looks or sounds different).'],

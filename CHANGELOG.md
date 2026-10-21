@@ -6,7 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **A user guide:** `Drone Box User Guide.html` ("Drone Box for Dummies"), a cheeky but complete guide to every part of the panel, the Keys, the expression plates, views and windows, patches, recipes and troubleshooting. It's one offline page, styled like the panel, and prints cleanly. It's included in the release zip.
 
 ## [0.4.1] — 2026-10-09
 

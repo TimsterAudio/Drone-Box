@@ -240,7 +240,7 @@ A semi-modular patch bay: the modulation matrix drawn as cables. Mock-up: [docs/
 - [ ] A patch format version field, for future migrations
 - [ ] Build the release zip automatically when a version is tagged (a GitHub Action)
 - [ ] Keep the tester checklist up to date with each release
-- [ ] A user guide (like Spool's `User Guide.txt`) once the panel settles
+- [x] A user guide: `Drone Box User Guide.html` ("Drone Box for Dummies"), shipped in the release zip. Keep it in step with each release.
 
 ## Known issues
 

@@ -27,6 +27,8 @@ You can also open `drone-box.html` directly in any browser tab. Chrome, Edge and
 
 Press **Play** or hit **Space**. Browsers only allow audio to start after a click or key press, so that's always the first step.
 
+**New to it?** Open **`Drone Box User Guide.html`** ("Drone Box for Dummies"): everything on the panel explained, with recipes, troubleshooting and a fair amount of cheek.
+
 ## Features
 
 - **6 oscillators**, running as band-limited wavetable AudioWorklets (alias-free even at high notes). Each one has:

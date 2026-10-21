@@ -21,6 +21,7 @@ Drone Box is a browser drone synthesizer by Timster's Audio Works. The whole ins
   - bump `VERSION` in `drone-box.html` and the version in `README.md`
   - tick off anything finished in `ROADMAP.md`
   - update the tester checklist (`testing/Drone Box Test Checklist.html`): its `VERSION`, plus checks for new features
+  - update the user guide (`Drone Box User Guide.html`): the version on its cover, plus anything new or changed (the smoke test checks the version)
   - tag the merge commit `vX.Y.Z`. This session can't push tags, so ask the user to create the release on GitHub.
   - build the release zip described in `TESTING.md`
 - Until 1.0, a minor bump (0.x.0) means a new stage or feature set, and a patch bump (0.x.y) means fixes and tweaks.

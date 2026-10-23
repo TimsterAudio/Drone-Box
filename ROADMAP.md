@@ -7,10 +7,11 @@ This is where Drone Box is heading, and the to-do list that keeps it on track. I
 **Where we are:** v0.4.2 is out (v0.4.0, plus a fix for delay echoes being cut off and a user guide): the Keys, the expression plates and the Performance window (most of Stage 3), on top of v0.3.1's audio fix.
 
 **Up next, in order:**
-1. Play with the plates, then settle their defaults and ranges (as v0.4.x tweaks)
-2. Engine pathway Phases 0 and 1 (the rest of the browser hardening; a clean engine interface)
-3. The rest of Stage 3: Setup window, Swarm, XY pad
-4. Stage 4 (modulation), then Engine pathway Phase 2 (Rust DSP), then Stage 5 onward
+1. **The sequencer:** built on `claude/sequencer`, to be played and reviewed; then v0.5.0
+2. Play with the plates, then settle their defaults and ranges (as v0.4.x tweaks)
+3. Engine pathway Phases 0 and 1 (the rest of the browser hardening; a clean engine interface)
+4. The rest of Stage 3: Setup window, Swarm, XY pad
+5. Stage 4 (modulation), then Engine pathway Phase 2 (Rust DSP), then Stage 5 onward
 
 ---
 
@@ -185,7 +186,23 @@ A semi-modular patch bay: the modulation matrix drawn as cables. Mock-up: [docs/
 - [ ] Shimmer: reverb with a pitch-shifted feedback path
 - [ ] Master EQ (tilt, low cut, high cut)
 
+## Sequencer (v0.5.0, in review)
+
+- [x] Record knob and fader moves, LED buttons, Mutes, expression plates and Keys notes into a pattern, with "touch" overwriting
+- [x] Playback on the audio clock (notes scheduled ahead), lanes that pause while you hold their control
+- [x] A timeline editor: note grid (add, delete, move, lengthen), lanes (draw, erase, delete, add by hand)
+- [x] Patterns A–D with their own lengths, queued switching, Chain; Tempo or Free time; Quantise and Snap; Copy, Paste, Clear, Keep
+- [x] Saved with the patch, checked on load
+- [ ] Record Keys glides and pressure changes during a note (notes keep their starting pitch and pressure for now)
+- [ ] A song mode: patterns in any order, with repeats
+- [ ] Per-lane options: smooth or stepped, and a lane on/off switch
+- [ ] Undo for recording passes and edits
+- [ ] Swing and note probability (gentle variation for long drones)
+
 ## Stage 6: The looper
+
+**Decided (October 2026):** the looper is the reason to go native. Recording a mic or instrument in time, holding long takes in memory and saving loops as WAV files are all where the browser is weakest. It's planned as the headline feature of the native Drone Box (see the Engine pathway); the sequencer stays in the browser meanwhile.
+
 
 - [ ] 4–8 loop tracks with record, overdub and undo
 - [ ] Half-speed and reverse per track

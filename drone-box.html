@@ -284,7 +284,21 @@ kbd{font-family:inherit;border:1px solid currentColor;border-radius:3px;padding:
 .eplate .chip select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:14px}
 .eplate .eled{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:#3a2c0c;z-index:3}
 .eplate.latched .eled{background:#f0c43a;box-shadow:0 0 6px 2px rgba(240,196,58,.8)}
-/* The Performance wrapper: Keys and plates, in the Play view or the Performance window */
+/* ---------- Sequencer ---------- */
+.seq-sec{flex:1 1 auto;flex-wrap:nowrap;align-items:stretch;gap:14px;justify-content:flex-start}
+.sctl{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;align-items:flex-end;gap:6px 16px;width:410px;flex:0 0 410px}
+.sctl .krow{display:flex;gap:2px}
+.sctl .krow .knob{margin:4px 6px}
+.sctl .hwb.queued .key{animation:qblink .5s steps(2) infinite}
+@keyframes qblink{50%{filter:brightness(1.7)}}
+.sctl .hwb.filled .txt::after{content:' •';color:var(--legend)}
+.seqadd{font:12px 'Share Tech Mono',monospace;text-transform:uppercase;background:var(--lcd-bg);color:var(--lcd-ink);border:0;border-radius:3px;
+  padding:5px 8px;box-shadow:inset 0 0 8px #000,0 0 0 2px #000;cursor:pointer;max-width:200px}
+.seqadd option{background:#111;color:#ff8a66}
+.seqview{flex:1;min-width:0;display:flex;height:290px}
+.seqcanvas{flex:1;min-width:0;width:100%;height:100%;display:block;border-radius:3px;box-shadow:inset 0 0 14px #000,0 0 0 2px #000,0 0 0 3px rgba(255,255,255,.07);touch-action:none;cursor:crosshair}
+.popbody .seqview{height:auto;min-height:0}
+/* The Performance wrapper: the sequencer, plates and Keys, in the Play view or the Performance window */
 .perf{position:relative;display:flex;flex-direction:column;gap:22px;flex:1 1 100%;min-width:0}
 .perfbar{position:absolute;top:-11px;right:12px;display:flex;gap:6px;z-index:4}
 .perfbar .popbtn{position:static}
@@ -655,8 +669,29 @@ function defaultPatch(){
     // sideways movement plays ('off' for none). release: 'spring' (return when let go) or 'hold'.
     expr: {release: 'spring', attack: 0.3, ret: 1.5, swell: true,
            plates: [...Array(NUM_OSC)].map(() => ({y: 'fold', x: 'bend'}))
-                     .concat([{y: 'cut', x: 'res'}, {y: 'throw', x: 'bal'}, {y: 'bloom', x: 'off'}])}
+                     .concat([{y: 'cut', x: 'res'}, {y: 'throw', x: 'bal'}, {y: 'bloom', x: 'off'}])},
+    // Sequencer (added in 0.5): patterns A-D. Times and lengths are in beats; in Free mode a beat is one second.
+    // notes: {t, d, idx (strip), oct, p}; lanes: control name (or 'plate:N') -> [[t, value] ...] in time order.
+    seq: {mode: 'tempo', bpm: 80, chain: false, quant: '16', pat: 0,
+          patterns: [0, 1, 2, 3].map(() => ({len: 16, notes: [], lanes: {}}))}
   };
+}
+// A saved sequencer pattern, checked field by field (it comes from files and storage).
+function cleanPattern(src, dp){
+  if (!src || typeof src !== 'object') return dp;
+  const num = (x, lo, hi) => typeof x === 'number' && isFinite(x) ? Math.min(hi, Math.max(lo, x)) : null;
+  const len = typeof src.len === 'number' && src.len > 0 ? num(src.len, 0.25, 3600) : dp.len;
+  const notes = (Array.isArray(src.notes) ? src.notes : []).map(n => n && {
+    t: num(n.t, 0, len), d: num(n.d, 0.01, len), idx: num(Math.round(n.idx), 0, NUM_KEYS - 1), oct: num(Math.round(n.oct || 0), -3, 3), p: num(n.p ?? 0.75, 0, 1)
+  }).filter(n => n && n.t !== null && n.d !== null && n.idx !== null && n.p !== null).slice(0, 2000);
+  const lanes = {};
+  if (src.lanes && typeof src.lanes === 'object') for (const [k, pts] of Object.entries(src.lanes)){
+    if (!Array.isArray(pts)) continue;
+    const ok = pts.filter(q => Array.isArray(q) && q.length >= 2 && num(q[0], 0, len) !== null
+      && q.slice(1).every(x => typeof x === 'number' ? isFinite(x) : typeof x === 'string' && x.length < 40)).slice(0, 20000);
+    if (ok.length) lanes[String(k).slice(0, 60)] = ok.sort((a, b) => a[0] - b[0]);
+  }
+  return {len, notes, lanes};
 }
 // Merge an arbitrary (possibly partial / older) patch onto defaults so imports never break the app.
 function normalize(p){
@@ -674,6 +709,7 @@ function normalize(p){
   merge(d, p);
   if (Array.isArray(p.oscs)) for (let i = 0; i < NUM_OSC; i++) if (p.oscs[i]) merge(d.oscs[i], p.oscs[i]);
   if (Array.isArray(p.lfos)) for (let i = 0; i < 2; i++) if (p.lfos[i]) merge(d.lfos[i], p.lfos[i]);
+  if (p.seq && Array.isArray(p.seq.patterns)) d.seq.patterns = d.seq.patterns.map((dp, i) => cleanPattern(p.seq.patterns[i], dp));
   if (p.expr && Array.isArray(p.expr.plates)) d.expr.plates.forEach((pl, i) => { if (p.expr.plates[i]) merge(pl, p.expr.plates[i]); });
   if (p.keys && Array.isArray(p.keys.tune))
     d.keys.tune = d.keys.tune.map((_, i) => typeof p.keys.tune[i] === 'number' ? Math.max(-50, Math.min(50, p.keys.tune[i])) : 0);
@@ -997,9 +1033,10 @@ class Engine {
     return this.ctx.createPeriodicWave(real, imag);
   }
 
-  T(param, v, tc = 0.03){ if (this.ready) param.setTargetAtTime(v, this.ctx.currentTime, tc); }
+  // \`at\` (context time) is optional: the sequencer uses it to place notes exactly; everything else acts now.
+  T(param, v, tc = 0.03, at){ if (this.ready) param.setTargetAtTime(v, at ?? this.ctx.currentTime, tc); }
   // Discrete selectors (wave index, noise colour) jump rather than glide through in-between values.
-  set(param, v){ if (this.ready) param.setValueAtTime(v, this.ctx.currentTime); }
+  set(param, v, at){ if (this.ready) param.setValueAtTime(v, at ?? this.ctx.currentTime); }
 
   /* ----- Gating: DSP that can't be heard is switched off ('on' = 0), so it costs (almost) nothing ----- */
   // Hold a worklet's 'on' param at 1 until \`end\` (context time; Infinity = for now), then 0. When it
@@ -1216,8 +1253,8 @@ class Engine {
     return keysCutoffHz(b);
   }
   keyGlide(){ return Math.max(0.003, this.p.keys.glide / 3); }
-  keyFilter(v, instant){                                                              // cutoff for a voice's pressure
-    const hz = this.keyCutoff(v.p), set = instant ? (q, x) => this.set(q, x) : (q, x) => this.T(q, x, 0.03);
+  keyFilter(v, instant, at){                                                          // cutoff for a voice's pressure
+    const hz = this.keyCutoff(v.p), set = instant ? (q, x) => this.set(q, x, at) : (q, x) => this.T(q, x, 0.03, at);
     set(v.bq.frequency, hz);
     if (v.ladder) set(v.ladder.parameters.get('frequency'), hz);
   }
@@ -1260,9 +1297,9 @@ class Engine {
   }
 
   // Start (or re-press) a note. A free voice starts at the new pitch; a stolen one glides from where it was.
-  keyOn(id, hz, p){
+  keyOn(id, hz, p, at){
     if (!this.ready) return;
-    const K = this.p.keys, now = this.ctx.currentTime;
+    const K = this.p.keys, now = Math.max(at ?? 0, this.ctx.currentTime);
     let v = this.keyMap.get(id);
     if (!v){
       const pool = this.keyVoices.slice(0, Math.max(1, Math.min(4, K.voices)));
@@ -1271,12 +1308,12 @@ class Engine {
       const silent = !v.id && v.vca.gain.value < 0.002;
       v.id = id; v.started = now;
       this.keyMap.set(id, v);
-      if (silent) this.set(v.freq, hz); else this.T(v.freq, hz, this.keyGlide());
-    } else this.T(v.freq, hz, this.keyGlide());
+      if (silent) this.set(v.freq, hz, now); else this.T(v.freq, hz, this.keyGlide(), now);
+    } else this.T(v.freq, hz, this.keyGlide(), now);
     v.p = p;
     this.gateKey(v);
-    this.set(v.press.gain, this.keyPress(p));
-    this.keyFilter(v, true);
+    this.set(v.press.gain, this.keyPress(p), now);
+    this.keyFilter(v, true, now);
     const g = v.vca.gain;
     if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(now); else { g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); }
     g.setTargetAtTime(K.level * 0.3, now, Math.max(0.003, K.attack / 4));
@@ -1293,12 +1330,12 @@ class Engine {
     this.keyFilter(v);
   }
 
-  keyOff(id){
+  keyOff(id, at){
     const v = this.ready && this.keyMap.get(id);
     if (!v) return;
     this.keyMap.delete(id);
     v.id = null;
-    const K = this.p.keys, now = this.ctx.currentTime, g = v.vca.gain;
+    const K = this.p.keys, now = Math.max(at ?? 0, this.ctx.currentTime), g = v.vca.gain;
     if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(now); else { g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); }
     g.setTargetAtTime(0, now, Math.max(0.005, K.release / 4));
     v.endAt = now + Math.max(0.05, K.release * 2.5);                  // ~ -90 dB, then the voice switches off
@@ -1333,6 +1370,7 @@ class Engine {
   // delay echoes, reverb tails and Space throws would be cut off dead.
   trySuspend(){
     if (this.running || !this.ready) return;
+    if (this.hold) return this.scheduleSuspend(1);             // the sequencer is playing
     if (this.keysBusy()) return this.scheduleSuspend(1);
     const now = this.ctx.currentTime;
     if (this.outputPeak() > 5e-4) this.quietSince = null;
@@ -1425,6 +1463,10 @@ function mapper({min = 0, max = 1, scale = 'lin', step = 0, options = null}){
   };
 }
 
+// Every recordable control, by its name: the sequencer records changes to it and plays them back through it.
+// Names are therefore part of the saved-sequence format: don't rename controls without a migration.
+const CTRL = new Map();
+
 // Shared drag / keyboard / reset behaviour for knobs and faders.
 function bindControl(node, wrap, o, kind, visual){
   const m = mapper(o);
@@ -1448,20 +1490,23 @@ function bindControl(node, wrap, o, kind, visual){
     node.setAttribute('aria-valuetext', txt);
     if (announce) lcd.show(name, txt);
   };
+  const rec = o.rec !== false;                                 // the sequencer can record and replay this control
   const commit = p => {
     const before = m.fromPos(pos);
     pos = Math.min(1, Math.max(0, p));
     const v = m.fromPos(pos);
-    if (v !== before) o.set(v);
+    if (v !== before){ o.set(v); if (rec) seqTouch(name, v); }
     reflect(true);
   };
   // Jump straight to a value, putting the position exactly on it (keyboard steps, reset).
   const commitValue = v => {
     const before = m.fromPos(pos);
     pos = Math.min(1, Math.max(0, m.toPos(v)));
-    if (v !== before) o.set(v);
+    if (v !== before){ o.set(v); if (rec) seqTouch(name, v); }
     reflect(true);
   };
+  if (rec) CTRL.set(name, {discrete: !!steps, toPos: m.toPos, fromPos: m.fromPos, get: o.get,
+    apply: v => { const before = m.fromPos(pos); pos = Math.min(1, Math.max(0, m.toPos(v))); if (v !== before) o.set(v); reflect(false); }});
 
   node.addEventListener('pointerdown', e => {
     if (e.button !== 0) return;
@@ -1592,18 +1637,22 @@ function hwButton(text, color, icon){
 }
 
 // Radio-style row of LED buttons.
-function buttons({label, name, options, color = 'k-cream', get, set}){
+function buttons({label, name, options, color = 'k-cream', get, set, rec = true}){
   const wrap = el('div', 'bgroup');
   if (label) wrap.append(el('div', 'glabel', label));
   const row = el('div', 'brow');
+  const id = name || label, vals = options.map(o => o[0]);
   const list = options.map(([v, text, icon]) => {
     const b = hwButton(text, color, icon);
-    b.addEventListener('click', () => { set(v); sync(); lcd.show(name || label, text); b.blur(); });
+    b.addEventListener('click', () => { set(v); sync(); lcd.show(id, text); if (rec && id) seqTouch(id, v); b.blur(); });
     row.append(b);
     return [v, b];
   });
   const sync = () => list.forEach(([v, b]) => b.setAttribute('aria-pressed', String(v) === String(get())));
   sync();
+  if (rec && id) CTRL.set(id, {discrete: true, get, apply: v => { if (String(v) !== String(get())){ set(v); sync(); } },
+    toPos: v => Math.max(0, vals.findIndex(x => String(x) === String(v))) / Math.max(1, vals.length - 1),
+    fromPos: p => vals[Math.round(p * (vals.length - 1))]});
   wrap.append(row);
   return wrap;
 }
@@ -1670,12 +1719,12 @@ function render(){
     knob({label: 'Volume', name: 'Master volume', size: 'lg', min: 0, max: 1, fmt: fmtPct, get: () => P.master.volume,
       set: v => { P.master.volume = v; engine.applyMaster(); changed(); }}));
   $('#themeSlot').replaceChildren(
-    buttons({label: 'Panel', options: [['dark', 'Black'], ['silver', 'Silver']], color: 'k-grey',
+    buttons({label: 'Panel', rec: false, options: [['dark', 'Black'], ['silver', 'Silver']], color: 'k-grey',
       get: () => document.documentElement.dataset.theme, set: setTheme}));
   $('#knobSlot').replaceChildren(
-    buttons({label: 'Knobs', name: 'Knob colours', options: [['caps', 'Colour'], ['pointers', 'Pointer']], color: 'k-grey',
+    buttons({label: 'Knobs', name: 'Knob colours', rec: false, options: [['caps', 'Colour'], ['pointers', 'Pointer']], color: 'k-grey',
       get: () => document.documentElement.dataset.knobs, set: setKnobStyle}));
-  const viewGroup = buttons({label: 'View', name: 'Panel view', options: [['panel', 'Panel'], ['play', 'Play']], color: 'k-grey',
+  const viewGroup = buttons({label: 'View', name: 'Panel view', rec: false, options: [['panel', 'Panel'], ['play', 'Play']], color: 'k-grey',
     get: () => view, set: setView});
   viewGroup.querySelector('.brow').append(keysFloatButton());
   $('#viewSlot').replaceChildren(viewGroup);
@@ -1704,7 +1753,10 @@ function render(){
       o.on = !o.on;
       lcd.show(nm('mute'), o.on ? 'OFF' : 'ON');
       upd(); syncStrips(); mute.blur();
+      seqTouch(nm('mute'), o.on ? 0 : 1);
     });
+    CTRL.set(nm('mute'), {discrete: true, get: () => o.on ? 0 : 1, toPos: v => v ? 1 : 0, fromPos: q => q >= 0.5 ? 1 : 0,
+      apply: v => { if (!!v === o.on){ o.on = !v; upd(); syncStrips(); } }});
     const solo = hwButton('Solo', 'k-yellow');
     solo.setAttribute('aria-label', `Solo oscillator ${n}`);
     solo.addEventListener('click', () => {
@@ -1816,6 +1868,7 @@ function render(){
 
   renderKeys();
   renderExpr();
+  renderSeq();
   applyView();
   refreshHz();
   syncStrips();
@@ -1965,6 +2018,7 @@ function paintStrips(){
 }
 
 function noteOn(st){
+  seqNoteOn(st);
   const a = {idx: st.idx, p: st.p, hz: st.hz, pending: true};   // pending until the audio is awake
   keysUI.active.set(st.id, a);
   paintStrips();
@@ -1984,6 +2038,7 @@ function noteMove(st){
 }
 function noteOff(st){
   st.ended = true;
+  seqNoteOff(st);
   const had = engine.ready && engine.keyMap.has(st.id);
   engine.keyOff(st.id);
   keysUI.active.delete(st.id);
@@ -2311,7 +2366,7 @@ function bindPlates(bed){
     const x = wasHeld ? prev.x : 0;
     exprUI.state[i] = {on: true, down: true, y, x, px: (e.clientX - r.left) / r.width, t0: wasHeld ? 0 : performance.now()};
     exprUI.held.set(e.pointerId, {i, x0: e.clientX - x * r.width, cx: e.clientX, cy: e.clientY, moved: false, wasHeld});
-    exprApply(); paintPlate(i);
+    exprApply(); paintPlate(i); seqPlate(i, exprUI.state[i]);
     lcd.show(EXPR_PLATES[i].title, exprFmt(i, 'y', y));
   });
   bed.addEventListener('pointermove', e => {
@@ -2322,7 +2377,7 @@ function bindPlates(bed){
     st.y = Math.min(1, Math.max(0, 1 - (e.clientY - r.top) / r.height));
     st.x = Math.min(1, Math.max(-1, (e.clientX - g.x0) / r.width));          // one plate-width each way = full
     st.px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-    exprApply(); paintPlate(g.i);
+    exprApply(); paintPlate(g.i); seqPlate(g.i, st);
     const xs = patch.expr.plates[g.i].x !== 'off' && Math.abs(st.x) > 0.01 ? '  ' + exprFmt(g.i, 'x', st.x) : '';
     lcd.show(EXPR_PLATES[g.i].title, exprFmt(g.i, 'y', st.y) + xs);
   });
@@ -2334,43 +2389,606 @@ function bindPlates(bed){
     st.down = false;
     // Spring: let go and it returns. Hold: it stays; tap a held plate (without sliding) to let it go.
     if (patch.expr.release !== 'hold' || (g.wasHeld && !g.moved) || e.type === 'pointercancel') st.on = false;
-    exprApply(); paintPlate(g.i);
+    exprApply(); paintPlate(g.i); seqPlate(g.i, st);
   };
   bed.addEventListener('pointerup', end);
   bed.addEventListener('pointercancel', end);
 }
 
-/* ---------- Performance: Keys, Expression or both ---------- */
-// The Keys and the plates live together in one wrapper. It sits in the Play view, or moves as a whole into
-// the Performance window (the one always-on-top window the browser allows). Tabs on its top edge choose
-// what it shows; the choice is a preference, not part of the patch.
+/* ---------- Sequencer ---------- */
+// Records and plays back the drone's controls (knobs, faders, LED buttons, mutes), the expression plates and the
+// Keys notes, in four patterns per patch. Time is counted in beats; in Free mode a beat is one second. The clock is
+// the audio context's: a 10 ms timer looks 60 ms ahead and schedules notes at exact times, and control lanes are
+// applied as the playhead reaches them. Recording works like a hardware sequencer's "touch" automation: while you
+// move a control, its lane is overwritten from where you started to where you are; let go and playback resumes.
+const SEQ_QUANT = [['off', 'Off'], ['4', '1/4'], ['8', '1/8'], ['16', '1/16']];
+const SEQ_BARS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32].map(b => [b * 4, String(b)]);
+const PATS = ['A', 'B', 'C', 'D'];
+const seqSec = el('section', 'sec seq-sec');
+const SEQ = {playing: false, rec: false, start: 0, iters: [], schedTo: 0, queued: null, timer: null, n: 0,
+             applied: {}, lastApply: {}, touch: {}, recLast: {}, recNotes: new Map(), pendingOff: [], ids: new Set(),
+             fresh: new WeakSet(), clip: null};
+const seqUI = {canvas: null, sel: null, scroll: 0, dirty: true, drag: null, patBtns: [], playBtn: null, recBtn: null,
+               keep: store('dronebox.seqkeep') === true};
+const seqPat = () => patch.seq.patterns[patch.seq.pat];
+const seqBps = () => patch.seq.mode === 'free' ? 1 : patch.seq.bpm / 60;
+const seqQ = () => patch.seq.mode === 'free' || patch.seq.quant === 'off' ? 0 : 4 / +patch.seq.quant;   // in beats
+const seqEmpty = P => !P.notes.length && !Object.keys(P.lanes).length;
+const seqAbs = (t = engine.ctx.currentTime) => (t - SEQ.start) * seqBps();
+// Where the playhead is: the pattern iteration that contains "now", and the position inside it.
+function seqNow(){
+  if (!SEQ.playing || !engine.ready) return null;
+  const a = seqAbs();
+  for (let i = SEQ.iters.length - 1; i >= 0; i--){
+    const it = SEQ.iters[i];
+    if (a >= it.start) return {pos: Math.min(Math.max(0, a - it.start), it.len - 1e-6), pat: it.pat};
+  }
+  return null;
+}
+// Binary search: the last point at or before t, or -1.
+function seqFind(pts, t){
+  let lo = 0, hi = pts.length - 1, r = -1;
+  while (lo <= hi){ const m = (lo + hi) >> 1; if (pts[m][0] <= t){ r = m; lo = m + 1; } else hi = m - 1; }
+  return r;
+}
+function seqLaneValue(pts, pos, c){
+  const i = seqFind(pts, pos);
+  if (i < 0) return pts[pts.length - 1][1];                  // before the first point: hold the last (it loops)
+  const a = pts[i];
+  if (c.discrete || i === pts.length - 1) return a[1];
+  const b = pts[i + 1], f = (pos - a[0]) / Math.max(1e-9, b[0] - a[0]);
+  return c.fromPos(c.toPos(a[1]) + (c.toPos(b[1]) - c.toPos(a[1])) * f);
+}
+const seqErase = (lane, a, b) => { for (let i = lane.length - 1; i >= 0; i--) if (lane[i][0] > a && lane[i][0] <= b) lane.splice(i, 1); };
+function seqInsert(lane, pt){
+  const i = seqFind(lane, pt[0]);
+  if (i >= 0 && Math.abs(lane[i][0] - pt[0]) < 1e-6) lane[i] = pt; else lane.splice(i + 1, 0, pt);
+}
+const plateName = i => 'Plate ' + EXPR_PLATES[i].title;
+
+/* ----- Transport ----- */
+async function seqPlay(){
+  if (SEQ.playing) return;
+  await engine.wake();
+  if (!engine.running){ await engine.play(); ui.setStatus(); }
+  engine.hold = true;                                        // keep the audio running while the sequencer plays
+  SEQ.start = engine.ctx.currentTime + 0.05;
+  SEQ.iters = [{start: 0, pat: patch.seq.pat, len: seqPat().len}];
+  Object.assign(SEQ, {schedTo: 0, playing: true, applied: {}, lastApply: {}, fresh: new WeakSet(), queued: null, pendingOff: []});
+  clearInterval(SEQ.timer);
+  SEQ.timer = setInterval(seqTick, 10);
+  seqTick(); seqSync();
+}
+function seqStop(){
+  if (!SEQ.playing) return;
+  SEQ.playing = false; engine.hold = false;
+  clearInterval(SEQ.timer);
+  for (const id of SEQ.ids){ engine.keyOff(id); keysUI.active.delete(id); }
+  SEQ.ids.clear(); SEQ.pendingOff = []; SEQ.recNotes.clear(); SEQ.queued = null;
+  exprUI.state.forEach((st, i) => { if (st && st.seq){ st.on = false; paintPlate(i); } });
+  exprApply(); paintStrips(); seqSync(); seqSimplifyAll();
+  if (!engine.running && engine.ready) engine.scheduleSuspend(engine.p.keys.release * 1.5 + engine.p.reverb.decay + 1);
+}
+// After the current pattern: the queued one, the next one with content (Chain), or the same again.
+function seqNextIter(end){
+  const cur = SEQ.iters[SEQ.iters.length - 1].pat;
+  let next = cur;
+  if (SEQ.queued !== null){ next = SEQ.queued; SEQ.queued = null; }
+  else if (patch.seq.chain) for (let k = 1; k <= 4; k++){ const j = (cur + k) % 4; if (!seqEmpty(patch.seq.patterns[j])){ next = j; break; } }
+  SEQ.iters.push({start: end, pat: next, len: patch.seq.patterns[next].len});
+  if (SEQ.iters.length > 3) SEQ.iters.shift();
+  SEQ.fresh = new WeakSet();
+}
+function seqTick(){
+  if (!SEQ.playing || !engine.ready) return;
+  const bps = seqBps(), now = engine.ctx.currentTime, ahead = (now + 0.06 - SEQ.start) * bps;
+  SEQ.pendingOff = SEQ.pendingOff.filter(o => {
+    if (o.abs > ahead) return true;
+    const at = SEQ.start + o.abs / bps;
+    engine.keyOff(o.id, at); SEQ.ids.delete(o.id);
+    setTimeout(() => { keysUI.active.delete(o.id); paintStrips(); }, Math.max(0, (at - now) * 1000));
+    return false;
+  });
+  for (let guard = 0; SEQ.schedTo < ahead && guard < 64; guard++){
+    const it = SEQ.iters[SEQ.iters.length - 1], P = patch.seq.patterns[it.pat];
+    const end = it.start + it.len, to = Math.min(ahead, end);
+    for (const n of P.notes){
+      const a = it.start + n.t;
+      if (a >= SEQ.schedTo && a < to && !SEQ.fresh.has(n)) seqPlayNote(n, a, it.len - n.t);
+    }
+    SEQ.schedTo = to;
+    if (to >= end - 1e-9) seqNextIter(end);
+  }
+  seqLanes();
+}
+function seqPlayNote(n, abs, maxD){
+  const id = 'q' + (++SEQ.n), at = SEQ.start + abs / seqBps();
+  engine.keyOn(id, keyHz(patch, n.idx, n.oct || 0), n.p, at);
+  SEQ.ids.add(id);
+  SEQ.pendingOff.push({id, abs: abs + Math.max(0.02, Math.min(n.d, maxD))});
+  setTimeout(() => { if (SEQ.ids.has(id)){ keysUI.active.set(id, {idx: n.idx, p: n.p, pending: true}); paintStrips(); } },
+    Math.max(0, (at - engine.ctx.currentTime) * 1000));
+}
+// Apply every lane's value at the playhead (skipping lanes you are moving by hand).
+function seqLanes(){
+  const cur = seqNow();
+  if (!cur) return;
+  if (patch.seq.pat !== cur.pat){ patch.seq.pat = cur.pat; seqSync(); }
+  const P = patch.seq.patterns[cur.pat], ms = performance.now();
+  for (const [name, pts] of Object.entries(P.lanes)){
+    if (!pts.length || ms - (SEQ.touch[name] || 0) < 400 || ms - (SEQ.lastApply[name] || 0) < 20) continue;
+    if (name.startsWith('plate:')){ seqApplyPlate(+name.slice(6), pts, cur.pos, ms); continue; }
+    const c = CTRL.get(name);
+    if (!c) continue;
+    const v = seqLaneValue(pts, cur.pos, c);
+    if (v !== SEQ.applied[name]){ SEQ.applied[name] = v; SEQ.lastApply[name] = ms; c.apply(v); }
+  }
+}
+function seqApplyPlate(i, pts, pos, ms){
+  if ([...exprUI.held.values()].some(g => g.i === i)) return;     // your hand wins
+  const k = seqFind(pts, pos), a = k < 0 ? pts[pts.length - 1] : pts[k], b = k >= 0 ? pts[k + 1] : null;
+  let y = a[1], x = a[2] || 0;
+  if (b && y >= 0 && b[1] >= 0){ const f = (pos - a[0]) / Math.max(1e-9, b[0] - a[0]); y += (b[1] - y) * f; x += ((b[2] || 0) - x) * f; }
+  const key = y < 0 ? 'off' : y.toFixed(3) + ',' + x.toFixed(3);
+  if (SEQ.applied['plate:' + i] === key) return;
+  SEQ.applied['plate:' + i] = key; SEQ.lastApply['plate:' + i] = ms;
+  exprUI.state[i] = y < 0 ? {on: false} : {on: true, down: false, seq: true, y, x, px: Math.min(1, Math.max(0, 0.5 + x / 2)), t0: 0};
+  exprApply(); paintPlate(i);
+}
+
+/* ----- Recording ----- */
+// One recorded value for a lane at the playhead. vals is [value] for controls, [y, x] (or [-1, 0]) for plates.
+function seqWrite(name, vals, discrete){
+  if (!SEQ.rec) return;
+  const cur = seqNow();
+  if (!cur) return;
+  const ms = performance.now(), P = patch.seq.patterns[cur.pat], lane = P.lanes[name] || (P.lanes[name] = []);
+  const last = SEQ.recLast[name], fresh = !last || ms - last.ms > 400 || last.pat !== cur.pat;
+  SEQ.touch[name] = ms;
+  if (fresh){
+    const c = CTRL.get(name);                                // hold the old value up to where the touch starts
+    if (lane.length && c && !c.discrete) seqInsert(lane, [Math.max(0, cur.pos - 0.001), seqLaneValue(lane, cur.pos, c)]);
+  } else if (cur.pos >= last.pos) seqErase(lane, last.pos, cur.pos);
+  else { seqErase(lane, last.pos, P.len); seqErase(lane, -1, cur.pos); }   // wrapped around the loop
+  // Thin continuous moves to a point every 40 ms: closer points just move the last one.
+  if (!fresh && !discrete && last.kept != null && (cur.pos - last.kept) / seqBps() < 0.04 && cur.pos >= last.kept){
+    const i = seqFind(lane, last.pos);
+    if (i >= 0 && lane[i][0] > last.kept) lane.splice(i, 1);
+  }
+  seqInsert(lane, [cur.pos, ...vals]);
+  const kept = fresh || !last || last.kept == null || (cur.pos - last.kept) / seqBps() >= 0.04 || cur.pos < last.kept ? cur.pos : last.kept;
+  SEQ.recLast[name] = {ms, pos: cur.pos, pat: cur.pat, kept};
+  SEQ.applied[name] = vals.length === 1 ? vals[0] : undefined;
+  seqUI.dirty = true; changed();
+}
+function seqTouch(name, v){
+  if (SEQ.rec){ const c = CTRL.get(name); return seqWrite(name, [v], !c || c.discrete); }
+  // Not recording: a hand on a control that has a lane pauses that lane, which then takes over again (automation).
+  if (SEQ.playing){ SEQ.touch[name] = performance.now(); delete SEQ.applied[name]; }
+}
+function seqPlate(i, st){ if (SEQ.rec) seqWrite('plate:' + i, st && st.on ? [+st.y.toFixed(4), +st.x.toFixed(4)] : [-1, 0], !(st && st.on)); }
+function seqNoteOn(st){
+  if (!SEQ.rec || st.tune || !SEQ.playing) return;
+  const cur = seqNow();
+  if (!cur) return;
+  const P = patch.seq.patterns[cur.pat], q = seqQ();
+  let t = cur.pos;
+  if (q) t = (Math.round(t / q) * q) % P.len;
+  const base = keyHz(patch, st.idx), oct = base > 0 ? Math.round(Math.log2(st.hz / base)) : 0;
+  const note = {t: +t.toFixed(4), d: q || 0.25, idx: st.idx, oct, p: +st.p.toFixed(3)};
+  P.notes.push(note);
+  SEQ.fresh.add(note);                                       // already heard: don't trigger it again this time round
+  SEQ.recNotes.set(st.id, {note, abs: seqAbs(), len: P.len});
+  seqUI.dirty = true; changed();
+}
+function seqNoteOff(st){
+  const r = SEQ.recNotes.get(st.id);
+  if (!r) return;
+  SEQ.recNotes.delete(st.id);
+  const q = seqQ();
+  let d = seqAbs() - r.abs;
+  if (q) d = Math.max(q, Math.round(d / q) * q);
+  r.note.d = +Math.max(0.02, Math.min(d, r.len)).toFixed(4);
+  seqUI.dirty = true; changed();
+}
+// Drop points that a straight line through their neighbours already describes (keeps saved patches small).
+function seqSimplify(lane, c){
+  if (!c || c.discrete || lane.length < 3) return lane;
+  const pos = q => c.toPos(q[1]), keep = [lane[0]];
+  for (let i = 1; i < lane.length - 1; i++){
+    const a = keep[keep.length - 1], b = lane[i + 1], f = (lane[i][0] - a[0]) / Math.max(1e-9, b[0] - a[0]);
+    if (Math.abs(pos(a) + (pos(b) - pos(a)) * f - pos(lane[i])) > 0.004) keep.push(lane[i]);
+  }
+  keep.push(lane[lane.length - 1]);
+  return keep;
+}
+function seqSimplifyAll(){
+  for (const P of patch.seq.patterns) for (const [name, lane] of Object.entries(P.lanes))
+    if (!name.startsWith('plate:')) P.lanes[name] = seqSimplify(lane, CTRL.get(name));
+  changed();
+}
+
+/* ----- Panel ----- */
+function seqSync(){
+  const S = patch.seq, cur = seqNow();
+  if (seqUI.playBtn) seqUI.playBtn.setAttribute('aria-pressed', SEQ.playing);
+  if (seqUI.recBtn) seqUI.recBtn.setAttribute('aria-pressed', SEQ.rec);
+  seqUI.patBtns.forEach((b, i) => {
+    b.setAttribute('aria-pressed', i === S.pat);
+    b.classList.toggle('queued', SEQ.queued === i);
+    b.classList.toggle('filled', !seqEmpty(S.patterns[i]));
+  });
+  seqUI.dirty = true;
+  if (cur && cur.pat !== S.pat) S.pat = cur.pat;
+}
+function seqSetTempoKeepingPlace(fn){
+  const a = SEQ.playing ? seqAbs() : 0;
+  fn();
+  if (SEQ.playing) SEQ.start = engine.ctx.currentTime - a / seqBps();
+  changed(); seqUI.dirty = true;
+}
+function renderSeq(){
+  const S = patch.seq, nm = s => 'Sequencer ' + s;
+  seqStop();
+  const play = hwButton('Play', 'k-red');
+  play.title = 'Play the sequence (starts the drone too)';
+  play.addEventListener('click', () => { SEQ.playing ? seqStop() : seqPlay(); play.blur(); });
+  const rec = hwButton('Rec', 'k-red');
+  rec.title = 'Record: move controls, play plates and Keys while it plays';
+  rec.addEventListener('click', () => {
+    SEQ.rec = !SEQ.rec; SEQ.recLast = {};
+    if (!SEQ.rec) seqSimplifyAll();
+    lcd.show('Sequencer record', SEQ.rec ? 'ON' : 'OFF'); seqSync(); rec.blur();
+  });
+  seqUI.playBtn = play; seqUI.recBtn = rec;
+  const tr = el('div', 'kbtns'); tr.append(play, rec);
+  const patRow = el('div', 'brow');
+  seqUI.patBtns = PATS.map((t, i) => {
+    const b = hwButton(t, 'k-orange');
+    b.title = `Pattern ${t}` + ' (while playing, it starts at the end of the current pattern)';
+    b.addEventListener('click', () => {
+      if (SEQ.playing && i !== seqNow()?.pat) SEQ.queued = SEQ.queued === i ? null : i;
+      else if (!SEQ.playing){ S.pat = i; seqUI.sel = null; changed(); }
+      lcd.show('Pattern', t); seqSync(); b.blur();
+    });
+    patRow.append(b);
+    return b;
+  });
+  const pats = el('div', 'bgroup'); pats.append(el('div', 'glabel', 'Pattern'), patRow);
+  const chain = hwButton('Chain', 'k-yellow');
+  chain.title = 'Play every pattern that has something in it, in order';
+  chain.setAttribute('aria-pressed', S.chain);
+  chain.addEventListener('click', () => { S.chain = !S.chain; chain.setAttribute('aria-pressed', S.chain); lcd.show('Chain', S.chain ? 'ON' : 'OFF'); changed(); chain.blur(); });
+  const keep = hwButton('Keep', 'k-grey');
+  keep.title = 'Keep this sequence when you load another patch';
+  keep.setAttribute('aria-pressed', seqUI.keep);
+  keep.addEventListener('click', () => { seqUI.keep = !seqUI.keep; store('dronebox.seqkeep', seqUI.keep); keep.setAttribute('aria-pressed', seqUI.keep); lcd.show('Keep sequence', seqUI.keep ? 'ON' : 'OFF'); keep.blur(); });
+  const opts = el('div', 'kbtns'); opts.append(chain, keep);
+
+  const free = S.mode === 'free';
+  const time = buttons({label: 'Time', name: nm('time'), rec: false, color: 'k-cream', options: [['tempo', 'Tempo'], ['free', 'Free']],
+    get: () => S.mode, set: v => { seqSetTempoKeepingPlace(() => { S.mode = v; }); renderSeqKeepPlaying(); }});
+  const bpm = knob({label: free ? 'BPM' : 'Tempo', name: nm('tempo'), rec: false, size: 'sm', min: 20, max: 240, step: 1, fmt: v => free ? '—' : v + ' BPM',
+    get: () => S.bpm, set: v => seqSetTempoKeepingPlace(() => { S.bpm = v; })});
+  const lenKnob = free
+    ? knob({label: 'Length', name: nm('length'), rec: false, size: 'sm', min: 4, max: 600, scale: 'log', fmt: fmtSec,
+        get: () => seqPat().len, set: v => seqSetLen(v)})
+    : knob({label: 'Bars', name: nm('bars'), rec: false, size: 'sm', options: SEQ_BARS, fmt: v => (v / 4) + (v === 4 ? ' bar' : ' bars'),
+        get: () => SEQ_BARS.reduce((a, b) => Math.abs(b[0] - seqPat().len) < Math.abs(a[0] - seqPat().len) ? b : a)[0], set: v => seqSetLen(v)});
+  const kr = el('div', 'krow'); kr.append(bpm, lenKnob);
+  const quant = buttons({label: 'Quantise notes', name: nm('quantise'), rec: false, color: 'k-cream', options: SEQ_QUANT, get: () => S.quant, set: v => { S.quant = v; changed(); }});
+
+  const edit = el('div', 'kbtns');
+  const mk = (t, title, fn) => { const b = hwButton(t, 'k-grey'); b.title = title; b.addEventListener('click', () => { fn(); b.blur(); }); edit.append(b); return b; };
+  mk('Snap', 'Move this pattern\'s notes onto the quantise grid', () => {
+    const q = seqQ(), P = seqPat(); if (!q) return lcd.show('Snap', 'Quantise is off');
+    P.notes.forEach(n => { n.t = (Math.round(n.t / q) * q) % P.len; n.d = Math.max(q, Math.round(n.d / q) * q); });
+    lcd.show('Snap', 'Notes on the grid'); changed(); seqUI.dirty = true;
+  });
+  mk('Copy', 'Copy this pattern', () => { SEQ.clip = clone(seqPat()); lcd.show('Copy', 'Pattern ' + PATS[S.pat]); });
+  mk('Paste', 'Paste over this pattern', () => {
+    if (!SEQ.clip) return lcd.show('Paste', 'Nothing copied');
+    S.patterns[S.pat] = clone(SEQ.clip); seqUI.sel = null; lcd.show('Paste', 'Pattern ' + PATS[S.pat]); changed(); seqSync();
+  });
+  mk('Clear', 'Clear this pattern', () => {
+    const P = seqPat(); if (seqEmpty(P)) return;
+    if (!confirm(`Clear pattern ${PATS[S.pat]}? Its notes and lanes will be removed.`)) return;
+    P.notes = []; P.lanes = {}; seqUI.sel = null; lcd.show('Clear', 'Pattern ' + PATS[S.pat]); changed(); seqSync();
+  });
+  // Add a lane by hand, to draw it rather than record it.
+  const add = el('select', 'seqadd');
+  add.setAttribute('aria-label', 'Add a lane');
+  const fillAdd = () => {
+    add.replaceChildren(Object.assign(el('option', null, '+ Add lane…'), {value: ''}));
+    const names = [...CTRL.keys()].filter(n => !n.startsWith('Sequencer')).sort();
+    for (const n of names){ const o = el('option', null, n); o.value = n; add.append(o); }
+    EXPR_PLATES.forEach((_, i) => { const o = el('option', null, plateName(i)); o.value = 'plate:' + i; add.append(o); });
+  };
+  add.addEventListener('focus', fillAdd);
+  add.addEventListener('pointerdown', fillAdd);
+  add.addEventListener('change', () => {
+    const name = add.value; add.value = '';
+    if (!name) return;
+    const P = seqPat();
+    if (!P.lanes[name]){
+      if (name.startsWith('plate:')) P.lanes[name] = [[0, -1, 0]];
+      else { const c = CTRL.get(name); if (!c) return; P.lanes[name] = [[0, c.get()]]; }
+    }
+    seqUI.sel = name; changed(); seqSync(); add.blur();
+  });
+  fillAdd();
+
+  const ctl = el('div', 'sctl');
+  ctl.append(tr, pats, opts, time, kr, quant, edit, add);
+  const view = el('div', 'seqview');
+  const canvas = el('canvas', 'seqcanvas');
+  canvas.setAttribute('aria-label', 'Sequence: notes and lanes');
+  view.append(canvas);
+  seqUI.canvas = canvas;
+  bindSeqCanvas(canvas);
+  seqSec.replaceChildren(el('h3', null, 'Sequencer'), ctl, view);
+  seqSync();
+}
+// Changing Time redraws the knobs; the sequence keeps playing.
+function renderSeqKeepPlaying(){
+  const was = SEQ.playing, place = was ? seqAbs() : 0;
+  SEQ.playing = false;                                        // renderSeq stops; keep its place instead
+  renderSeq();
+  if (was){ SEQ.playing = true; engine.hold = true; SEQ.start = engine.ctx.currentTime - place / seqBps(); clearInterval(SEQ.timer); SEQ.timer = setInterval(seqTick, 10); seqSync(); }
+}
+function seqSetLen(v){
+  const P = seqPat();
+  P.len = v;
+  P.notes = P.notes.filter(n => n.t < v);
+  for (const [k, lane] of Object.entries(P.lanes)){ const kept = lane.filter(q => q[0] < v); if (kept.length) P.lanes[k] = kept; else delete P.lanes[k]; }
+  const it = SEQ.iters[SEQ.iters.length - 1];
+  if (SEQ.playing && it && it.pat === patch.seq.pat){ it.len = v; if (SEQ.schedTo > it.start + v) SEQ.schedTo = it.start + v; }
+  changed(); seqUI.dirty = true;
+}
+
+/* ----- The timeline: ruler, a note grid (one row per strip) and one row per lane ----- */
+const SG = {gut: 108, ruler: 18, row: 10, laneH: 26, pad: 6};
+function seqGeom(c){
+  const W = c.clientWidth, H = c.clientHeight, rollTop = SG.ruler, rollH = NUM_KEYS * SG.row, laneTop = rollTop + rollH + SG.pad;
+  const len = seqPat().len, x0 = SG.gut, x1 = W - 6;
+  return {W, H, rollTop, rollH, laneTop, len, x0, x1, xOf: t => x0 + t / len * (x1 - x0), tOf: x => Math.min(len, Math.max(0, (x - x0) / (x1 - x0) * len)),
+          visLanes: Math.max(1, Math.floor((H - laneTop) / SG.laneH))};
+}
+const seqLaneNames = () => Object.keys(seqPat().lanes).sort();
+function drawSeq(){
+  const c = seqUI.canvas;
+  if (!c || !c.isConnected || seqSec.hidden) return;
+  const win = c.ownerDocument.defaultView, dpr = win.devicePixelRatio || 1, r = c.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
+  if (c.width !== w || c.height !== h){ c.width = w; c.height = h; seqUI.dirty = true; }
+  if (!seqUI.dirty && !SEQ.playing) return;
+  seqUI.dirty = false;
+  const g = c.getContext('2d'), G = seqGeom(c), S = patch.seq, P = seqPat(), free = S.mode === 'free';
+  g.setTransform(w / G.W, 0, 0, h / G.H, 0, 0);
+  g.clearRect(0, 0, G.W, G.H);
+  g.fillStyle = '#110504'; g.fillRect(0, 0, G.W, G.H);
+  g.font = "10px 'Share Tech Mono', monospace"; g.textBaseline = 'middle';
+  // Grid: beats and bars (Tempo), or seconds and tens of seconds (Free)
+  const minor = free ? (G.len > 120 ? 10 : 1) : 1, major = free ? (G.len > 120 ? 60 : 10) : 4;
+  const step = Math.max(minor, (G.x1 - G.x0) / (G.len / minor) < 6 ? major : minor);
+  for (let t = 0; t <= G.len + 1e-6; t += step){
+    const x = Math.round(G.xOf(t)) + 0.5, isMajor = Math.abs(t / major - Math.round(t / major)) < 1e-6;
+    g.strokeStyle = isMajor ? 'rgba(255,91,54,.30)' : 'rgba(255,91,54,.10)';
+    g.beginPath(); g.moveTo(x, G.ruler - (isMajor ? 8 : 4)); g.lineTo(x, G.H); g.stroke();
+    if (isMajor && t < G.len - 1e-6){ g.fillStyle = 'rgba(255,91,54,.75)'; g.fillText(free ? fmtSec(t) : String(t / 4 + 1), x + 3, 7); }
+  }
+  // Header text
+  g.fillStyle = 'rgba(255,91,54,.9)'; g.textAlign = 'left';
+  g.fillText(`${PATS[S.pat]} · ${free ? fmtSec(G.len) : (G.len / 4) + ' BAR' + (G.len === 4 ? '' : 'S') + ' · ' + S.bpm + ' BPM'}${S.chain ? ' · CHAIN' : ''}`, 6, 7);
+  // Note grid
+  for (let i = 0; i < NUM_KEYS; i++){
+    const y = G.rollTop + (NUM_KEYS - 1 - i) * SG.row;
+    if (i % 2 === 0){ g.fillStyle = 'rgba(255,255,255,.025)'; g.fillRect(G.x0, y, G.x1 - G.x0, SG.row); }
+    g.fillStyle = 'rgba(255,91,54,.6)'; g.font = "9px 'Share Tech Mono', monospace";
+    g.fillText(KEY_RATIOS[i][0], 6, y + SG.row / 2 + 0.5);
+  }
+  g.font = "10px 'Share Tech Mono', monospace";
+  for (const n of P.notes){
+    const y = G.rollTop + (NUM_KEYS - 1 - n.idx) * SG.row, x = G.xOf(n.t), xe = G.xOf(Math.min(G.len, n.t + n.d));
+    g.fillStyle = `rgba(255,91,54,${0.45 + 0.55 * n.p})`;
+    g.fillRect(x, y + 1, Math.max(2, xe - x), SG.row - 2);
+    if (n.oct){ g.fillStyle = '#fff'; g.font = "7px 'Share Tech Mono', monospace"; g.fillText((n.oct > 0 ? '+' : '') + n.oct, x + 2, y + SG.row / 2 + 0.5); g.font = "10px 'Share Tech Mono', monospace"; }
+  }
+  // Lanes
+  const names = seqLaneNames();
+  seqUI.scroll = Math.max(0, Math.min(seqUI.scroll, names.length - G.visLanes));
+  const shown = names.slice(seqUI.scroll, seqUI.scroll + G.visLanes);
+  if (!names.length){
+    g.fillStyle = 'rgba(255,91,54,.45)';
+    g.fillText(SEQ.rec ? 'Recording: move any control, play plates or Keys…' : 'No lanes yet: press Rec and Play, then move controls (or use + Add lane)', G.x0, G.laneTop + 13);
+  }
+  shown.forEach((name, k) => {
+    const y = G.laneTop + k * SG.laneH, pts = P.lanes[name], plate = name.startsWith('plate:');
+    const c = plate ? null : CTRL.get(name), sel = seqUI.sel === name;
+    g.fillStyle = sel ? 'rgba(236,123,36,.16)' : (k % 2 ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,.015)');
+    g.fillRect(0, y, G.W, SG.laneH - 2);
+    g.fillStyle = c || plate ? (sel ? '#ffb38a' : 'rgba(255,91,54,.85)') : 'rgba(255,91,54,.35)';
+    const label = plate ? plateName(+name.slice(6)) : name;
+    g.fillText(label.length > 15 ? label.slice(0, 14) + '…' : label, 6, y + SG.laneH / 2 - 1);
+    g.fillStyle = 'rgba(255,91,54,.5)'; g.fillText('×', SG.gut - 14, y + SG.laneH / 2 - 1);
+    if (!pts.length) return;
+    const top = y + 3, hh = SG.laneH - 8, yOf = p => top + (1 - p) * hh;
+    const posOf = q => plate ? q[1] : c ? c.toPos(q[1]) : 0.5, discrete = !plate && (!c || c.discrete);
+    const X = i => G.xOf(pts[i][0]), Y = i => yOf(posOf(pts[i])), last = pts.length - 1;
+    g.strokeStyle = plate ? '#f0c43a' : '#ff5b36'; g.lineWidth = 1.4;
+    g.beginPath();
+    if (!plate){
+      // Before the first point the lane holds its last value (it loops); discrete lanes step, others ramp.
+      g.moveTo(G.x0, Y(last)); g.lineTo(X(0), Y(last)); g.lineTo(X(0), Y(0));
+      for (let i = 1; i <= last; i++){ if (discrete) g.lineTo(X(i), Y(i - 1)); g.lineTo(X(i), Y(i)); }
+      g.lineTo(G.x1, Y(last));
+    } else {
+      // A plate lane is only drawn where the plate is held (height >= 0).
+      if (posOf(pts[last]) >= 0){ g.moveTo(G.x0, Y(last)); g.lineTo(X(0), Y(last)); }
+      for (let i = 0; i <= last; i++){
+        if (posOf(pts[i]) < 0) continue;
+        g.moveTo(X(i), Y(i));
+        if (i < last) g.lineTo(X(i + 1), posOf(pts[i + 1]) >= 0 ? Y(i + 1) : Y(i)); else g.lineTo(G.x1, Y(i));
+      }
+    }
+    g.stroke();
+    g.fillStyle = plate ? '#f0c43a' : '#ff5b36';
+    if (pts.length < 200) for (const q of pts){ const v = posOf(q); if (v >= 0) g.fillRect(G.xOf(q[0]) - 1.5, yOf(v) - 1.5, 3, 3); }
+  });
+  if (names.length > G.visLanes){
+    g.fillStyle = 'rgba(255,91,54,.6)'; g.textAlign = 'right';
+    g.fillText(`${seqUI.scroll + 1}–${Math.min(names.length, seqUI.scroll + G.visLanes)} of ${names.length} lanes (scroll)`, G.W - 8, G.H - 8);
+    g.textAlign = 'left';
+  }
+  // Playhead
+  const cur = seqNow();
+  if (cur && cur.pat === S.pat){
+    const x = Math.round(G.xOf(cur.pos)) + 0.5;
+    g.strokeStyle = SEQ.rec ? '#ff3a24' : '#fff'; g.lineWidth = 1.5; g.shadowColor = 'rgba(255,80,40,.8)'; g.shadowBlur = 6;
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, G.H); g.stroke(); g.shadowBlur = 0;
+  }
+}
+function bindSeqCanvas(c){
+  const local = e => { const r = c.getBoundingClientRect(); return {x: (e.clientX - r.left) * c.clientWidth / r.width, y: (e.clientY - r.top) * c.clientHeight / r.height}; };
+  const snapT = (t, G) => { const q = seqQ(); return q ? Math.min(G.len - q, Math.max(0, Math.round(t / q) * q)) : t; };
+  const noteAt = (G, x, y) => {
+    const idx = NUM_KEYS - 1 - Math.floor((y - G.rollTop) / SG.row), t = G.tOf(x);
+    return seqPat().notes.find(n => n.idx === idx && t >= n.t && t <= n.t + n.d) || null;
+  };
+  const preview = n => {
+    if (!engine.ready) return;
+    const id = 'ed' + (++SEQ.n);
+    engine.keyOn(id, keyHz(patch, n.idx, n.oct || 0), n.p);
+    setTimeout(() => engine.keyOff(id), 180);
+  };
+  c.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    try { c.setPointerCapture(e.pointerId); } catch (_) {}
+    const G = seqGeom(c), {x, y} = local(e), P = seqPat();
+    if (y >= G.rollTop && y < G.rollTop + G.rollH && x >= G.x0){
+      const hit = noteAt(G, x, y);
+      if (hit){
+        const edge = Math.abs(x - G.xOf(hit.t + hit.d)) < 5;
+        seqUI.drag = {type: edge ? 'resize' : 'move', n: hit, x0: x, t0: hit.t, d0: hit.d, idx0: hit.idx, moved: false};
+      } else {
+        const q = seqQ(), idx = NUM_KEYS - 1 - Math.floor((y - G.rollTop) / SG.row);
+        const n = {t: +snapT(G.tOf(x), G).toFixed(4), d: q || 0.5, idx, oct: 0, p: 0.75};
+        P.notes.push(n); preview(n);
+        seqUI.drag = {type: 'move', n, x0: x, t0: n.t, d0: n.d, idx0: n.idx, moved: true, added: true};
+        changed();
+      }
+      seqUI.dirty = true;
+      return;
+    }
+    if (y >= G.laneTop){
+      const names = seqLaneNames(), name = names[seqUI.scroll + Math.floor((y - G.laneTop) / SG.laneH)];
+      if (!name) return;
+      if (x < G.x0){
+        if (x > SG.gut - 20){
+          if (confirm(`Delete the lane "${name.startsWith('plate:') ? plateName(+name.slice(6)) : name}"?`)){ delete P.lanes[name]; if (seqUI.sel === name) seqUI.sel = null; changed(); seqSync(); }
+        } else seqUI.sel = seqUI.sel === name ? null : name;
+        seqUI.dirty = true;
+        return;
+      }
+      seqUI.sel = name;
+      seqUI.drag = {type: 'draw', name, k: Math.floor((y - G.laneTop) / SG.laneH), last: null, erase: e.shiftKey};
+      seqDrawAt(G, x, y);
+    }
+  });
+  c.addEventListener('pointermove', e => {
+    const d = seqUI.drag;
+    if (!d) return;
+    const G = seqGeom(c), {x, y} = local(e);
+    if (d.type === 'draw') return seqDrawAt(G, x, y);
+    if (Math.abs(x - d.x0) > 3) d.moved = true;
+    if (d.type === 'resize'){
+      const q = seqQ(), end = G.tOf(x), t = q ? Math.round(end / q) * q : end;
+      d.n.d = +Math.max(q || 0.05, Math.min(G.len - d.n.t, t - d.n.t)).toFixed(4);
+    } else {
+      const dt = G.tOf(x) - G.tOf(d.x0), idx = Math.min(NUM_KEYS - 1, Math.max(0, NUM_KEYS - 1 - Math.floor((y - G.rollTop) / SG.row)));
+      if (idx !== d.n.idx) d.moved = true;
+      d.n.t = +snapT(Math.max(0, d.t0 + dt), G).toFixed(4);
+      if (idx !== d.n.idx){ d.n.idx = idx; preview(d.n); }
+    }
+    seqUI.dirty = true;
+  });
+  const end = () => {
+    const d = seqUI.drag;
+    seqUI.drag = null;
+    if (!d) return;
+    if ((d.type === 'move') && !d.moved && !d.added){ const P = seqPat(); P.notes = P.notes.filter(n => n !== d.n); }   // a click deletes
+    if (d.type === 'draw'){ const P = seqPat(), lane = P.lanes[d.name]; if (lane && !lane.length) delete P.lanes[d.name]; else if (lane && !d.name.startsWith('plate:')) P.lanes[d.name] = seqSimplify(lane, CTRL.get(d.name)); }
+    seqUI.dirty = true; changed(); seqSync();
+  };
+  c.addEventListener('pointerup', end);
+  c.addEventListener('pointercancel', end);
+  c.addEventListener('wheel', e => {
+    const G = seqGeom(c), {y} = local(e);
+    if (y < G.laneTop) return;
+    e.preventDefault();
+    seqUI.scroll += Math.sign(e.deltaY); seqUI.dirty = true;
+  }, {passive: false});
+}
+// Drawing on a lane: each point replaces whatever was there between the last point and this one.
+function seqDrawAt(G, x, y){
+  const d = seqUI.drag, P = seqPat(), lane = P.lanes[d.name];
+  if (!lane) return;
+  const t = +G.tOf(x).toFixed(4), top = G.laneTop + d.k * SG.laneH + 3, hh = SG.laneH - 8;
+  const p = Math.min(1, Math.max(0, 1 - (y - top) / hh));
+  const a = d.last == null ? t : Math.min(d.last, t), b = d.last == null ? t : Math.max(d.last, t);
+  if (d.erase){ seqErase(lane, a - 1e-6, b); d.last = t; seqUI.dirty = true; return; }
+  seqErase(lane, a, b);
+  if (d.name.startsWith('plate:')) seqInsert(lane, [t, +p.toFixed(4), 0]);
+  else { const c = CTRL.get(d.name); if (!c) return; seqInsert(lane, [t, c.fromPos(p)]); }
+  d.last = t; seqUI.dirty = true;
+}
+
+/* ---------- Performance: Sequencer, Expression and Keys ---------- */
+// The sequencer, the plates and the Keys live together in one wrapper. It sits in the Play view, or moves as a
+// whole into the Performance window (the one always-on-top window the browser allows). Tabs on its top edge
+// switch each one on or off; the choice is a preference, not part of the patch.
 const perfWrap = el('div', 'perf');
-let strips = ['keys', 'expr', 'both'].includes(store('dronebox.strips')) ? store('dronebox.strips') : 'both';
+const STRIP_KINDS = ['seq', 'expr', 'keys'];
+const parseStrips = v => Array.isArray(v) ? v.filter(k => STRIP_KINDS.includes(k))
+  : v === 'both' ? ['expr', 'keys'] : String(v || '').split(',').filter(k => STRIP_KINDS.includes(k));
+let strips = parseStrips(store('dronebox.strips'));
+if (!strips.length) strips = ['expr', 'keys'];
 const stripTabs = {};
+const STRIP_NAMES = {seq: 'Sequencer', expr: 'Expression', keys: 'Keys'};
+// v: a list, or a comma-separated string ('both' still means Expression + Keys).
 function setStrips(v){
-  strips = v;
-  store('dronebox.strips', v);
+  strips = parseStrips(v);
+  if (!strips.length) strips = ['keys'];
+  store('dronebox.strips', STRIP_KINDS.filter(k => strips.includes(k)).join(','));
   applyStrips();
-  lcd.show('Show', {keys: 'Keys', expr: 'Expression', both: 'Keys + Expression'}[v]);
+  lcd.show('Show', STRIP_KINDS.filter(k => strips.includes(k)).map(k => STRIP_NAMES[k]).join(' + '));
+}
+function toggleStrip(k){
+  const next = strips.includes(k) ? strips.filter(x => x !== k) : [...strips, k];
+  setStrips(next.length ? next : [k]);
 }
 function applyStrips(){
-  exprSec.hidden = strips === 'keys';
-  keysSec.hidden = strips === 'expr';
-  for (const [v, b] of Object.entries(stripTabs)) b.setAttribute('aria-pressed', v === strips);
+  seqSec.hidden = !strips.includes('seq');
+  exprSec.hidden = !strips.includes('expr');
+  keysSec.hidden = !strips.includes('keys');
+  for (const [v, b] of Object.entries(stripTabs)) b.setAttribute('aria-pressed', strips.includes(v));
+  seqUI.dirty = true;
   fitToWindow();
 }
 function buildPerf(){
   const bar = el('div', 'perfbar');
-  for (const [v, t] of [['keys', 'Keys'], ['expr', 'Expression'], ['both', 'Both']]){
-    const b = el('button', 'popbtn tab', t);
+  for (const k of STRIP_KINDS){
+    const b = el('button', 'popbtn tab', k === 'seq' ? 'Seq' : STRIP_NAMES[k]);
     b.type = 'button';
-    b.title = 'Show ' + {keys: 'the Keys', expr: 'the expression plates', both: 'the Keys and the expression plates'}[v];
-    b.addEventListener('click', () => { setStrips(v); b.blur(); });
-    stripTabs[v] = b;
+    b.title = `Show or hide the ${STRIP_NAMES[k].toLowerCase()}`;
+    b.addEventListener('click', () => { toggleStrip(k); b.blur(); });
+    stripTabs[k] = b;
     bar.append(b);
   }
   bar.append(popButton('keys'));
-  perfWrap.replaceChildren(bar, exprSec, keysSec);
+  perfWrap.replaceChildren(bar, seqSec, exprSec, keysSec);
   applyStrips();
 }
 
@@ -2538,10 +3156,14 @@ function fillPresets(selected){
 }
 function loadPatch(p){
   engine.solo.clear();
+  const keepSeq = seqUI.keep ? clone(patch.seq) : null, wasPlaying = SEQ.playing;
+  seqStop();
   patch = normalize(clone(p));
+  if (keepSeq) patch.seq = keepSeq;                          // Keep: audition this sequence on another sound
   render();
   engine.applyAll();
   changed();
+  if (keepSeq && wasPlaying) seqPlay();
 }
 $('#presetSel').addEventListener('change', e => {
   const v = e.target.value;
@@ -2741,6 +3363,7 @@ function drawLoop(win){
     if (VIS.spectrum.ownerDocument === d) drawSpectrum(VIS.spectrum, dpr);
     if (VIS.meters.ownerDocument === d) drawMeters(VIS.meters, dpr);
     if (win === window) paintStrips();
+    if (seqUI.canvas && seqUI.canvas.ownerDocument === d) drawSeq();
   };
   win.requestAnimationFrame(frame);
 }
@@ -2773,8 +3396,20 @@ function fitToWindow(){
   root.classList.add('fitted');
   const naturalH = body.scrollHeight;                       // height at zoom 1, laid out at the design width
   const z = Math.min(innerWidth / DESIGN_W, (innerHeight - 2) / naturalH);   // 2px spare for rounding at odd zooms
-  body.style.zoom = (Math.floor(z * 1e4) / 1e4).toFixed(4);         // round down, so it never overshoots
+  let zz = Math.floor(z * 1e4) / 1e4;                               // round down, so it never overshoots
+  body.style.zoom = zz.toFixed(4);
+  // At small zooms every element rounds to whole pixels, which can add up past the spare: shave until it fits.
+  for (let i = 0; i < 6 && root.scrollHeight > innerHeight; i++){
+    zz = Math.floor(zz * (innerHeight - 1) / root.scrollHeight * 1e4) / 1e4;
+    body.style.zoom = zz.toFixed(4);
+  }
+  // Late layout changes (fonts finishing loading, canvases sizing) can still push it over: check again next frame.
+  if (!fitRecheck){
+    fitRecheck = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => { fitRecheck = false; if (root.scrollHeight > innerHeight) fitToWindow(); }));
+  }
 }
+let fitRecheck = false;
 let fitQueued = false;
 addEventListener('resize', () => {
   if (fitQueued) return;

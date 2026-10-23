@@ -6,7 +6,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **Sequencer.** Records what you do and plays it back, so the drone can evolve on its own while you play over it. Open it with the new **Seq** tab on the Performance block (in the Play view or the Performance window).
+  - **Record:** press **Rec** and **Play**, then move knobs and faders, press LED buttons and Mutes, hold expression plates and play the Keys. Everything is written into the current pattern as the playhead passes. Touching a control overwrites its lane only from where you start to where you let go.
+  - **Play back:** notes are scheduled on the audio clock, so they land on time. Control lanes move the panel as they play, and grabbing a control pauses its lane until you let go.
+  - **Edit** on the timeline: click the note grid to add notes (snapped to the grid), click to delete, drag to move, drag a note's end to lengthen it. Drag on a lane to draw values, Shift-drag to erase, **×** deletes a lane, and **+ Add lane…** makes one for any control to draw.
+  - **Patterns A–D**, each with its own length. While playing, a new pattern starts at the end of the current one. **Chain** plays every pattern with content in order.
+  - **Time:** **Tempo** (20–240 BPM, 1–32 bars) or **Free** (seconds, up to 10 minutes per pattern). **Quantise notes** (Off, 1/4, 1/8, 1/16) and **Snap**.
+  - **Copy**, **Paste**, **Clear**; **Keep** holds the sequence when you load another patch.
+  - Sequences are saved with the patch (Save, Export and Import keep them together); older patches load with an empty sequence.
+- The user guide has a new **Part 8½: The sequencer**, plus a recipe ("The slow evolution") and troubleshooting entries.
+
+### Changed
+- The Performance block's tabs are now **Seq**, **Expression** and **Keys**, and each one switches on and off independently (they used to be Keys / Expression / Both).
+- Fit to window double-checks its result, so tall layouts never need a scrollbar at small scales.
 
 ## [0.4.2] — 2026-10-21
 

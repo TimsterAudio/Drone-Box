@@ -104,6 +104,7 @@ dl dd{margin:2px 0 0 18px}
     <li><a href="#p6">Part 6: The Keys</a></li>
     <li><a href="#p7">Part 7: Expression plates</a></li>
     <li><a href="#p8">Part 8: Views and windows</a></li>
+    <li><a href="#p8s">Part 8½: The sequencer</a> <span>(added after the book went to print)</span></li>
     <li><a href="#p9">Part 9: Patches, or how not to lose that perfect sound</a></li>
     <li><a href="#p10">Part 10: Recipes</a></li>
     <li><a href="#p11">Part 11: When things go wrong</a></li>
@@ -258,7 +259,7 @@ dl dd{margin:2px 0 0 18px}
 
 <section id="p6">
   <h2><span class="pn">Part 6</span> The Keys</h2>
-  <p>The drone is the floor. The <b>Keys</b> are you dancing on it. Switch <b>View</b> to <b>Play</b> and, if needed, pick the <b>Keys</b> or <b>Both</b> tab on the bottom block. You'll see <b>13 tall strips</b>: one for each just-tuned interval above the root, plus the octave on the end.</p>
+  <p>The drone is the floor. The <b>Keys</b> are you dancing on it. Switch <b>View</b> to <b>Play</b> and, if needed, make sure the <b>Keys</b> tab on the bottom block is lit. You'll see <b>13 tall strips</b>: one for each just-tuned interval above the root, plus the octave on the end.</p>
   <h3>Playing them</h3>
   <ul>
     <li><b>Press a strip</b> to play its note. Let go to stop.</li>
@@ -319,8 +320,8 @@ dl dd{margin:2px 0 0 18px}
   <h2><span class="pn">Part 8</span> Views and windows</h2>
   <dl>
     <dt>View: Panel</dt><dd>Everything: oscillators, Monitor, Root, Noise, and the bottom row of LFOs, filter and effects.</dd>
-    <dt>View: Play</dt><dd>Swaps the bottom row for the <b>Performance</b> block. Tabs on its top edge choose <b>Keys</b>, <b>Expression</b> or <b>Both</b>. With Both, the whole panel shrinks a bit to fit; that's the price of having everything at once.</dd>
-    <dt>View: Perform</dt><dd>Pops the Performance block out into its own window. In Chrome, Edge and Brave, that window <b>stays on top of other apps</b>, so you can play while doing something else. It has the same Keys / Expression / Both tabs.</dd>
+    <dt>View: Play</dt><dd>Swaps the bottom row for the <b>Performance</b> block. Tabs on its top edge switch the <b>Seq</b>uencer, the <b>Expression</b> plates and the <b>Keys</b> on and off, in any combination. Turn on all three and the whole panel shrinks to fit; that's the price of having everything at once.</dd>
+    <dt>View: Perform</dt><dd>Pops the Performance block out into its own window. In Chrome, Edge and Brave, that window <b>stays on top of other apps</b>, so you can play while doing something else. It has the same Seq / Expression / Keys tabs.</dd>
     <dt>Monitor's Window tab</dt><dd>The little tab on Monitor's top edge opens the scope and spectrum in their own window. Lovely on a second screen.</dd>
   </dl>
   <ul>
@@ -328,6 +329,38 @@ dl dd{margin:2px 0 0 18px}
     <li>Windows remember their size. Next time you open Drone Box, a section that was in a window last time has a <b>glowing tab</b>: click it to reopen. (Browsers only allow one new window per click, so they can't all pop up by themselves. Blame the pop-up ads of the early 2000s.)</li>
   </ul>
   <p class="ic tech"><b>TECHNICAL STUFF</b> Browsers allow only <i>one</i> always-on-top window per page, which is why the Keys and the plates share the Performance window instead of getting one each.</p>
+</section>
+
+<section id="p8s">
+  <h2><span class="pn">Part 8½</span> The sequencer</h2>
+  <p>We added this part after the book went to print, which is why it has a fraction for a number. Like a director's cut, but for a synth manual.</p>
+  <p>The <b>sequencer</b> records what you do (knob and fader moves, button presses, mutes, plate gestures and Keys notes) and plays it back, so your drone can evolve on its own while you make tea, or while you play something else on top. Open it with the <b>Seq</b> tab on the Performance block, in the Play view or the Performance window.</p>
+  <h3>Recording, the easy way</h3>
+  <ol class="steps">
+    <li>Press <b>Rec</b> (its LED lights), then <b>Play</b> in the sequencer. The drone starts too, if it wasn't already.</li>
+    <li><b>Do things.</b> Sweep the filter, change the root note, mute an oscillator, hold a plate, play some Keys. Everything you touch is written into the current pattern as the playhead passes.</li>
+    <li>The pattern loops. Go round again and add more, or redo a move: touching a control overwrites its lane from where you start to where you let go, and leaves the rest alone.</li>
+    <li>Press <b>Rec</b> again to stop recording. It keeps playing back what you did, and you can play along.</li>
+  </ol>
+  <p class="ic tip"><b>TIP</b> While it plays back, you can still grab a control that has a lane. The sequencer pauses that lane while your hand is on it, then takes over again. That's how automation works on the big studio desks, and now on yours.</p>
+  <h3>The timeline</h3>
+  <ul>
+    <li><b>The note grid</b> (top) has one row per Keys strip. <b>Click</b> to add a note (it snaps to the grid), <b>click a note</b> to delete it, <b>drag</b> to move it, and drag its right edge to make it longer.</li>
+    <li><b>Lanes</b> (below) show one control each, with the name on the left. <b>Drag</b> on a lane to draw new values; <kbd>Shift</kbd> + drag rubs points out. Click a name to highlight it, or the <b>×</b> to delete the lane. Scroll if there are lots.</li>
+    <li><b>+ Add lane…</b> makes a lane for any control without recording, so you can draw it instead.</li>
+  </ul>
+  <h3>The controls</h3>
+  <dl>
+    <dt>Pattern A, B, C, D</dt><dd>Four patterns per patch, each with its own length. A dot means a pattern has something in it. While playing, pressing another pattern makes it blink, and it starts at the end of the current one. No awkward jumps.</dd>
+    <dt>Chain</dt><dd>Plays every pattern that has something in it, in order, then loops: intro, middle, end, repeat.</dd>
+    <dt>Time: Tempo / Free</dt><dd><b>Tempo</b> works in beats and bars (Tempo from 20 to 240 BPM, Bars from 1 to 32). <b>Free</b> works in plain seconds, up to 10 minutes per pattern, for drones that don't believe in beats.</dd>
+    <dt>Quantise notes</dt><dd>The grid that recorded and added notes snap to: Off, 1/4, 1/8 or 1/16. <b>Snap</b> moves a pattern's existing notes onto it.</dd>
+    <dt>Copy, Paste, Clear</dt><dd>Copy a pattern, paste it over another, or clear one out (it asks first).</dd>
+    <dt>Keep</dt><dd>Keeps the sequence when you load another patch, so you can hear the same moves on a different sound.</dd>
+  </dl>
+  <p class="ic remember"><b>REMEMBER</b> Sequences are saved with the patch: <b>Save</b> and <b>Export</b> keep them together. Load another patch without <b>Keep</b> and you get that patch's own sequence.</p>
+  <p class="ic tech"><b>TECHNICAL STUFF</b> The sequencer runs on the audio clock and schedules notes a moment ahead, so they land on time even when your computer is busy drawing things. Recorded moves are tidied up afterwards (points that a straight line already describes are dropped), so your patches don't swell up.</p>
+  <p class="ic warning"><b>WARNING</b> A sequence that plays a knob will keep playing that knob. If something won't stay where you put it, there's a lane for it: delete the lane, or record over it.</p>
 </section>
 
 <section id="p9">
@@ -366,6 +399,8 @@ dl dd{margin:2px 0 0 18px}
     <ol><li>Any patch; set Delay <b>Time</b> about 0.45 s and <b>Feedback</b> about 40%.</li><li>View: <b>Play</b>, tab <b>Expression</b>.</li><li>Press Play, then hold the <b>Space</b> plate near the top for a second and let go.</li><li>Nod knowingly as the echoes tumble away.</li></ol></div>
   <div class="recipe"><h3>Playing the drone in</h3>
     <ol><li>Mute OSC 3 to OSC 6.</li><li>Turn the plates' <b>Swell</b> on.</li><li>Press Play and bring the muted oscillators in one at a time on their plates, higher for brighter.</li><li>Accept applause from the cat.</li></ol></div>
+  <div class="recipe"><h3>The slow evolution</h3>
+    <ol><li>Load <b>Tanpura Fifths</b>. In the sequencer set <b>Time</b> to <b>Free</b> and the length to about 2 minutes.</li><li>Press <b>Rec</b>, then <b>Play</b>.</li><li>Over the two minutes, slowly open the filter, change the root note once, and bring OSC 5 in with its plate.</li><li>Press <b>Rec</b> to stop recording, and let it evolve by itself. Forever. You've made an installation. Apply for an arts grant.</li></ol></div>
   <div class="recipe"><h3>The Bagpiper's Revenge</h3>
     <p>If you have the <code>Highland-Bagpipes.dronebox.json</code> patch, <b>Import</b> it. Drones at 120 and 240 Hz, a Mono chanter on the Keys. Play the strips 1/1, 9/8, 5/4, 4/3, 3/2, 5/3, 7/4 and 2/1, and flick a quick 7/4 before each note for an authentic grace note. Neighbours may form a pipe band, or a mob.</p></div>
 </section>
@@ -380,9 +415,11 @@ dl dd{margin:2px 0 0 18px}
     <dt>A plate is stuck on.</dt><dd>You're in <b>Hold</b>. Tap the plate, or press <b>Clear</b>.</dd>
     <dt>A note won't stop.</dt><dd><b>Latch</b> is on. Press the strip again, or turn Latch off.</dd>
     <dt>Some strips are dark and won't play.</dt><dd>They're outside the current <b>Scale</b>. Set the Scale to All 12.</dd>
+    <dt>A knob keeps moving on its own.</dt><dd>The sequencer has a lane for it. Delete the lane (its <b>×</b>), record over it, or stop the sequencer.</dd>
+    <dt>The sequencer recorded nothing.</dt><dd>Both <b>Rec</b> and the sequencer's <b>Play</b> need to be on, and you have to actually touch something while it runs. Panel and View switches aren't recorded: they're preferences, not music.</dd>
     <dt>The Performance window isn't on top.</dt><dd>That only works in Chrome, Edge and Brave. Elsewhere it's an ordinary window.</dd>
     <dt>A pop-out window won't open.</dt><dd>Your browser blocked it; allow pop-ups for Drone Box. And remember: one window per click.</dd>
-    <dt>The panel is tiny.</dt><dd>On a tablet held upright it fits the width and leaves space below. Turn it sideways. In Play view with Both, it shrinks to fit everything; pick Keys or Expression for bigger controls.</dd>
+    <dt>The panel is tiny.</dt><dd>On a tablet held upright it fits the width and leaves space below. Turn it sideways. In Play view with several tabs lit, it shrinks to fit everything; turn some off for bigger controls.</dd>
     <dt>My saved patches have vanished!</dt><dd>They live in one browser on one computer. Different browser, cleared site data or a private window? They won't be there. This is why <b>Export</b> exists. We did mention it.</dd>
   </dl>
 </section>
@@ -414,6 +451,7 @@ dl dd{margin:2px 0 0 18px}
     <li>Metallic FM on a Sunday morning. Church bells, but wrong.</li>
     <li>Tune mode, every strip a few cents off. Just to see who notices.</li>
     <li>Latching every Key. All of them. Then leaving.</li>
+    <li>Bonus round: a Free-mode sequence ten minutes long, with Chain on. They'll never find the end.</li>
   </ol>
   <p class="ic warning"><b>WARNING</b> The publishers of this guide accept no responsibility for neighbourly relations. Use the Volume knob responsibly.</p>
 </section>

@@ -49,7 +49,8 @@ Press **Play** or hit **Space**. Browsers only allow audio to start after a clic
 - **Output:** master volume, a safety limiter, L/R meters, a scope and a log-frequency spectrum.
 - **Keys:** 13 touch strips (the 12 just intervals plus the octave) that play a 1–4 voice synth over the drone, with its own filter (LPF, BPF, HPF, Ladder; cutoff, resonance, drive) and LFO (pitch, filter, level). The height you press at is pressure. Drag sideways to glide. Also: Latch, a microtonal Tune mode, scales, vibrato, and computer-keyboard playing.
 - **Expression plates:** nine touch plates that shape the drone as you play: oscillator fold, FM, swell, bend and more; a filter sweep; throws into the delay and reverb; and a Bloom macro. Height and sideways movement each play a control.
-- **Pop-out windows:** Monitor, and a Performance window (Keys, plates or both) that can stay on top of other apps.
+- **Sequencer:** record knob moves, button presses, mutes, plate gestures and Keys notes, then play them back, edit them on a timeline, and save them with the patch. Four patterns, Chain, Tempo or Free time.
+- **Pop-out windows:** Monitor, and a Performance window (sequencer, plates and Keys, in any combination) that can stay on top of other apps.
 - **Patches:** factory presets, Randomize, saving your own patches in browser storage, and Export/Import as JSON.
 
 ## Playing the panel
@@ -62,9 +63,10 @@ The panel is styled after classic Roland Jupiter-series synths: a black panel (o
 - **Mute / Solo:** each oscillator has a Mute button (saved with the patch) and a Solo button. When any oscillator is soloed, only the soloed ones play, even if they're muted. Solo isn't saved and clears when you load a patch.
 - **Displays:** the red LED display at the top shows the patch name, play state, and the last control you touched. Every knob and fader also has its own small value readout.
 - **Knob colours:** blue for pitch, green for tone, red for modulation. The **Knobs** switch picks tinted knob tops (Colour) or coloured pointers (Pointer).
-- **View:** **Panel** shows everything. **Play** swaps the bottom row for the Keys and the expression plates (tabs on its top edge pick Keys, Expression or Both). **Perform** floats them in their own window.
+- **View:** **Panel** shows everything. **Play** swaps the bottom row for the Performance block, whose tabs switch the **Seq**uencer, **Expression** plates and **Keys** on and off. **Perform** floats it in its own window.
 - **Keys:** press a strip to play it, higher up for louder and brighter. Drag sideways to glide; hold **Shift** to slide freely. **Latch** holds notes until you press them again. **Tune** lets you drag a strip up or down to retune it (double-click resets it). On the computer keyboard, **A S D F G H J K L ; ' \** play up the scale, and **Z** / **X** change the octave.
 - **Expression plates:** press a plate and move up for more; slide sideways for its second control. Let go and it springs back (or choose **Hold**, then tap to let go). The chips at the foot of each plate pick what it plays.
+- **Sequencer:** press **Rec** and **Play**, then do things: moves, button presses, plates and notes are recorded into the pattern and play back as it loops. Click the timeline's note grid to add or delete notes; drag on a lane to draw it. **A–D** pick a pattern, **Chain** plays them in order.
 - **Windows:** the small **Window** tab on Monitor or the Performance section opens it in its own window; **Dock** (or closing the window) brings it back.
 - **Screen size:** the panel is designed at 1920 × 900 and scales as a whole to fit any window, from a tablet or a 1366 × 768 laptop to a 2560 px monitor. It never re-wraps, so it always looks the same.
 

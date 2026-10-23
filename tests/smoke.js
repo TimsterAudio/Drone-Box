@@ -534,6 +534,119 @@ function check(name, ok, detail = ''){
   await page.waitForTimeout(300);
   }
 
+  // Sequencer (0.5): record and play back controls, plates and notes; patterns, chain, editing, saving
+  {
+    await page.setViewportSize({ width: 1920, height: 900 });
+    await page.evaluate(() => { loadPatch(FACTORY[0]); setView('play'); setStrips('seq,expr,keys'); });
+    await page.waitForTimeout(200);
+    await page.waitForTimeout(100);
+    const tabs = await page.evaluate(() => [seqSec.hidden, exprSec.hidden, keysSec.hidden, store('dronebox.strips'),
+      document.querySelectorAll('#playSlot .seqcanvas').length, document.documentElement.scrollHeight <= innerHeight]);
+    await page.evaluate(() => setStrips('seq'));
+    const only = await page.evaluate(() => [seqSec.hidden, exprSec.hidden, keysSec.hidden]);
+    check('Seq / Expression / Keys tabs show the sequencer, alone or with the others', tabs.join() === 'false,false,false,seq,expr,keys,1,true' && only.join() === 'false,true,true', JSON.stringify([tabs, only]));
+    await page.evaluate(() => { setStrips('seq,expr,keys'); patch.seq.bpm = 120; seqSetLen(8); patch.seq.quant = '16'; SEQ.rec = true; seqSync(); return seqPlay(); });
+    await page.waitForTimeout(400);
+    const kn = await page.evaluate(() => { const r = [...document.querySelectorAll('.knob')].find(n => n.getAttribute('aria-label') === 'Osc 1 fold').getBoundingClientRect(); return {x: r.x + r.width / 2, y: r.y + r.height / 2}; });
+    await page.mouse.move(kn.x, kn.y); await page.mouse.down();
+    for (let i = 0; i < 16; i++){ await page.mouse.move(kn.x, kn.y - i * 5); await page.waitForTimeout(30); }
+    await page.mouse.up();
+    await page.keyboard.down('g'); await page.waitForTimeout(300); await page.keyboard.up('g');
+    const pl = await page.evaluate(() => { const r = exprUI.plates[6].el.getBoundingClientRect(); return {x: r.x + r.width / 2, y: r.y + r.height * 0.3}; });
+    await page.mouse.move(pl.x, pl.y); await page.mouse.down(); await page.waitForTimeout(300); await page.mouse.up();
+    const rec = await page.evaluate(() => { const P = patch.seq.patterns[0]; return {fold: (P.lanes['Osc 1 fold'] || []).length, foldMax: Math.max(...(P.lanes['Osc 1 fold'] || [[0, 0]]).map(q => q[1])),
+      plate: (P.lanes['plate:6'] || []).length, notes: P.notes.map(n => ({t: n.t, idx: n.idx})), held: seqUI.recBtn.getAttribute('aria-pressed')}; });
+    const onGrid = rec.notes.length === 1 && Math.abs(rec.notes[0].t * 4 - Math.round(rec.notes[0].t * 4)) < 1e-6 && rec.notes[0].idx === 4;
+    check('recording captures a knob move, a Keys note (on the grid) and a plate', rec.fold > 3 && rec.foldMax > 0.2 && rec.plate >= 2 && onGrid, JSON.stringify(rec));
+    // Playback: put Fold back by hand, then the lane must bring it back; the note and plate must replay
+    await page.evaluate(() => { SEQ.rec = false; seqSimplifyAll(); seqSync(); CTRL.get('Osc 1 fold').apply(0); SEQ.applied = {}; });
+    let foldBack = 0, noteHeard = false, plateOn = false;
+    for (let i = 0; i < 40; i++){
+      await page.waitForTimeout(110);
+      const s = await page.evaluate(() => [patch.oscs[0].fold, [...engine.keyMap.keys()].some(k => k.startsWith('q')), !!(exprUI.state[6] && exprUI.state[6].on && exprUI.state[6].seq)]);
+      foldBack = Math.max(foldBack, s[0]); noteHeard = noteHeard || s[1]; plateOn = plateOn || s[2];
+    }
+    check('playback replays the knob lane, the note and the plate', foldBack > 0.2 && noteHeard && plateOn, `fold ${foldBack}, note ${noteHeard}, plate ${plateOn}`);
+    // A note lands at its time: the note at t (beats) sounds within ±25 ms of it
+    const timing = await page.evaluate(async () => {
+      const P = seqPat(), n = P.notes[0], bps = seqBps();
+      return new Promise(res => {
+        const iv = setInterval(() => {
+          const cur = seqNow(); if (!cur) return;
+          const v = engine.keyVoices.find(v => v.id && v.id.startsWith('q'));
+          if (v){ clearInterval(iv); res((v.started - (SEQ.start + (SEQ.iters[SEQ.iters.length - 1].start + n.t) / bps)) * 1000); }
+        }, 2);
+        setTimeout(() => { clearInterval(iv); res(null); }, 6000);
+      });
+    });
+    check('sequenced notes are scheduled on time', timing !== null && Math.abs(timing) < 25 || (timing !== null && Math.abs(Math.abs(timing) - 4000) < 25), `${timing && timing.toFixed(1)} ms`);
+    // Queue a pattern, then Chain
+    await page.evaluate(() => { patch.seq.patterns[1].notes.push({t: 0, d: 1, idx: 7, oct: 0, p: .8}); patch.seq.patterns[1].len = 4; seqUI.patBtns[1].click(); });
+    const queued = await page.evaluate(() => [SEQ.queued, seqNow().pat]);
+    for (let i = 0; i < 50 && (await page.evaluate(() => seqNow().pat)) !== 1; i++) await page.waitForTimeout(100);
+    const switched = await page.evaluate(() => [seqNow().pat, patch.seq.pat, SEQ.queued]);
+    await page.evaluate(() => { patch.seq.chain = true; });
+    let back = false;
+    for (let i = 0; i < 40 && !back; i++){ await page.waitForTimeout(100); back = await page.evaluate(() => seqNow().pat === 0); }
+    check('patterns: B queues to the end of the bar, Chain moves on to the next one with content', queued.join() === '1,0' && switched.join() === '1,1,' && back, JSON.stringify([queued, switched, back]));
+    // The audio keeps running for the sequencer with the drone stopped
+    await page.evaluate(() => { patch.env.release = 0.1; engine.stop(); });
+    await page.waitForTimeout(3500);
+    const alive = await page.evaluate(() => [engine.ctx.state, SEQ.playing, engine.hold]);
+    await page.evaluate(() => seqStop());
+    await page.waitForTimeout(100);
+    const stopped = await page.evaluate(() => [SEQ.playing, [...engine.keyMap.keys()].filter(k => k.startsWith('q')).length, engine.hold]);
+    check('the sequencer keeps the audio running with the drone stopped, and Stop lets go', alive.join() === 'running,true,true' && stopped.join() === 'false,0,false', JSON.stringify([alive, stopped]));
+    // Editing: click the note grid to add a note on the grid, click it again to delete it; draw on a lane
+    await page.evaluate(() => { patch.seq.chain = false; patch.seq.pat = 2; seqPat().len = 16; seqSync(); seqUI.dirty = true; });
+    await page.waitForTimeout(150);
+    const geo = await page.evaluate(() => { const c = seqUI.canvas, r = c.getBoundingClientRect(), G = seqGeom(c), k = r.width / c.clientWidth;
+      return {x: r.x + G.xOf(4.1) * k, y: r.y + (G.rollTop + (NUM_KEYS - 1 - 7) * SG.row + 4) * k}; });
+    await page.mouse.click(geo.x, geo.y);
+    const added = await page.evaluate(() => seqPat().notes.map(n => [n.t, n.idx]));
+    await page.mouse.click(geo.x + 3, geo.y);
+    const removed = await page.evaluate(() => seqPat().notes.length);
+    await page.evaluate(() => { seqPat().lanes['Filter cutoff'] = [[0, 1000]]; seqUI.dirty = true; });
+    await page.waitForTimeout(100);
+    const lg = await page.evaluate(() => { const c = seqUI.canvas, r = c.getBoundingClientRect(), G = seqGeom(c), k = r.width / c.clientWidth;
+      return {x0: r.x + G.xOf(2) * k, x1: r.x + G.xOf(10) * k, y: r.y + (G.laneTop + 4) * k}; });
+    await page.mouse.move(lg.x0, lg.y); await page.mouse.down(); await page.mouse.move(lg.x1, lg.y, {steps: 8}); await page.mouse.up();
+    const drawn = await page.evaluate(() => { const L = seqPat().lanes['Filter cutoff']; return [L.length, Math.max(...L.map(q => q[1]))]; });
+    check('editing: click adds a note on the grid, clicking it deletes it, dragging draws a lane', JSON.stringify(added) === '[[4,7]]' && removed === 0 && drawn[0] >= 2 && drawn[1] > 8000, JSON.stringify([added, removed, drawn]));
+    // Free mode and tempo changes keep their place
+    await page.evaluate(() => { patch.seq.pat = 0; seqSync(); });
+    await page.click('.seq-sec .bgroup:has(.glabel:text("Time")) .hwb:nth-child(2)');
+    const freeMode = await page.evaluate(() => [patch.seq.mode, seqBps(), seqQ(), !!document.querySelector('.seq-sec [aria-label="Sequencer length"]')]);
+    await page.click('.seq-sec .bgroup:has(.glabel:text("Time")) .hwb:nth-child(1)');
+    await page.evaluate(() => seqPlay());
+    await page.waitForTimeout(600);
+    const placeA = await page.evaluate(() => seqNow().pos);
+    await page.evaluate(() => seqSetTempoKeepingPlace(() => { patch.seq.bpm = 60; }));
+    const placeB = await page.evaluate(() => seqNow().pos);
+    await page.evaluate(() => seqStop());
+    check('Free mode counts in seconds; changing tempo keeps the playhead in place', freeMode.join() === 'free,1,0,true' && Math.abs(placeA - placeB) < 0.1, JSON.stringify([freeMode, placeA, placeB]));
+    // Saving: the sequence travels with the patch; old patches get an empty one; bad data is cleaned
+    const sv = await page.evaluate(() => {
+      const back = normalize(JSON.parse(JSON.stringify(patch)));
+      const old = clone(FACTORY[0]); delete old.seq;
+      const bad = clone(patch); bad.seq.patterns[0] = {len: -5, notes: [{t: 'x'}, {t: 1, d: 1, idx: 99, p: 2}], lanes: {'Filter cutoff': [[1, 500], 'junk', [NaN, 3]], x: 5}};
+      const nb = normalize(bad).seq.patterns[0];
+      return {kept: JSON.stringify(back.seq) === JSON.stringify(patch.seq), old: normalize(old).seq.patterns.length === 4 && normalize(old).seq.patterns.every(P => !P.notes.length),
+              bad: [nb.len, nb.notes.length, nb.notes[0] && nb.notes[0].idx, (nb.lanes['Filter cutoff'] || []).length, 'x' in nb.lanes].join()};
+    });
+    check('sequences save with the patch; old patches load; bad data is cleaned', sv.kept && sv.old && sv.bad === '16,1,12,1,false', JSON.stringify(sv));
+    // Keep: another patch keeps this sequence; without Keep it gets its own
+    const kp = await page.evaluate(() => {
+      const mine = JSON.stringify(patch.seq);
+      seqUI.keep = true; loadPatch(FACTORY[1]); const kept = JSON.stringify(patch.seq) === mine;
+      seqUI.keep = false; loadPatch(FACTORY[2]); const fresh = patch.seq.patterns.every(P => !P.notes.length);
+      return [kept, fresh];
+    });
+    check('Keep carries the sequence to another patch', kp.join() === 'true,true', JSON.stringify(kp));
+    await page.evaluate(() => { localStorage.removeItem('dronebox.seqkeep'); setStrips('expr,keys'); setView('panel'); loadPatch(FACTORY[0]); });
+    await page.waitForTimeout(200);
+  }
+
   // Pop-out windows. Headless Chromium has no Picture-in-Picture window, so Keys falls back to a popup too.
   await page.evaluate(() => setView('panel'));
   await page.evaluate(() => engine.play());

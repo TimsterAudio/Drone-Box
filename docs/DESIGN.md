@@ -113,6 +113,20 @@ In both styles, a fader's cap line takes the family colour.
 - The bank's controls sit on the left in a compact block: Swell and Clear (single LED buttons), Release (Spring / Hold), Attack and Return knobs.
 - **Keys / Expression / Both** are tabs on the top edge of the Performance block, next to its Window tab. The same tabs travel with it into the Performance window.
 
+## Sequencer
+
+- The **Sequencer** block has its controls on the left, packed into four rows, and the timeline on the right:
+  - row 1: Play and Rec (red, the transport colour), Pattern A–D (orange), Chain (yellow), Keep (grey)
+  - row 2: Time (Tempo / Free) and the Tempo and Bars (or Length) knobs
+  - row 3: Quantise notes
+  - row 4: Snap, Copy, Paste, Clear (grey), and the "+ Add lane…" menu (an LED-display style select)
+- A pattern key shows a dot when the pattern has content, and blinks while it's queued.
+- **The timeline** is an LED screen, like Monitor: dark red background, red-orange ink.
+  - A ruler with bar numbers (Tempo) or times (Free), and the pattern, length and tempo in its corner.
+  - The note grid: one row per Keys strip (2/1 at the top), each note a bar whose brightness follows its pressure; notes in another octave show +1 / −1.
+  - One lane per recorded control, named on the left with a × to delete it. Lanes are drawn red, plates amber (their glow colour); the selected lane is tinted orange.
+  - The playhead is white, or red while recording.
+
 ## Pop-out windows
 
 - A section that can float has a small **Window** tab on its top frame edge, at the right (opposite the title). In its window, the tab reads **Dock**.

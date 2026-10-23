@@ -30,7 +30,8 @@ The `<script>` block is split into sections with `/* ---------- Name ---------- 
 | App | the `patch` and `engine` instances, `POPS`, `ui.setStatus`, theme, `render()` |
 | Keys | `keysSec` (one persistent section), `renderKeys()`, the strip bed (`bindBed`), computer-keyboard playing (`keysKeyDown`/`keysKeyUp`) |
 | Expression plates | `exprSec`, `EXPR_PLATES`, `renderExpr()`, `exprContrib()` (what each plate does), `exprApply()` (sends offsets to the engine), `bindPlates()` |
-| Performance | `perfWrap` (holds the plates and the Keys), `buildPerf()`, the Keys / Expression / Both tabs (`setStrips()`) |
+| Sequencer | `SEQ` (transport state), `seqPlay()` / `seqStop()`, `seqTick()` (the clock), `seqLanes()`, recording (`seqWrite()`, `seqTouch()`, `seqPlate()`, `seqNoteOn/Off()`), `renderSeq()`, the timeline (`drawSeq()`, `bindSeqCanvas()`) |
+| Performance | `perfWrap` (holds the sequencer, the plates and the Keys), `buildPerf()`, the Seq / Expression / Keys tabs (`setStrips()`, `toggleStrip()`) |
 | Panel / Play view | `view`, `setView()`, `applyView()`: the Play view swaps the bottom row for the Keys |
 | Pop-out windows | `POP_SPECS`, `popOut()`, `adopt()`, `popIn()`, the Window/Dock tabs and the reopen glow |
 | Patches | the preset menu, save, delete, export, import, randomize |
@@ -144,11 +145,17 @@ A patch is plain JSON. This is what Export writes and what's stored in localStor
               "tune": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },      // cents per strip (13, the last is the octave), ±50
   "expr":   { "release": "spring", "attack": 0.3, "ret": 1.5,         // added in 0.4; release: spring | hold
               "swell": true,                                          // pressing an OSC plate brings its oscillator in
-              "plates": [ { "y": "fold", "x": "bend" } ] }           // always 9: OSC 1-6, Filter, Space, Bloom; y and x pick each plate's controls
+              "plates": [ { "y": "fold", "x": "bend" } ] },          // always 9: OSC 1-6, Filter, Space, Bloom; y and x pick each plate's controls
+  "seq":    { "mode": "tempo", "bpm": 80, "chain": false,             // added in 0.5; mode: tempo | free (a beat is one second)
+              "quant": "16", "pat": 0,                                // quant: off | 4 | 8 | 16; pat: the current pattern
+              "patterns": [ { "len": 16,                              // always 4 (A-D); times and lengths in beats
+                "notes": [ { "t": 0, "d": 1, "idx": 7, "oct": 0, "p": 0.8 } ],      // idx: Keys strip 0-12
+                "lanes": { "Filter cutoff": [[0, 600], [4, 2400]],                  // control name -> [[t, value] ...]
+                           "plate:6": [[2, 0.5, 0], [3, -1, 0]] } } ] }             // plates: [t, height, sideways]; -1 = let go
 }
 ```
 
-`normalize()` merges any incoming object onto `defaultPatch()`. It skips arrays, so `keys.tune` is copied by hand (numbers only, clamped to ±50). Missing keys get defaults, unknown keys are dropped, and wrongly typed values are ignored. **That's what keeps old patches loading, so add new fields to `defaultPatch()`. Never rename or repurpose existing ones.** If a breaking change is ever unavoidable, add a format version field first (it's on the backlog).
+`normalize()` merges any incoming object onto `defaultPatch()`. It skips arrays, so the sequencer's patterns are checked field by field by `cleanPattern()`, and `keys.tune` is copied by hand (numbers only, clamped to ±50). Missing keys get defaults, unknown keys are dropped, and wrongly typed values are ignored. **That's what keeps old patches loading, so add new fields to `defaultPatch()`. Never rename or repurpose existing ones.** If a breaking change is ever unavoidable, add a format version field first (it's on the backlog).
 
 ### Browser storage keys
 
@@ -159,7 +166,8 @@ A patch is plain JSON. This is what Export writes and what's stored in localStor
 | `dronebox.theme` | `"dark"` or `"silver"` |
 | `dronebox.knobs` | `"caps"` (Colour) or `"pointers"` (Pointer) |
 | `dronebox.view` | `"panel"` or `"play"` |
-| `dronebox.strips` | what the Play view and Performance window show: `"keys"`, `"expr"` or `"both"` |
+| `dronebox.strips` | what the Performance block shows: a comma-separated list of `seq`, `expr` and `keys` (the old value `both` still means Expression + Keys) |
+| `dronebox.seqkeep` | the sequencer's Keep switch |
 | `dronebox.pops` | names of the sections that were in their own window (they glow, ready to reopen) |
 | `dronebox.popgeom` | each pop-out window's last size (and position, for popups) |
 
@@ -197,6 +205,16 @@ Colours are CSS custom properties on `:root`. `[data-theme="silver"]` overrides 
 ## Testing
 
 See [TESTING.md](../TESTING.md). `tests/smoke.js` is the automated check run before every merge. `testing/Drone Box Test Checklist.html` is the manual checklist for human testers. It's a separate offline page, not part of the instrument.
+
+## Sequencer
+
+- **What it can record:** every knob and fader (`bindControl`), every LED-button row (`buttons()`), the oscillators' Mutes, the expression plates and the Keys notes. Recordable controls register themselves in `CTRL` (name → `{discrete, get, apply, toPos, fromPos}`); panel preferences (Panel, Knobs, View) and the sequencer's own controls pass `rec: false`.
+  - **Control names are the saved-sequence format.** A lane is keyed by its control's name (for example "Filter cutoff"), so renaming a control breaks existing sequences. Don't rename one without a migration in `cleanPattern()`.
+- **Clock:** the audio context's time. `seqTick()` runs every 10 ms and looks 60 ms ahead. Notes go to `engine.keyOn(id, hz, p, at)` and `engine.keyOff(id, at)` with exact times; note-offs are queued and sent within the same look-ahead, so a voice isn't freed early. Each pattern iteration is recorded in `SEQ.iters`, so the playhead (`seqNow()`) and the scheduler can be in different patterns for those 60 ms.
+- **Lanes** are applied by `seqLanes()` at the playhead, at most every 20 ms per lane and only when the value changes. Continuous controls interpolate in their own position space (so log controls sweep evenly); discrete ones step. Before a lane's first point, it holds its last point (patterns loop).
+- **Recording ("touch"):** `seqWrite()` overwrites a lane from where a touch started to where the hand is, thins points to one per 40 ms, and holds the old value up to the start of a touch. A hand on a control (recording or not) pauses its lane for 400 ms. When recording stops, `seqSimplify()` drops points a straight line already describes. Notes are snapped to the quantise grid and marked `fresh`, so they don't play again in the pass that recorded them.
+- **Keeping the audio alive:** while the sequencer plays, `engine.hold` stops `trySuspend()` from suspending the context, even with the drone stopped (the sequence's clock is the audio clock).
+- `loadPatch()` stops the sequencer, unless **Keep** is on: then the current sequence is copied into the new patch and carries on.
 
 ## Pop-out windows
 
